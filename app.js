@@ -21,6 +21,7 @@ const scenePadding = document.querySelector("#scenePadding");
 const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
+const applyGlobalTransitionBtn = document.querySelector("#applyGlobalTransitionBtn");
 const apiEndpoint = document.querySelector("#apiEndpoint");
 const apiToken = document.querySelector("#apiToken");
 const apiFieldName = document.querySelector("#apiFieldName");
@@ -1137,9 +1138,9 @@ function renderScenes() {
     wrap.append(image);
 
     // Apply Transition Effects in HTML Preview
-    const transStyle = getSceneTransitionStyle();
-    const transSize = getSceneTransitionSize();
-    const transSides = getSceneTransitionSides();
+    const transStyle = scene.transitionStyle || "none";
+    const transSize = scene.transitionStyle === "none" ? 0 : (scene.transitionSize ?? 150);
+    const transSides = scene.transitionSides || "both";
 
     if (transStyle !== "none" && transSize > 0) {
       if (transStyle === "soft") {
@@ -1354,6 +1355,29 @@ function renderScenes() {
         createRangeControl("Blur", scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
           scene.filterBlur = value;
           updateSceneImageTransform(scene);
+        }),
+        createSelectControl("Gecis filtresi", scene.transitionStyle || "none", [
+          { value: "soft", text: "Soft fade" },
+          { value: "cinematic", text: "Sinematik kararma" },
+          { value: "blur", text: "Blur gecis" },
+          { value: "none", text: "Keskin" }
+        ], (value) => {
+          pushSceneHistory();
+          scene.transitionStyle = value;
+          renderScenes();
+        }),
+        createRangeControl("Gecis boyutu", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
+          scene.transitionSize = value;
+          renderScenes();
+        }),
+        createSelectControl("Gecis yonu", scene.transitionSides || "both", [
+          { value: "both", text: "Her iki taraf (Ust & Alt)" },
+          { value: "top", text: "Sadece Ust (Baslangic)" },
+          { value: "bottom", text: "Sadece Alt (Bitis)" }
+        ], (value) => {
+          pushSceneHistory();
+          scene.transitionSides = value;
+          renderScenes();
         }),
       );
     } else {
@@ -1875,6 +1899,9 @@ function ensureSceneModel() {
     scene.filterSaturate ??= sceneImageFilterDefaults.saturate;
     scene.filterSepia ??= sceneImageFilterDefaults.sepia;
     scene.filterBlur ??= sceneImageFilterDefaults.blur;
+    scene.transitionStyle ??= (sceneTransitionStyle ? sceneTransitionStyle.value : "none") || "none";
+    scene.transitionSize ??= Number(sceneTransitionSize ? sceneTransitionSize.value : 150) || 150;
+    scene.transitionSides ??= (sceneTransitionSides ? sceneTransitionSides.value : "both") || "both";
     if (!Array.isArray(scene.blocks)) {
       scene.blocks = scene.text ? [{
         id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
@@ -2056,6 +2083,27 @@ function createRangeControl(labelText, value, min, max, step, onInput) {
     onInput(parsed);
   });
   label.append(title, input, valueText);
+  return label;
+}
+
+function createSelectControl(labelText, value, options, onChange) {
+  const label = document.createElement("label");
+  label.className = "range-control";
+  const title = document.createElement("span");
+  title.textContent = labelText;
+  const select = document.createElement("select");
+  select.style.height = "32px";
+  select.style.padding = "0 6px";
+  select.style.fontSize = "12px";
+  options.forEach((opt) => {
+    const o = document.createElement("option");
+    o.value = opt.value;
+    o.textContent = opt.text;
+    o.selected = opt.value === value;
+    select.append(o);
+  });
+  select.addEventListener("change", () => onChange(select.value));
+  label.append(title, select);
   return label;
 }
 
@@ -2336,9 +2384,9 @@ function drawSceneLayerImage(context, image, scene, width, height) {
   tempCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
   tempCtx.restore();
 
-  const style = getSceneTransitionStyle();
-  const transSize = getSceneTransitionSize();
-  const sides = getSceneTransitionSides();
+  const style = scene.transitionStyle || "none";
+  const transSize = scene.transitionStyle === "none" ? 0 : (scene.transitionSize ?? 150);
+  const sides = scene.transitionSides || "both";
 
   if (style !== "none" && transSize > 0) {
     if (style === "soft") {
@@ -2671,6 +2719,20 @@ sceneTransitionStyle.addEventListener("change", () => {
 sceneTransitionSides.addEventListener("change", () => {
   saveState();
   renderScenes();
+});
+applyGlobalTransitionBtn.addEventListener("click", () => {
+  pushSceneHistory();
+  const style = sceneTransitionStyle.value;
+  const size = Number(sceneTransitionSize.value) || 150;
+  const sides = sceneTransitionSides.value;
+  scenes.forEach((scene) => {
+    scene.transitionStyle = style;
+    scene.transitionSize = size;
+    scene.transitionSides = sides;
+  });
+  saveState();
+  renderScenes();
+  setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
 });
 apiEndpoint.addEventListener("input", saveState);
 apiToken.addEventListener("input", saveState);
