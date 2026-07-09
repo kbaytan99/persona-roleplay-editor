@@ -11,16 +11,19 @@
       <section class="editor-panel" aria-label="Editor ayarlari">
         <div class="toolbox-top-strip" aria-hidden="true"></div>
         <div class="brand-row">
-          <div>
-            <h1 id="appTitle">Sahne Olusturucu</h1>
-            <p id="appSubtitle">Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
+          <div class="brand-main">
+            <span class="brand-mark" aria-hidden="true"><i data-lucide="image"></i></span>
+            <div class="brand-copy">
+              <h1 id="appTitle">Sahne Olusturucu</h1>
+              <p id="appSubtitle">Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
+            </div>
           </div>
           <div class="header-actions">
             <div class="mode-tabs" role="tablist" aria-label="Editor modu">
-              <button id="sceneTab" class="mode-tab active" type="button">Sahne</button>
-              <button id="rollTab" class="mode-tab" type="button">Roll SS</button>
+              <button id="sceneTab" class="mode-tab active" type="button"><i data-lucide="clapperboard"></i><span>Sahne</span></button>
+              <button id="rollTab" class="mode-tab" type="button"><i data-lucide="image"></i><span>Roll SS</span></button>
             </div>
-            <button id="downloadBtn" class="primary-action" type="button">Tek PNG indir</button>
+            <button id="downloadBtn" class="primary-action" type="button"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
           </div>
         </div>
 
@@ -83,92 +86,94 @@
         </div>
 
         <section id="sceneEditorPane" class="scene-tools mode-pane active" aria-label="Sahne olusturucu">
-          <div class="section-title">
-            <h2>Sahne Olusturucu</h2>
-            <div class="section-actions">
-              <button id="blankSceneBtn" type="button">Bos sahne</button>
-              <button id="exportSceneProjectBtn" type="button">RSE indir</button>
-              <label class="button-link file-button">
-                RSE yukle
-                <input id="sceneProjectInput" type="file" accept=".rse,application/json" />
-              </label>
-              <label class="button-link file-button">
-                Resim ekle
-                <input id="sceneImageInput" type="file" accept="image/*" multiple />
-              </label>
+          <div class="scene-card scene-actions-card">
+            <div class="section-title">
+              <h2><i data-lucide="sparkles"></i><span>Sahne Olusturucu</span></h2>
+              <div class="section-actions">
+                <button id="blankSceneBtn" type="button"><i data-lucide="scan-plus"></i><span>Bos sahne</span></button>
+                <button id="exportSceneProjectBtn" type="button"><i data-lucide="download"></i><span>RSE indir</span></button>
+                <label class="button-link file-button">
+                  <i data-lucide="upload"></i><span>RSE yukle</span>
+                  <input id="sceneProjectInput" type="file" accept=".rse,application/json" />
+                </label>
+                <label class="button-link file-button">
+                  <i data-lucide="image-plus"></i><span>Resim ekle</span>
+                  <input id="sceneImageInput" type="file" accept="image/*" multiple />
+                </label>
+              </div>
             </div>
-          </div>
-          <p class="helper-text">Resim sec veya panodaki gorseli Ctrl+V ile yapistir.</p>
-          <details class="api-panel">
-            <summary>HizliResim / upload API</summary>
-            <div class="api-grid">
-              <label>
-                <span>Endpoint</span>
-                <input id="apiEndpoint" type="url" placeholder="https://..." />
-              </label>
-              <label>
-                <span>Token</span>
-                <input id="apiToken" type="password" placeholder="Opsiyonel" />
-              </label>
-              <label>
-                <span>Form alani</span>
-                <input id="apiFieldName" type="text" value="image" />
-              </label>
-              <button id="uploadSceneBtn" type="button">Secili sahneyi yukle</button>
-            </div>
-            <div id="apiStatus" class="status-text" aria-live="polite"></div>
-          </details>
-
-          <div class="controls-grid compact-grid">
-            <label>
-              <span>Cikti genisligi</span>
-              <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="1200" />
-            </label>
-            <label>
-              <span>Arka plan yuksekligi</span>
-              <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="800" />
-            </label>
-            <label>
-              <span>Sahne font</span>
-              <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
-            </label>
-            <label>
-              <span>Sahne bosluk</span>
-              <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
-            </label>
-            <label>
-              <span>Gecis boyutu</span>
-              <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
-            </label>
-            <label>
-              <span>Gecis filtresi</span>
-              <select id="sceneTransitionStyle">
-                <option value="soft" selected>Soft fade</option>
-                <option value="cinematic">Sinematik kararma</option>
-                <option value="blur">Blur gecis</option>
-                <option value="none">Keskin</option>
-              </select>
-            </label>
-            <label>
-              <span>Gecis yonu</span>
-              <select id="sceneTransitionSides">
-                <option value="both" selected>Her iki taraf (Ust & Alt)</option>
-                <option value="top">Sadece Ust (Baslangic)</option>
-                <option value="bottom">Sadece Alt (Bitis)</option>
-              </select>
-            </label>
-            <div style="grid-column: span 2; display: flex; justify-content: flex-end; margin-top: 4px;">
-              <button id="applyGlobalTransitionBtn" type="button" style="min-height: 30px; font-size: 11px; padding: 0 10px;">
-                Secilenleri tum katmanlara uygula
-              </button>
-            </div>
+            <p class="helper-text"><i data-lucide="info"></i><span>Resim sec veya panodaki gorseli Ctrl+V ile yapistir.</span></p>
+            <details class="api-panel imgur-panel">
+              <summary><i data-lucide="chevron-right"></i><span>Imgur / upload API</span></summary>
+              <div class="api-grid">
+                <label>
+                  <span>Imgur Client ID</span>
+                  <input id="imgurClientId" type="password" autocomplete="off" placeholder="Client-ID" />
+                </label>
+                <button id="uploadSceneBtn" type="button"><i data-lucide="cloud-upload"></i><span>Secili sahneyi Imgur'a yukle</span></button>
+                <a class="button-link api-doc-link" href="https://api.imgur.com/oauth2/addclient" target="_blank" rel="noreferrer">
+                  <i data-lucide="external-link"></i><span>Client ID al</span>
+                </a>
+              </div>
+              <p class="api-note">Anonim upload icin Imgur uygulamasi olusturup Client ID girmen yeterli.</p>
+              <div id="apiStatus" class="status-text" aria-live="polite"></div>
+            </details>
           </div>
 
-          <div class="actions-row">
-            <button id="hideToolboxBtn" type="button">Toolbox gizle</button>
-            <button id="clearScenesBtn" type="button">Sahneleri sil</button>
+          <div class="scene-card scene-settings-card">
+            <div class="controls-grid compact-grid">
+              <label>
+                <span>Cikti genisligi</span>
+                <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="1200" />
+              </label>
+              <label>
+                <span>Arka plan yuksekligi</span>
+                <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="800" />
+              </label>
+              <label>
+                <span>Sahne font</span>
+                <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
+              </label>
+              <label>
+                <span>Sahne bosluk</span>
+                <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
+              </label>
+              <label>
+                <span>Gecis boyutu</span>
+                <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
+              </label>
+              <label>
+                <span>Gecis filtresi</span>
+                <select id="sceneTransitionStyle">
+                  <option value="soft" selected>Soft fade</option>
+                  <option value="cinematic">Sinematik kararma</option>
+                  <option value="blur">Blur gecis</option>
+                  <option value="none">Keskin</option>
+                </select>
+              </label>
+              <label class="wide-field">
+                <span>Gecis yonu</span>
+                <select id="sceneTransitionSides">
+                  <option value="both" selected>Her iki taraf (Ust & Alt)</option>
+                  <option value="top">Sadece Ust (Baslangic)</option>
+                  <option value="bottom">Sadece Alt (Bitis)</option>
+                </select>
+              </label>
+              <div class="wide-field apply-row">
+                <button id="applyGlobalTransitionBtn" type="button">
+                  <i data-lucide="layers"></i><span>Secilenleri tum katmanlara uygula</span>
+                </button>
+              </div>
+            </div>
           </div>
-          <div id="sceneStatus" class="status-text" aria-live="polite"></div>
+
+          <div class="scene-card scene-footer-card">
+            <div class="actions-row">
+              <button id="hideToolboxBtn" type="button"><i data-lucide="eye-off"></i><span>Toolbox gizle</span></button>
+              <button id="clearScenesBtn" class="danger-action" type="button"><i data-lucide="trash-2"></i><span>Sahneleri sil</span></button>
+            </div>
+            <div id="sceneStatus" class="status-text" aria-live="polite"></div>
+          </div>
         </section>
       </section>
 
@@ -210,6 +215,7 @@
       <button id="showShortcutsBtn" class="shortcut-toggle-button" type="button">Kisayollar</button>
     </main>
 
+    <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
     <script src="./app.js"></script>
   </body>
 </html>

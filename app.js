@@ -22,9 +22,7 @@ const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
 const applyGlobalTransitionBtn = document.querySelector("#applyGlobalTransitionBtn");
-const apiEndpoint = document.querySelector("#apiEndpoint");
-const apiToken = document.querySelector("#apiToken");
-const apiFieldName = document.querySelector("#apiFieldName");
+const imgurClientId = document.querySelector("#imgurClientId");
 const uploadSceneBtn = document.querySelector("#uploadSceneBtn");
 const apiStatus = document.querySelector("#apiStatus");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
@@ -85,9 +83,7 @@ const storageKeys = {
   sceneTransitionSize: "rollSs.sceneTransitionSize",
   sceneTransitionStyle: "rollSs.sceneTransitionStyle",
   sceneTransitionSides: "rollSs.sceneTransitionSides",
-  apiEndpoint: "rollSs.apiEndpoint",
-  apiToken: "rollSs.apiToken",
-  apiFieldName: "rollSs.apiFieldName",
+  imgurClientId: "rollSs.imgurClientId",
   toolboxWidth: "rollSs.toolboxWidth",
   toolboxHidden: "rollSs.toolboxHidden",
   shortcutsHidden: "rollSs.shortcutsHidden",
@@ -390,9 +386,7 @@ function saveState() {
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSize), sceneTransitionSize.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionStyle), sceneTransitionStyle.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSides), sceneTransitionSides.value);
-  localStorage.setItem(clientStorageKey(storageKeys.apiEndpoint), apiEndpoint.value);
-  localStorage.setItem(clientStorageKey(storageKeys.apiToken), apiToken.value);
-  localStorage.setItem(clientStorageKey(storageKeys.apiFieldName), apiFieldName.value);
+  localStorage.setItem(clientStorageKey(storageKeys.imgurClientId), imgurClientId.value);
 }
 
 function restoreState() {
@@ -407,9 +401,7 @@ function restoreState() {
   sceneTransitionSize.value = getClientStoredValue(storageKeys.sceneTransitionSize) ?? sceneTransitionSize.value;
   sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
   sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
-  apiEndpoint.value = getClientStoredValue(storageKeys.apiEndpoint) ?? "";
-  apiToken.value = getClientStoredValue(storageKeys.apiToken) ?? "";
-  apiFieldName.value = getClientStoredValue(storageKeys.apiFieldName) ?? "image";
+  imgurClientId.value = getClientStoredValue(storageKeys.imgurClientId) ?? "";
   appShell.style.setProperty("--toolbox-width", `${getSavedToolboxWidth()}px`);
   appShell.classList.toggle("toolbox-hidden", getClientStoredValue(storageKeys.toolboxHidden) === "true");
   document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
@@ -711,6 +703,16 @@ function setStatus(message) {
   statusText.textContent = message;
 }
 
+function setIconButtonContent(button, icon, label) {
+  button.replaceChildren();
+  const iconNode = document.createElement("i");
+  iconNode.dataset.lucide = icon;
+  const labelNode = document.createElement("span");
+  labelNode.textContent = label;
+  button.append(iconNode, labelNode);
+  if (window.lucide) window.lucide.createIcons();
+}
+
 function switchMode(mode) {
   activeMode = mode;
   const isScene = mode === "scene";
@@ -721,7 +723,7 @@ function switchMode(mode) {
   sceneEditorPane.classList.toggle("active", isScene);
   rollPreviewPane.classList.toggle("active", !isScene);
   scenePreviewPane.classList.toggle("active", isScene);
-  downloadBtn.textContent = isScene ? "Tek PNG indir" : "PNG indir";
+  setIconButtonContent(downloadBtn, "download", isScene ? "Tek PNG indir" : "PNG indir");
   appTitle.textContent = isScene ? "Sahne Olusturucu" : "Roll SS Editor";
   appSubtitle.textContent = isScene
     ? "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici"
@@ -785,7 +787,7 @@ function startToolboxResize(event) {
   const startWidth = panelRect.width;
 
   const onMove = (moveEvent) => {
-    const width = clampNumber(startWidth + moveEvent.clientX - startX, 300, 620, startWidth);
+    const width = clampNumber(startWidth + moveEvent.clientX - startX, 420, 820, startWidth);
     appShell.style.setProperty("--toolbox-width", `${width}px`);
     localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), String(Math.round(width)));
     renderScenes();
@@ -3060,7 +3062,9 @@ function getScenePadding() {
 }
 
 function getSavedToolboxWidth() {
-  return clampNumber(getClientStoredValue(storageKeys.toolboxWidth), 300, 620, 330);
+  const savedWidth = Number(getClientStoredValue(storageKeys.toolboxWidth));
+  if (!Number.isFinite(savedWidth) || savedWidth < 420) return 560;
+  return clampNumber(savedWidth, 420, 820, 560);
 }
 
 function createPanelResizeHandles() {
@@ -3163,10 +3167,10 @@ function setApiStatus(message) {
   apiStatus.textContent = message;
 }
 
-async function uploadSelectedSceneToApi() {
-  const endpoint = apiEndpoint.value.trim();
-  if (!endpoint) {
-    setApiStatus("Endpoint girilmedi.");
+async function uploadSelectedSceneToImgur() {
+  const clientId = imgurClientId.value.trim();
+  if (!clientId) {
+    setApiStatus("Imgur Client ID girilmedi.");
     return;
   }
 
@@ -3182,25 +3186,34 @@ async function uploadSelectedSceneToApi() {
   }
 
   saveState();
-  setApiStatus("Yukleniyor...");
+  setApiStatus("Imgur'a yukleniyor...");
   try {
     const form = new FormData();
     const blob = dataUrlToBlob(scene.dataUrl);
-    const fieldName = apiFieldName.value.trim() || "image";
-    form.append(fieldName, blob, safeFilePart(scene.name || "scene") + ".png");
+    const fileName = safeFilePart(scene.name || "scene") + ".png";
+    form.append("image", blob, fileName);
+    form.append("type", "file");
+    form.append("name", fileName);
+    form.append("title", scene.name || "Roleplay Scene");
 
-    const headers = {};
-    if (apiToken.value.trim()) headers.Authorization = `Bearer ${apiToken.value.trim()}`;
-    const response = await fetch(endpoint, { method: "POST", headers, body: form });
-    const text = await response.text();
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    const uploadedUrl = extractFirstUrl(text);
+    const response = await fetch("https://api.imgur.com/3/image", {
+      method: "POST",
+      headers: { Authorization: `Client-ID ${clientId}` },
+      body: form,
+    });
+    const payload = await response.json().catch(() => null);
+    if (!response.ok || payload?.success === false) {
+      const apiError = payload?.data?.error || payload?.data || `HTTP ${response.status}`;
+      throw new Error(typeof apiError === "string" ? apiError : JSON.stringify(apiError));
+    }
+
+    const uploadedUrl = payload?.data?.link || "";
     scene.uploadedUrl = uploadedUrl || "";
     scheduleSceneAutosave();
     renderScenes();
-    setApiStatus(uploadedUrl ? `Yuklendi: ${uploadedUrl}` : "Yuklendi ama URL otomatik bulunamadi.");
+    setApiStatus(uploadedUrl ? `Imgur yuklendi: ${uploadedUrl}` : "Imgur yukledi ama link donmedi.");
   } catch (error) {
-    setApiStatus(`Yukleme basarisiz: ${error.message}`);
+    setApiStatus(`Imgur yukleme basarisiz: ${error.message}`);
   }
 }
 
@@ -3211,21 +3224,6 @@ function dataUrlToBlob(dataUrl) {
   const bytes = new Uint8Array(binary.length);
   for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
   return new Blob([bytes], { type: mime });
-}
-
-function extractFirstUrl(value) {
-  try {
-    const parsed = JSON.parse(value);
-    const stack = [parsed];
-    while (stack.length) {
-      const item = stack.shift();
-      if (typeof item === "string" && /^https?:\/\//i.test(item)) return item;
-      if (item && typeof item === "object") stack.push(...Object.values(item));
-    }
-  } catch {
-    // fall through to regex
-  }
-  return value.match(/https?:\/\/[^\s"'<>\\]+/i)?.[0] || "";
 }
 
 function shouldKeepCleanLine(line) {
@@ -3321,10 +3319,8 @@ applyGlobalTransitionBtn.addEventListener("click", () => {
   renderScenes();
   setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
 });
-apiEndpoint.addEventListener("input", saveState);
-apiToken.addEventListener("input", saveState);
-apiFieldName.addEventListener("input", saveState);
-uploadSceneBtn.addEventListener("click", uploadSelectedSceneToApi);
+imgurClientId.addEventListener("input", saveState);
+uploadSceneBtn.addEventListener("click", uploadSelectedSceneToImgur);
 prepareSceneHistoryControl(sceneFontSize);
 sceneFontSize.addEventListener("input", () => {
   saveState();
@@ -3374,6 +3370,7 @@ document.addEventListener("pointerdown", startSceneViewportPan);
 
 switchMode("scene");
 loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
+if (window.lucide) window.lucide.createIcons();
 
 /* ── Window Manager (Dock & Float) ── */
 document.addEventListener("pointerdown", (e) => {
