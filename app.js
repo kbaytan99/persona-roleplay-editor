@@ -1266,23 +1266,29 @@ function renderScenes() {
       setSelectedScene(scene.id);
     });
 
+    // ── Drag grip strip (left edge) ──
+    const dragGrip = document.createElement("div");
+    dragGrip.className = "layer-drag-grip";
+    dragGrip.title = "Surukleyerek sahne sirasini degistir";
+    dragGrip.draggable = true;
+    dragGrip.innerHTML = `<svg width="6" height="20" viewBox="0 0 6 20" fill="currentColor"><circle cx="1.5" cy="2" r="1.2"/><circle cx="4.5" cy="2" r="1.2"/><circle cx="1.5" cy="6" r="1.2"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="1.5" cy="10" r="1.2"/><circle cx="4.5" cy="10" r="1.2"/><circle cx="1.5" cy="14" r="1.2"/><circle cx="4.5" cy="14" r="1.2"/><circle cx="1.5" cy="18" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg>`;
+    dragGrip.addEventListener("dragstart", (event) => startSceneOrderDrag(event, scene.id));
+    dragGrip.addEventListener("dragend", endSceneOrderDrag);
+
+    // ── Card inner (header + body) ──
+    const cardInner = document.createElement("div");
+    cardInner.className = "layer-card-inner";
+
+    // ── Header ──
     const itemHeader = document.createElement("div");
     itemHeader.className = "scene-editor-header";
 
-    const dragHandle = document.createElement("span");
-    dragHandle.className = "scene-drag-handle";
-    dragHandle.textContent = "Tut";
-    dragHandle.title = "Surukleyerek sahne sirasini degistir";
-    dragHandle.draggable = true;
-    dragHandle.addEventListener("dragstart", (event) => startSceneOrderDrag(event, scene.id));
-    dragHandle.addEventListener("dragend", endSceneOrderDrag);
+    const headerLeft = document.createElement("div");
+    headerLeft.className = "layer-header-left";
 
-    const itemIdentity = document.createElement("div");
-    itemIdentity.className = "scene-identity";
-
-    const itemTitle = document.createElement("div");
-    itemTitle.className = "scene-title";
-    itemTitle.textContent = `Katman ${index + 1}${scene.dataUrl ? "" : " - bos"}`;
+    const layerNumber = document.createElement("span");
+    layerNumber.className = "layer-number";
+    layerNumber.textContent = `${index + 1}`;
 
     const nameInput = document.createElement("input");
     nameInput.className = "scene-name-input";
@@ -1298,60 +1304,76 @@ function renderScenes() {
       scheduleSceneAutosave();
     });
 
-    itemIdentity.append(itemTitle, nameInput);
+    headerLeft.append(layerNumber, nameInput);
 
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.textContent = "Sil";
-    removeButton.addEventListener("click", () => removeScene(scene.id));
-
-    const addTextButton = document.createElement("button");
-    addTextButton.type = "button";
-    addTextButton.textContent = "Yazi ekle";
-    addTextButton.addEventListener("click", () => addTextBlock(scene.id));
+    const headerRight = document.createElement("div");
+    headerRight.className = "layer-header-actions";
 
     const lockButton = document.createElement("button");
     lockButton.type = "button";
-    lockButton.textContent = scene.isLocked ? "Kilidi Ac" : "Kilitle";
-    lockButton.title = scene.isLocked ? "Katman kilidini ac" : "Katman hareketini kilitle";
-    lockButton.style.background = scene.isLocked ? "linear-gradient(180deg, #5b21b6, #3b0764)" : "";
+    lockButton.className = "layer-icon-btn" + (scene.isLocked ? " active" : "");
+    lockButton.innerHTML = scene.isLocked ? "🔒" : "🔓";
+    lockButton.title = scene.isLocked ? "Kilidi ac" : "Kilitle";
     lockButton.addEventListener("click", () => {
       pushSceneHistory();
       scene.isLocked = !scene.isLocked;
       renderScenes();
     });
 
-    const orderActions = document.createElement("div");
-    orderActions.className = "scene-order-actions";
-    orderActions.append(
+    const addTextButton = document.createElement("button");
+    addTextButton.type = "button";
+    addTextButton.className = "layer-icon-btn";
+    addTextButton.innerHTML = "T+";
+    addTextButton.title = "Yazi ekle";
+    addTextButton.addEventListener("click", () => addTextBlock(scene.id));
+
+    const removeButton = document.createElement("button");
+    removeButton.type = "button";
+    removeButton.className = "layer-icon-btn danger";
+    removeButton.innerHTML = "✕";
+    removeButton.title = "Katmani sil";
+    removeButton.addEventListener("click", () => removeScene(scene.id));
+
+    headerRight.append(lockButton, addTextButton, removeButton);
+    itemHeader.append(headerLeft, headerRight);
+
+    // ── Order buttons row ──
+    const orderRow = document.createElement("div");
+    orderRow.className = "layer-order-row";
+    orderRow.append(
       createSceneOrderButton("En ust", scene.id, "top", index === 0),
       createSceneOrderButton("Uste", scene.id, "up", index === 0),
       createSceneOrderButton("Alta", scene.id, "down", index === scenes.length - 1),
       createSceneOrderButton("En alt", scene.id, "bottom", index === scenes.length - 1),
     );
 
-    const headerActions = document.createElement("div");
-    headerActions.className = "actions-row tight-actions";
-    headerActions.append(orderActions, addTextButton, lockButton, removeButton);
+    // ── Scrollable body ──
+    const scrollableBody = document.createElement("div");
+    scrollableBody.className = "scene-editor-item-scrollable";
 
-    itemHeader.append(dragHandle, itemIdentity, headerActions);
-
-    const imageControls = document.createElement("div");
-    imageControls.className = "scene-sub-controls";
+    // ── Image controls (grouped sections) ──
     if (scene.dataUrl) {
-      imageControls.append(
-        createRangeControl("Resim boyutu", scene.imageZoom || 100, 5, 1200, 1, (value) => {
+      // Position section
+      const posSection = createLayerSection("Pozisyon", true);
+      posSection.body.append(
+        createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
           scene.imageZoom = value;
           updateSceneImageTransform(scene);
         }),
-        createRangeControl("Sag / sol", scene.imageX || 0, -100, 100, 0.5, (value) => {
+        createRangeControl("X", scene.imageX || 0, -100, 100, 0.5, (value) => {
           scene.imageX = value;
           updateSceneImageTransform(scene);
         }),
-        createRangeControl("Yukari / asagi", scene.imageY || 0, -100, 100, 0.5, (value) => {
+        createRangeControl("Y", scene.imageY || 0, -100, 100, 0.5, (value) => {
           scene.imageY = value;
           updateSceneImageTransform(scene);
         }),
+      );
+      scrollableBody.append(posSection.el);
+
+      // Filter section
+      const filterSection = createLayerSection("Filtreler", false);
+      filterSection.body.append(
         createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
           scene.filterBrightness = value;
           updateSceneImageTransform(scene);
@@ -1360,7 +1382,7 @@ function renderScenes() {
           scene.filterContrast = value;
           updateSceneImageTransform(scene);
         }),
-        createRangeControl("Renk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
+        createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
           scene.filterSaturate = value;
           updateSceneImageTransform(scene);
         }),
@@ -1372,9 +1394,21 @@ function renderScenes() {
           scene.filterBlur = value;
           updateSceneImageTransform(scene);
         }),
-        createSelectControl("Gecis filtresi", scene.transitionStyle || "none", [
+      );
+      const resetFilterButton = document.createElement("button");
+      resetFilterButton.type = "button";
+      resetFilterButton.className = "layer-mini-btn";
+      resetFilterButton.textContent = "Sifirla";
+      resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
+      filterSection.body.append(resetFilterButton);
+      scrollableBody.append(filterSection.el);
+
+      // Transition section
+      const transSection = createLayerSection("Gecis efekti", false);
+      transSection.body.append(
+        createSelectControl("Stil", scene.transitionStyle || "none", [
           { value: "soft", text: "Soft fade" },
-          { value: "cinematic", text: "Sinematik kararma" },
+          { value: "cinematic", text: "Sinematik" },
           { value: "blur", text: "Blur gecis" },
           { value: "none", text: "Keskin" }
         ], (value) => {
@@ -1382,44 +1416,39 @@ function renderScenes() {
           scene.transitionStyle = value;
           renderScenes();
         }),
-        createRangeControl("Gecis boyutu", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
+        createRangeControl("Boyut", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
           scene.transitionSize = value;
           renderScenes();
         }),
-        createSelectControl("Gecis yonu", scene.transitionSides || "both", [
-          { value: "both", text: "Her iki taraf (Ust & Alt)" },
-          { value: "top", text: "Sadece Ust (Baslangic)" },
-          { value: "bottom", text: "Sadece Alt (Bitis)" }
+        createSelectControl("Yon", scene.transitionSides || "both", [
+          { value: "both", text: "Ust & Alt" },
+          { value: "top", text: "Sadece Ust" },
+          { value: "bottom", text: "Sadece Alt" }
         ], (value) => {
           pushSceneHistory();
           scene.transitionSides = value;
           renderScenes();
         }),
       );
+      scrollableBody.append(transSection.el);
+
+      if (scene.uploadedUrl) {
+        const uploadedLink = document.createElement("a");
+        uploadedLink.className = "uploaded-scene-link";
+        uploadedLink.href = scene.uploadedUrl;
+        uploadedLink.target = "_blank";
+        uploadedLink.rel = "noreferrer";
+        uploadedLink.textContent = "Yuklenen link";
+        scrollableBody.append(uploadedLink);
+      }
     } else {
       const blankNote = document.createElement("div");
       blankNote.className = "blank-layer-note";
-      blankNote.textContent = "Bu katman bos. Yazi ekleyebilir veya ust/alt siraya tasiyabilirsin.";
-      imageControls.append(blankNote);
+      blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
+      scrollableBody.append(blankNote);
     }
 
-    const filterActions = document.createElement("div");
-    filterActions.className = "scene-filter-actions";
-    const resetFilterButton = document.createElement("button");
-    resetFilterButton.type = "button";
-    resetFilterButton.textContent = "Filtre sifirla";
-    resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
-    filterActions.append(resetFilterButton);
-    if (scene.uploadedUrl) {
-      const uploadedLink = document.createElement("a");
-      uploadedLink.className = "uploaded-scene-link";
-      uploadedLink.href = scene.uploadedUrl;
-      uploadedLink.target = "_blank";
-      uploadedLink.rel = "noreferrer";
-      uploadedLink.textContent = "Yuklenen link";
-      filterActions.prepend(uploadedLink);
-    }
-
+    // ── Text block editors ──
     const blockEditors = document.createElement("div");
     blockEditors.className = "block-editor-list";
 
@@ -1499,13 +1528,10 @@ function renderScenes() {
       blockEditors.append(blockEditor);
     });
 
-    if (!scene.dataUrl) filterActions.hidden = true;
+    scrollableBody.append(blockEditors);
 
-    const scrollableBody = document.createElement("div");
-    scrollableBody.className = "scene-editor-item-scrollable";
-    scrollableBody.append(imageControls, filterActions, blockEditors);
-
-    item.append(itemHeader, scrollableBody);
+    cardInner.append(itemHeader, orderRow, scrollableBody);
+    item.append(dragGrip, cardInner);
     listContainer.append(item);
   });
 
@@ -2082,6 +2108,19 @@ function addTextBlock(sceneId) {
   scene.blocks.push(block);
   renderScenes();
   setSceneStatus("Yeni yazi kutusu eklendi.");
+}
+
+function createLayerSection(title, openByDefault) {
+  const section = document.createElement("details");
+  section.className = "layer-section";
+  if (openByDefault) section.open = true;
+  const summary = document.createElement("summary");
+  summary.className = "layer-section-title";
+  summary.textContent = title;
+  const body = document.createElement("div");
+  body.className = "layer-section-body";
+  section.append(summary, body);
+  return { el: section, body };
 }
 
 function removeTextBlock(sceneId, blockId) {
