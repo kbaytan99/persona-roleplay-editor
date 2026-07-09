@@ -1932,6 +1932,16 @@ button:hover,
   background: linear-gradient(to top, #000000 0%, transparent 100%);
 }
 
+.toolbox-top-strip {
+  height: 18px;
+  margin: -16px -16px 10px;
+  border-radius: 8px 8px 0 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 2px, transparent 2px, transparent 4px);
+  opacity: 0.34;
+  pointer-events: none;
+}
+
 /* Responsive scene workspace fixes */
 .app-shell.scene-mode {
   grid-template-columns: var(--toolbox-width, 330px) minmax(0, 1fr);
@@ -1995,9 +2005,149 @@ button:hover,
 
 .dockable-panel.floating {
   position: fixed;
+  min-width: 300px;
+  min-height: 220px;
   max-width: calc(100vw - 24px);
   max-height: calc(100vh - 24px);
   overflow: hidden;
+  resize: none;
+}
+
+.layers-title {
+  justify-content: space-between;
+  user-select: none;
+}
+
+.layers-title > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-window-button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.layers-show-button {
+  display: none;
+}
+
+body.layers-hidden .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.layers-hidden .scene-layers-panel {
+  display: none;
+}
+
+body.layers-hidden .scene-mode .shortcut-hud {
+  right: 18px;
+}
+
+body.layers-hidden .layers-show-button {
+  display: inline-flex;
+  position: fixed;
+  right: 14px;
+  top: 14px;
+  z-index: 24;
+  min-height: 34px;
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
+    #2f6fed;
+  border-color: rgba(112, 158, 255, 0.78);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+.panel-resize-handle {
+  display: none;
+}
+
+.dockable-panel.floating .panel-resize-handle {
+  position: absolute;
+  z-index: 130;
+  display: block;
+  pointer-events: auto;
+}
+
+.panel-resize-handle.n,
+.panel-resize-handle.s {
+  left: 14px;
+  right: 14px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.panel-resize-handle.e,
+.panel-resize-handle.w {
+  top: 14px;
+  bottom: 14px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.panel-resize-handle.n {
+  top: -5px;
+}
+
+.panel-resize-handle.s {
+  bottom: -5px;
+}
+
+.panel-resize-handle.e {
+  right: -5px;
+}
+
+.panel-resize-handle.w {
+  left: -5px;
+}
+
+.panel-resize-handle.ne,
+.panel-resize-handle.nw,
+.panel-resize-handle.se,
+.panel-resize-handle.sw {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: rgba(125, 184, 255, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 8px 20px rgba(0, 0, 0, 0.36);
+}
+
+.panel-resize-handle.ne {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.panel-resize-handle.nw {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.panel-resize-handle.se {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.panel-resize-handle.sw {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+
+body.resizing-floating-panel {
+  user-select: none;
 }
 
 .scene-mode .shortcut-hud {

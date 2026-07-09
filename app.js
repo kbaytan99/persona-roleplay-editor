@@ -33,6 +33,7 @@ const sceneProjectInput = document.querySelector("#sceneProjectInput");
 const clearScenesBtn = document.querySelector("#clearScenesBtn");
 const hideToolboxBtn = document.querySelector("#hideToolboxBtn");
 const showToolboxBtn = document.querySelector("#showToolboxBtn");
+const showLayersBtn = document.querySelector("#showLayersBtn");
 const sceneStatus = document.querySelector("#sceneStatus");
 const sceneList = document.querySelector("#sceneList");
 const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
@@ -745,6 +746,20 @@ function showToolbox() {
   renderScenes();
 }
 
+function closeLayersPanel() {
+  sceneLayersPanel.classList.remove("floating", "dockable-panel", "dragging");
+  document.body.classList.remove("layers-floating");
+  document.body.classList.add("layers-hidden");
+  sceneLayersPanel.style.width = "";
+  sceneLayersPanel.style.height = "";
+  sceneLayersPanel.style.left = "";
+  sceneLayersPanel.style.top = "";
+}
+
+function showLayersPanel() {
+  document.body.classList.remove("layers-hidden");
+}
+
 function startToolboxResize(event) {
   if (activeMode !== "scene" || appShell.classList.contains("toolbox-hidden")) return;
   const panelRect = document.querySelector(".editor-panel").getBoundingClientRect();
@@ -764,12 +779,14 @@ function startToolboxResize(event) {
   const onUp = () => {
     document.removeEventListener("pointermove", onMove);
     document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
     document.body.classList.remove("resizing-toolbox");
   };
 
   document.body.classList.add("resizing-toolbox");
   document.addEventListener("pointermove", onMove);
   document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
 }
 
 function handleSceneWheel(event) {
@@ -1267,8 +1284,20 @@ function renderScenes() {
 
   const layersTitle = document.createElement("div");
   layersTitle.className = "layers-title panel-drag-handle";
-  layersTitle.textContent = "Katman Yoneticisi";
   layersTitle.title = "Surukleyerek tasi";
+  const layersTitleText = document.createElement("span");
+  layersTitleText.textContent = "Katman Yoneticisi";
+  const layersCloseButton = document.createElement("button");
+  layersCloseButton.className = "layer-window-button";
+  layersCloseButton.type = "button";
+  layersCloseButton.textContent = "Kapat";
+  layersCloseButton.title = "Katman yoneticisini kapat";
+  layersCloseButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+  layersCloseButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    closeLayersPanel();
+  });
+  layersTitle.append(layersTitleText, layersCloseButton);
   sceneLayersPanel.append(layersTitle);
 
   if (!scenes.length) {
@@ -1569,6 +1598,7 @@ function renderScenes() {
   });
 
   sceneLayersPanel.append(listContainer);
+  sceneLayersPanel.append(...createPanelResizeHandles());
 
   composer.append(toolbar, canvasViewport);
   sceneList.append(composer);
@@ -2875,6 +2905,76 @@ function getSavedToolboxWidth() {
   return clampNumber(getClientStoredValue(storageKeys.toolboxWidth), 300, 620, 330);
 }
 
+function createPanelResizeHandles() {
+  return ["n", "e", "s", "w", "ne", "nw", "se", "sw"].map((direction) => {
+    const handle = document.createElement("span");
+    handle.className = `panel-resize-handle ${direction}`;
+    handle.dataset.resizeDirection = direction;
+    handle.title = "Panel boyutunu ayarla";
+    handle.addEventListener("pointerdown", startFloatingPanelResize);
+    return handle;
+  });
+}
+
+function startFloatingPanelResize(event) {
+  const handle = event.target.closest(".panel-resize-handle");
+  const panel = handle?.closest(".scene-layers-panel.dockable-panel.floating");
+  if (!handle || !panel) return;
+
+  event.preventDefault();
+  event.stopPropagation();
+
+  const direction = handle.dataset.resizeDirection || "";
+  const startRect = panel.getBoundingClientRect();
+  const startX = event.clientX;
+  const startY = event.clientY;
+  const minWidth = 300;
+  const minHeight = 220;
+  const edgeGap = 12;
+
+  const onMove = (moveEvent) => {
+    moveEvent.preventDefault();
+    const dx = moveEvent.clientX - startX;
+    const dy = moveEvent.clientY - startY;
+    let left = startRect.left;
+    let top = startRect.top;
+    let width = startRect.width;
+    let height = startRect.height;
+
+    if (direction.includes("e")) {
+      width = clampNumber(startRect.width + dx, minWidth, window.innerWidth - edgeGap - startRect.left, startRect.width);
+    }
+    if (direction.includes("s")) {
+      height = clampNumber(startRect.height + dy, minHeight, window.innerHeight - edgeGap - startRect.top, startRect.height);
+    }
+    if (direction.includes("w")) {
+      left = clampNumber(startRect.left + dx, edgeGap, startRect.right - minWidth, startRect.left);
+      width = startRect.right - left;
+    }
+    if (direction.includes("n")) {
+      top = clampNumber(startRect.top + dy, edgeGap, startRect.bottom - minHeight, startRect.top);
+      height = startRect.bottom - top;
+    }
+
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.width = `${Math.round(width)}px`;
+    panel.style.height = `${Math.round(height)}px`;
+  };
+
+  const onUp = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    document.body.classList.remove("resizing-floating-panel");
+  };
+
+  document.body.classList.add("resizing-floating-panel");
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
+}
+
 function readFileAsDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -3100,6 +3200,7 @@ sceneProjectInput.addEventListener("change", importSceneProject);
 clearScenesBtn.addEventListener("click", clearScenes);
 hideToolboxBtn.addEventListener("click", hideToolbox);
 showToolboxBtn.addEventListener("click", showToolbox);
+showLayersBtn.addEventListener("click", showLayersPanel);
 document.querySelector(".editor-panel").addEventListener("pointerdown", startToolboxResize);
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
@@ -3119,13 +3220,13 @@ document.addEventListener("pointerdown", (e) => {
   if (activeMode !== "scene") return;
   const handle = e.target.closest(".panel-drag-handle");
   if (!handle) return;
+  if (e.target.closest(".layer-window-button, .panel-resize-handle")) return;
   
-  const panel = handle.closest(".editor-panel") || handle.closest(".scene-layers-panel");
+  const panel = handle.closest(".scene-layers-panel");
   if (!panel) return;
 
   e.preventDefault();
 
-  const isEditorPanel = panel.classList.contains("editor-panel");
   const isLayersPanel = panel.classList.contains("scene-layers-panel");
 
   const rect = panel.getBoundingClientRect();
@@ -3142,10 +3243,9 @@ document.addEventListener("pointerdown", (e) => {
   // Setup dragging state
   panel.classList.add("dockable-panel", "floating", "dragging");
   
-  if (isEditorPanel) {
-    document.body.classList.add("editor-floating");
-  } else if (isLayersPanel) {
+  if (isLayersPanel) {
     document.body.classList.add("layers-floating");
+    document.body.classList.remove("layers-hidden");
   }
 
   panel.style.width = Math.min(rect.width, window.innerWidth - 24) + "px";
@@ -3165,14 +3265,7 @@ document.addEventListener("pointerdown", (e) => {
     panel.style.top = newTop + "px";
 
     // Determine drop zones
-    if (moveEvent.clientX < 150) {
-      currentDock = "left";
-      indicator.style.display = "block";
-      indicator.style.left = "0";
-      indicator.style.top = "0";
-      indicator.style.width = "340px";
-      indicator.style.height = "100vh";
-    } else if (moveEvent.clientX > window.innerWidth - 150) {
+    if (moveEvent.clientX > window.innerWidth - 150) {
       currentDock = "right";
       indicator.style.display = "block";
       indicator.style.left = (window.innerWidth - 380) + "px";
@@ -3188,19 +3281,13 @@ document.addEventListener("pointerdown", (e) => {
   const onPointerUp = (upEvent) => {
     document.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("pointerup", onPointerUp);
+    document.removeEventListener("pointercancel", onPointerUp);
     
     panel.classList.remove("dragging");
     indicator.style.display = "none";
 
     // Docking logic
-    if (currentDock === "left" && isEditorPanel) {
-      panel.classList.remove("floating", "dockable-panel");
-      document.body.classList.remove("editor-floating");
-      panel.style.width = "";
-      panel.style.height = "";
-      panel.style.left = "";
-      panel.style.top = "";
-    } else if (currentDock === "right" && isLayersPanel) {
+    if (currentDock === "right" && isLayersPanel) {
       panel.classList.remove("floating", "dockable-panel");
       document.body.classList.remove("layers-floating");
       panel.style.width = "";
@@ -3212,4 +3299,5 @@ document.addEventListener("pointerdown", (e) => {
 
   document.addEventListener("pointermove", onPointerMove);
   document.addEventListener("pointerup", onPointerUp);
+  document.addEventListener("pointercancel", onPointerUp);
 });
