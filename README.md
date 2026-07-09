@@ -4,33 +4,11 @@ Text based roleplay sunuculari icin siyah arka planli roll SS hazirlayici.
 
 ## Calistirma
 
-Tarayici surumu:
-
 ```powershell
-npm run web
+node server.js
 ```
 
-Sonra `http://127.0.0.1:8765/` adresini ac.
-
-Masaustu uygulama gelistirme modu:
-
-```powershell
-npm install
-npm run app
-```
-
-Windows uygulama paketi almak icin:
-
-```powershell
-npm run dist
-```
-
-Build bittikten sonra `dist/` klasorunde portable `.exe` ve kurulum dosyasi olusur. Uygulama da tarayici surumu de client-side calisir; kayitlar kullanicinin kendi tarayici/app profilinde `localStorage` ve `IndexedDB` icinde tutulur.
-
-Olusan Windows dosyalari:
-
-- `dist/Roll SS Editor-1.0.0-portable-x64.exe`: kurulum gerektirmeden acilir.
-- `dist/Roll SS Editor-1.0.0-setup-x64.exe`: klasik kurulum sihirbazi.
+Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side calisir; kayitlar kullanicinin kendi tarayici profilinde `localStorage` ve `IndexedDB` icinde tutulur.
 
 ## Kullanim
 
