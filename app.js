@@ -611,7 +611,7 @@ function startToolboxResize(event) {
   const startWidth = panelRect.width;
 
   const onMove = (moveEvent) => {
-    const width = clampNumber(startWidth + moveEvent.clientX - startX, 420, 820, startWidth);
+    const width = clampNumber(startWidth + moveEvent.clientX - startX, 380, 640, startWidth);
     appShell.style.setProperty("--toolbox-width", `${width}px`);
     localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), String(Math.round(width)));
     renderScenes();
@@ -2861,8 +2861,8 @@ function getScenePadding() {
 
 function getSavedToolboxWidth() {
   const savedWidth = Number(getClientStoredValue(storageKeys.toolboxWidth));
-  if (!Number.isFinite(savedWidth) || savedWidth < 420) return 560;
-  return clampNumber(savedWidth, 420, 820, 560);
+  if (!Number.isFinite(savedWidth)) return 520;
+  return clampNumber(savedWidth, 380, 640, 520);
 }
 
 function createPanelResizeHandles() {

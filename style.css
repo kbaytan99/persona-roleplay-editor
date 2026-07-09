@@ -2777,6 +2777,8 @@ input[type="range"] {
   font-size: clamp(13px, 3.8cqi, 20px);
   font-weight: 780;
   text-decoration: none;
+  text-shadow: none;
+  -webkit-text-stroke: 0 transparent;
 }
 
 .scene-mode button:hover,
@@ -2798,6 +2800,18 @@ input[type="range"] {
   background: rgba(12, 22, 32, 0.8);
   color: #aeb8c7;
   font-size: clamp(13px, 3.6cqi, 18px);
+}
+
+.scene-mode .toolbox-show-button,
+.scene-mode .layers-show-button,
+.scene-mode .shortcut-toggle-button {
+  display: none;
+}
+
+.scene-mode.toolbox-hidden .toolbox-show-button,
+body.layers-hidden .scene-mode .layers-show-button,
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  display: inline-flex;
 }
 
 .api-panel {
@@ -2948,5 +2962,120 @@ input[type="range"] {
     grid-template-columns: minmax(0, 1fr) auto auto;
     align-items: end;
   }
+}
+
+/* Final scene toolbox corrections */
+.scene-mode .editor-panel {
+  padding: 14px;
+}
+
+.scene-mode .editor-panel,
+.scene-mode .editor-panel * {
+  text-shadow: none !important;
+  -webkit-text-stroke: 0 transparent !important;
+}
+
+.scene-mode .brand-row,
+.scene-mode .scene-card {
+  border-radius: 14px;
+}
+
+.scene-mode .brand-row {
+  gap: 14px;
+  padding: 18px;
+}
+
+.brand-main {
+  gap: 14px;
+  align-items: center;
+}
+
+.brand-mark {
+  flex-basis: 52px;
+  width: 52px;
+  height: 52px;
+  border-radius: 13px;
+}
+
+.scene-mode .brand-row h1 {
+  font-size: clamp(24px, 6cqi, 32px);
+}
+
+.scene-mode .brand-row p {
+  margin-top: 8px;
+  font-size: clamp(14px, 3.5cqi, 17px);
+}
+
+.scene-mode .header-actions {
+  gap: 10px;
+}
+
+.scene-mode .primary-action {
+  min-height: 54px;
+  border-radius: 10px;
+  font-size: clamp(15px, 3.6cqi, 18px);
+}
+
+.scene-mode .scene-tools {
+  gap: 14px;
+}
+
+.scene-mode .scene-card {
+  padding: 18px;
+}
+
+.scene-mode .section-title h2 {
+  margin-bottom: 16px;
+  font-size: clamp(18px, 4.4cqi, 23px);
+}
+
+.scene-mode button,
+.scene-mode .button-link {
+  min-height: 50px;
+  border-radius: 10px;
+  font-size: clamp(13px, 3.2cqi, 16px);
+  font-weight: 760;
+}
+
+.scene-mode .helper-text {
+  margin: 16px 0 12px;
+  padding: 12px 14px;
+  font-size: clamp(13px, 3cqi, 15px);
+}
+
+.api-panel summary {
+  padding: 14px;
+  font-size: clamp(12px, 3cqi, 15px);
+}
+
+.scene-mode .compact-grid {
+  gap: 16px 18px;
+}
+
+.scene-settings-card label > span {
+  margin-bottom: 8px;
+  font-size: clamp(11px, 2.8cqi, 14px);
+}
+
+.scene-mode input,
+.scene-mode select {
+  height: 48px;
+  font-size: clamp(14px, 3.2cqi, 17px);
+}
+
+#applyGlobalTransitionBtn {
+  min-height: 56px;
+}
+
+.scene-mode .toolbox-show-button,
+.scene-mode .layers-show-button,
+.scene-mode .shortcut-toggle-button {
+  display: none !important;
+}
+
+.scene-mode.toolbox-hidden .toolbox-show-button,
+body.layers-hidden .scene-mode .layers-show-button,
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  display: inline-flex !important;
 }
 
