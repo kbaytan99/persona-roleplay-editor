@@ -1932,3 +1932,122 @@ button:hover,
   background: linear-gradient(to top, #000000 0%, transparent 100%);
 }
 
+/* Responsive scene workspace fixes */
+.app-shell.scene-mode {
+  grid-template-columns: var(--toolbox-width, 330px) minmax(0, 1fr);
+}
+
+.scene-mode .brand-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.scene-mode .brand-row h1 {
+  font-size: clamp(18px, 7vw, 22px);
+}
+
+.scene-mode .brand-row p {
+  max-width: 34ch;
+  overflow-wrap: break-word;
+}
+
+.header-actions {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.mode-tabs {
+  flex: 1 1 150px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mode-tab {
+  padding-inline: 8px;
+}
+
+.scene-mode .primary-action {
+  flex: 1 1 118px;
+}
+
+.scene-mode .section-title .section-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.scene-mode .section-title .section-actions > *,
+.scene-mode .actions-row > * {
+  min-width: 0;
+}
+
+.scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr) minmax(320px, 380px);
+}
+
+.scene-layers-panel {
+  max-height: 100vh;
+}
+
+.scene-editor-list-container {
+  min-height: 0;
+}
+
+.dockable-panel.floating {
+  position: fixed;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+}
+
+.scene-mode .shortcut-hud {
+  right: 398px;
+}
+
+body.layers-floating .scene-mode .shortcut-hud,
+.scene-mode.toolbox-hidden .shortcut-hud {
+  right: 18px;
+}
+
+@media (max-width: 1180px) {
+  .scene-mode #scenePreviewPane.active {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scene-layers-panel {
+    display: none;
+  }
+
+  .scene-mode .shortcut-hud {
+    right: 18px;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell.scene-mode {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scene-mode .editor-panel {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(330px, calc(100vw - 44px));
+    z-index: 30;
+  }
+
+  .scene-mode.toolbox-hidden .editor-panel {
+    width: 0;
+  }
+
+  .header-actions,
+  .scene-mode .section-title .section-actions,
+  .scene-mode .actions-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .scene-mode:not(.toolbox-hidden) .shortcut-hud {
+    display: none;
+  }
+}
+

@@ -755,7 +755,7 @@ function startToolboxResize(event) {
   const startWidth = panelRect.width;
 
   const onMove = (moveEvent) => {
-    const width = clampNumber(startWidth + moveEvent.clientX - startX, 240, 620, startWidth);
+    const width = clampNumber(startWidth + moveEvent.clientX - startX, 300, 620, startWidth);
     appShell.style.setProperty("--toolbox-width", `${width}px`);
     localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), String(Math.round(width)));
     renderScenes();
@@ -2872,7 +2872,7 @@ function getScenePadding() {
 }
 
 function getSavedToolboxWidth() {
-  return clampNumber(getClientStoredValue(storageKeys.toolboxWidth), 240, 620, 330);
+  return clampNumber(getClientStoredValue(storageKeys.toolboxWidth), 300, 620, 330);
 }
 
 function readFileAsDataUrl(file) {
@@ -3148,8 +3148,8 @@ document.addEventListener("pointerdown", (e) => {
     document.body.classList.add("layers-floating");
   }
 
-  panel.style.width = rect.width + "px";
-  panel.style.height = rect.height + "px";
+  panel.style.width = Math.min(rect.width, window.innerWidth - 24) + "px";
+  panel.style.height = Math.min(rect.height, window.innerHeight - 24) + "px";
   panel.style.left = rect.left + "px";
   panel.style.top = rect.top + "px";
   
@@ -3157,8 +3157,10 @@ document.addEventListener("pointerdown", (e) => {
 
   const onPointerMove = (moveEvent) => {
     moveEvent.preventDefault();
-    const newLeft = moveEvent.clientX - offsetX;
-    const newTop = moveEvent.clientY - offsetY;
+    const maxLeft = Math.max(12, window.innerWidth - panel.offsetWidth - 12);
+    const maxTop = Math.max(12, window.innerHeight - panel.offsetHeight - 12);
+    const newLeft = clampNumber(moveEvent.clientX - offsetX, 12, maxLeft, 12);
+    const newTop = clampNumber(moveEvent.clientY - offsetY, 12, maxTop, 12);
     panel.style.left = newLeft + "px";
     panel.style.top = newTop + "px";
 
