@@ -509,7 +509,7 @@ button:hover,
   max-height: none;
   overflow: hidden;
   display: grid;
-  grid-template-rows: minmax(0, 1fr) auto;
+  grid-template-columns: minmax(0, 1fr) 380px;
 }
 
 .scene-mode .scene-list {
@@ -765,21 +765,23 @@ button:hover,
   border-top: 0;
 }
 
-/* ── Bottom Layer Manager Panel ── */
+/* ── Right-Side Layer Manager Panel ── */
 .scene-layers-panel {
-  grid-row: 2;
-  border-top: 2px solid rgba(100, 180, 255, 0.15);
+  grid-column: 2;
+  grid-row: 1;
+  border-left: 2px solid rgba(100, 180, 255, 0.15);
   background:
-    linear-gradient(180deg, rgba(16, 20, 30, 0.98), rgba(10, 12, 18, 0.99));
-  padding: 10px 14px;
+    linear-gradient(90deg, rgba(16, 20, 30, 0.98), rgba(10, 12, 18, 0.99));
+  padding: 10px;
   display: flex;
   flex-direction: column;
-  height: 280px;
+  height: 100%;
   min-height: 0;
   box-shadow:
-    0 -4px 20px rgba(0, 0, 0, 0.45),
-    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+    -4px 0 20px rgba(0, 0, 0, 0.45),
+    inset 1px 0 0 rgba(255, 255, 255, 0.04);
   z-index: 5;
+  overflow: hidden;
 }
 
 .layers-title {
@@ -794,6 +796,7 @@ button:hover,
   display: flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
 }
 
 .layers-title::before {
@@ -805,20 +808,21 @@ button:hover,
   box-shadow: 0 0 6px var(--cyan);
 }
 
-/* ── Horizontal scroll container ── */
+/* ── 2-column vertical grid container ── */
 .scene-editor-list-container {
-  display: flex;
-  flex-direction: row;
-  gap: 10px;
-  overflow-x: auto;
-  overflow-y: hidden;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  overflow-y: auto;
+  overflow-x: hidden;
   flex: 1;
   padding-bottom: 6px;
   scroll-behavior: smooth;
+  align-content: start;
 }
 
 .scene-editor-list-container::-webkit-scrollbar {
-  height: 5px;
+  width: 5px;
 }
 .scene-editor-list-container::-webkit-scrollbar-track {
   background: rgba(255, 255, 255, 0.03);
@@ -846,10 +850,9 @@ button:hover,
 
 /* ── Layer card ── */
 .scene-editor-item {
-  flex: 0 0 340px;
   display: flex;
   flex-direction: row;
-  height: 100%;
+  max-height: 320px;
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
   overflow: hidden;
