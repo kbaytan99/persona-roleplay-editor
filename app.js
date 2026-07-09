@@ -1002,6 +1002,8 @@ async function addSceneImages(files) {
       dataUrl,
       isBlank: false,
       imageZoom: 100,
+      imageScaleX: 100,
+      imageScaleY: 100,
       imageX: 0,
       imageY: 0,
       filterBrightness: sceneImageFilterDefaults.brightness,
@@ -1032,6 +1034,8 @@ function addBlankScene() {
     dataUrl: "",
     isBlank: true,
     imageZoom: 100,
+    imageScaleX: 100,
+    imageScaleY: 100,
     imageX: 0,
     imageY: 0,
     filterBrightness: sceneImageFilterDefaults.brightness,
@@ -1108,10 +1112,16 @@ function renderScenes() {
   stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
   stage.addEventListener("pointerdown", (event) => {
     hoveredSceneId = "";
-    if (event.target === stage || event.target.classList.contains("stage-resize-frame")) {
+    if (event.target === stage || event.target.classList.contains("stage-render-clip") || event.target.classList.contains("stage-resize-frame")) {
       clearSceneSelection();
     }
   });
+
+  const renderClip = document.createElement("div");
+  renderClip.className = "stage-render-clip";
+  const transformOverlay = document.createElement("div");
+  transformOverlay.className = "stage-transform-overlay";
+  stage.append(renderClip, transformOverlay);
 
   scenes.forEach((scene, index) => {
     if (!scene.dataUrl) return;
@@ -1196,9 +1206,12 @@ function renderScenes() {
     }
 
     if (!scene.isLocked) {
-      wrap.append(createSceneImageTransformBox(scene));
+      const transformBox = createSceneImageTransformBox(scene);
+      transformBox.style.zIndex = String(getSceneLayerZIndex(index, 500));
+      applySceneLayerPosition(transformBox, scene);
+      transformOverlay.append(transformBox);
     }
-    stage.append(wrap);
+    renderClip.append(wrap);
   });
 
   scenes.forEach((scene) => {
@@ -1225,7 +1238,7 @@ function renderScenes() {
     resizeHandle.title = "Genisligi ayarla";
       resizeHandle.addEventListener("pointerdown", (event) => startSceneTextResize(event, textBlock));
     block.append(resizeHandle);
-    stage.append(block);
+    renderClip.append(block);
     });
   });
 
@@ -1361,11 +1374,19 @@ function renderScenes() {
           scene.imageZoom = value;
           updateSceneImageTransform(scene);
         }),
-        createRangeControl("X", scene.imageX || 0, -100, 100, 0.5, (value) => {
+        createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
+          scene.imageScaleX = value;
+          updateSceneImageTransform(scene);
+        }),
+        createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
+          scene.imageScaleY = value;
+          updateSceneImageTransform(scene);
+        }),
+        createRangeControl("X", scene.imageX || 0, -1000, 1000, 0.5, (value) => {
           scene.imageX = value;
           updateSceneImageTransform(scene);
         }),
-        createRangeControl("Y", scene.imageY || 0, -100, 100, 0.5, (value) => {
+        createRangeControl("Y", scene.imageY || 0, -1000, 1000, 0.5, (value) => {
           scene.imageY = value;
           updateSceneImageTransform(scene);
         }),
@@ -1710,6 +1731,9 @@ function refreshSceneSelection() {
   document.querySelectorAll(".scene-image-wrap").forEach((wrap) => {
     wrap.classList.toggle("selected", isSceneSelected(wrap.dataset.sceneId));
   });
+  document.querySelectorAll(".scene-image-transform-box").forEach((box) => {
+    box.classList.toggle("selected", isSceneSelected(box.dataset.sceneTransformId));
+  });
   document.querySelectorAll(".scene-editor-item").forEach((item) => {
     item.classList.toggle("selected", isSceneSelected(item.dataset.sceneEditorId));
   });
@@ -1865,15 +1889,24 @@ function renderSceneTextBlock(container, text) {
 function createSceneImageTransformBox(scene) {
   const box = document.createElement("div");
   box.className = "scene-image-transform-box";
+  if (isSceneSelected(scene.id)) box.classList.add("selected");
   box.dataset.sceneTransformId = scene.id;
   box.style.transform = getSceneImageTransform(scene);
-  box.title = "Resmi tasimak icin surukle, koseden buyut/kucult";
+  box.title = "Resmi tasimak icin surukle; koseden orantili, kenardan yatay/dikey esnet";
   box.addEventListener("pointerdown", (event) => startSceneImagePan(event, scene));
 
-  ["nw", "ne", "se", "sw"].forEach((corner) => {
+  const ghostImage = document.createElement("img");
+  ghostImage.className = "transform-ghost-image";
+  ghostImage.src = scene.dataUrl;
+  ghostImage.alt = "";
+  ghostImage.draggable = false;
+  ghostImage.addEventListener("load", () => applySceneViewportZoom());
+  box.append(ghostImage);
+
+  ["nw", "n", "ne", "e", "se", "s", "sw", "w"].forEach((handleName) => {
     const handle = document.createElement("span");
-    handle.className = `image-transform-handle ${corner}`;
-    handle.dataset.corner = corner;
+    handle.className = `image-transform-handle ${handleName}`;
+    handle.dataset.handle = handleName;
     handle.addEventListener("pointerdown", (event) => startSceneImageScale(event, scene));
     box.append(handle);
   });
@@ -1904,7 +1937,10 @@ function createStageResizeFrame() {
 }
 
 function getSceneImageTransform(scene) {
-  return `scale(${(scene.imageZoom || 100) / 100})`;
+  const zoom = (scene.imageZoom || 100) / 100;
+  const scaleX = (scene.imageScaleX || 100) / 100;
+  const scaleY = (scene.imageScaleY || 100) / 100;
+  return `scale(${zoom * scaleX}, ${zoom * scaleY})`;
 }
 
 function getSceneLayerZIndex(index, offset = 0) {
@@ -1936,6 +1972,7 @@ function updateSceneImageTransform(scene) {
   }
   if (box) box.style.transform = transform;
   if (wrap) applySceneLayerPosition(wrap, scene);
+  if (box) applySceneLayerPosition(box, scene);
 }
 
 function createSceneBlock(text = "") {
@@ -1954,6 +1991,8 @@ function ensureSceneModel() {
   scenes.forEach((scene) => {
     scene.isBlank = !scene.dataUrl;
     scene.imageZoom ??= 100;
+    scene.imageScaleX ??= 100;
+    scene.imageScaleY ??= 100;
     scene.imageX ??= 0;
     scene.imageY ??= 0;
     scene.filterBrightness ??= sceneImageFilterDefaults.brightness;
@@ -2212,8 +2251,8 @@ function startSceneImagePan(event, scene) {
   const onMove = (moveEvent) => {
     const deltaX = ((moveEvent.clientX - startX) / Math.max(1, stageRect.width)) * 100;
     const deltaY = ((moveEvent.clientY - startY) / Math.max(1, stageRect.height)) * 100;
-    scene.imageX = Math.round(clampNumber(initialX + deltaX, -100, 100, initialX) * 10) / 10;
-    scene.imageY = Math.round(clampNumber(initialY + deltaY, -100, 100, initialY) * 10) / 10;
+    scene.imageX = roundPositionValue(initialX + deltaX);
+    scene.imageY = roundPositionValue(initialY + deltaY);
     updateSceneImageTransform(scene);
   };
 
@@ -2289,23 +2328,69 @@ function startSceneImageScale(event, scene) {
   if (event.button !== 0) return;
   const handle = event.currentTarget;
   const box = handle.closest(".scene-image-transform-box");
-  if (!box) return;
+  const stage = box?.closest(".composite-stage");
+  if (!box || !stage) return;
 
   event.preventDefault();
   event.stopPropagation();
+  setSelectedScene(scene.id);
   pushSceneHistory();
   const rect = box.getBoundingClientRect();
+  const stageRect = stage.getBoundingClientRect();
   const centerX = rect.left + rect.width / 2;
   const centerY = rect.top + rect.height / 2;
+  const handleName = handle.dataset.handle || handle.dataset.corner || "se";
+  const isHorizontal = handleName.includes("e") || handleName.includes("w");
+  const isVertical = handleName.includes("n") || handleName.includes("s");
+  const isCorner = isHorizontal && isVertical;
   const startDistance = Math.max(1, Math.hypot(event.clientX - centerX, event.clientY - centerY));
+  const startHorizontalDistance = Math.max(1, Math.abs(event.clientX - centerX));
+  const startVerticalDistance = Math.max(1, Math.abs(event.clientY - centerY));
   const startZoom = scene.imageZoom || 100;
+  const startScaleX = scene.imageScaleX || 100;
+  const startScaleY = scene.imageScaleY || 100;
+  const startEffectiveScaleX = Math.max(0.01, (startZoom / 100) * (startScaleX / 100));
+  const startEffectiveScaleY = Math.max(0.01, (startZoom / 100) * (startScaleY / 100));
+  const baseWidth = Math.max(1, rect.width / startEffectiveScaleX);
+  const baseHeight = Math.max(1, rect.height / startEffectiveScaleY);
+  const fixedLeft = rect.left - stageRect.left;
+  const fixedRight = rect.right - stageRect.left;
+  const fixedTop = rect.top - stageRect.top;
+  const fixedBottom = rect.bottom - stageRect.top;
+
+  const keepOppositeSideAnchored = () => {
+    const effectiveScaleX = (scene.imageZoom || 100) / 100 * ((scene.imageScaleX || 100) / 100);
+    const effectiveScaleY = (scene.imageZoom || 100) / 100 * ((scene.imageScaleY || 100) / 100);
+    const scaledWidth = baseWidth * effectiveScaleX;
+    const scaledHeight = baseHeight * effectiveScaleY;
+
+    if (handleName === "e") {
+      scene.imageX = roundPositionValue(((fixedLeft - (baseWidth - scaledWidth) / 2) / Math.max(1, stageRect.width)) * 100);
+    } else if (handleName === "w") {
+      scene.imageX = roundPositionValue(((fixedRight - (baseWidth + scaledWidth) / 2) / Math.max(1, stageRect.width)) * 100);
+    } else if (handleName === "s") {
+      scene.imageY = roundPositionValue(((fixedTop - (baseHeight - scaledHeight) / 2) / Math.max(1, stageRect.height)) * 100);
+    } else if (handleName === "n") {
+      scene.imageY = roundPositionValue(((fixedBottom - (baseHeight + scaledHeight) / 2) / Math.max(1, stageRect.height)) * 100);
+    }
+  };
 
   handle.setPointerCapture(event.pointerId);
   box.classList.add("scaling");
 
   const onMove = (moveEvent) => {
-    const distance = Math.max(1, Math.hypot(moveEvent.clientX - centerX, moveEvent.clientY - centerY));
-    scene.imageZoom = Math.round(clampNumber(startZoom * (distance / startDistance), 5, 1200, startZoom) * 10) / 10;
+    if (isCorner) {
+      const distance = Math.max(1, Math.hypot(moveEvent.clientX - centerX, moveEvent.clientY - centerY));
+      scene.imageZoom = roundScaleValue(startZoom * (distance / startDistance));
+    } else if (isHorizontal) {
+      const distance = Math.max(1, Math.abs(moveEvent.clientX - centerX));
+      scene.imageScaleX = roundScaleValue(startScaleX * (distance / startHorizontalDistance));
+      keepOppositeSideAnchored();
+    } else if (isVertical) {
+      const distance = Math.max(1, Math.abs(moveEvent.clientY - centerY));
+      scene.imageScaleY = roundScaleValue(startScaleY * (distance / startVerticalDistance));
+      keepOppositeSideAnchored();
+    }
     updateSceneImageTransform(scene);
   };
 
@@ -2319,6 +2404,14 @@ function startSceneImageScale(event, scene) {
   handle.addEventListener("pointermove", onMove);
   handle.addEventListener("pointerup", onUp);
   handle.addEventListener("pointercancel", onUp);
+}
+
+function roundScaleValue(value) {
+  return Math.round(clampNumber(value, 5, 1200, 100) * 10) / 10;
+}
+
+function roundPositionValue(value) {
+  return Math.round(clampNumber(value, -1000, 1000, 0) * 10) / 10;
 }
 
 function startSceneTextDrag(event, textBlock) {
@@ -2442,11 +2535,13 @@ async function downloadCompositeScene() {
 
 function drawSceneLayerImage(context, image, scene, width, height) {
   const zoom = (scene.imageZoom || 100) / 100;
+  const scaleX = (scene.imageScaleX || 100) / 100;
+  const scaleY = (scene.imageScaleY || 100) / 100;
   const naturalWidth = image.naturalWidth || image.width;
   const naturalHeight = image.naturalHeight || image.height;
   const baseHeight = Math.round((naturalHeight * width) / Math.max(1, naturalWidth));
-  const drawWidth = Math.ceil(width * zoom);
-  const drawHeight = Math.ceil(baseHeight * zoom);
+  const drawWidth = Math.ceil(width * zoom * scaleX);
+  const drawHeight = Math.ceil(baseHeight * zoom * scaleY);
   const drawX = ((scene.imageX || 0) / 100) * width + (width - drawWidth) / 2;
   const drawY = ((scene.imageY || 0) / 100) * height + (baseHeight - drawHeight) / 2;
 

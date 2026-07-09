@@ -653,7 +653,7 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 180px),
     #10141b;
-  overflow: hidden;
+  overflow: visible;
   user-select: none;
   touch-action: none;
   max-width: none;
@@ -662,6 +662,20 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
     0 0 0 1px rgba(82, 209, 197, 0.08),
     0 26px 90px rgba(0, 0, 0, 0.72),
     0 0 80px rgba(82, 209, 197, 0.035);
+}
+
+.stage-render-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.stage-transform-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9000;
+  overflow: visible;
+  pointer-events: none;
 }
 
 .scene-image-wrap {
@@ -683,17 +697,30 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 
 .scene-image-transform-box {
   position: absolute;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
   z-index: 3;
   border: 1px dashed rgba(82, 209, 197, 0.42);
   cursor: move;
   transform-origin: center center;
   will-change: transform;
   opacity: 0.38;
+  box-sizing: border-box;
+  pointer-events: auto;
   transition: opacity 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
 }
 
-.scene-image-wrap:hover .scene-image-transform-box {
+.transform-ghost-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene-image-transform-box:hover {
   opacity: 1;
 }
 
@@ -727,16 +754,56 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   cursor: nesw-resize;
 }
 
+.image-transform-handle.e {
+  right: -7px;
+  top: 50%;
+  width: 12px;
+  height: 30px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
 .image-transform-handle.se {
   right: -7px;
   bottom: -7px;
   cursor: nwse-resize;
 }
 
+.image-transform-handle.s {
+  left: 50%;
+  bottom: -7px;
+  width: 30px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
 .image-transform-handle.sw {
   left: -7px;
   bottom: -7px;
   cursor: nesw-resize;
+}
+
+.image-transform-handle.w {
+  left: -7px;
+  top: 50%;
+  width: 12px;
+  height: 30px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.image-transform-handle.n {
+  left: 50%;
+  top: -7px;
+  width: 30px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
 }
 
 .scene-text-block {
@@ -1657,7 +1724,7 @@ button:hover,
   border-color: rgba(112, 158, 255, 0.78);
 }
 
-.scene-image-wrap.selected .scene-image-transform-box {
+.scene-image-transform-box.selected {
   opacity: 1;
   border-color: rgba(125, 184, 255, 0.98);
   box-shadow:

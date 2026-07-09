@@ -1,0 +1,63 @@
+{
+  "name": "roll-ss-editor",
+  "version": "1.0.0",
+  "description": "Client-side Roll SS editor for browser and desktop app usage.",
+  "main": "electron-main.js",
+  "author": "Kaan",
+  "private": true,
+  "scripts": {
+    "web": "node server.js",
+    "app": "electron .",
+    "dist": "electron-builder --win nsis portable --x64",
+    "dist:portable": "electron-builder --win portable --x64",
+    "dist:installer": "electron-builder --win nsis --x64"
+  },
+  "devDependencies": {
+    "electron": "43.1.0",
+    "electron-builder": "26.15.3"
+  },
+  "build": {
+    "appId": "com.kaan.rollsseditor",
+    "productName": "Roll SS Editor",
+    "artifactName": "${productName}-${version}-${os}-${arch}.${ext}",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "index.html",
+      "style.css",
+      "app.js",
+      "server.js",
+      "README.md",
+      "electron-main.js"
+    ],
+    "asar": true,
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "portable": {
+      "artifactName": "${productName}-${version}-portable-${arch}.${ext}"
+    },
+    "nsis": {
+      "artifactName": "${productName}-${version}-setup-${arch}.${ext}",
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Roll SS Editor"
+    }
+  }
+}
