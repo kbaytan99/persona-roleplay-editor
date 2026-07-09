@@ -2128,9 +2128,9 @@ function createSelectControl(labelText, value, options, onChange) {
   const title = document.createElement("span");
   title.textContent = labelText;
   const select = document.createElement("select");
-  select.style.height = "32px";
-  select.style.padding = "0 6px";
-  select.style.fontSize = "12px";
+  select.style.height = "24px";
+  select.style.padding = "0 4px";
+  select.style.fontSize = "10px";
   options.forEach((opt) => {
     const o = document.createElement("option");
     o.value = opt.value;
