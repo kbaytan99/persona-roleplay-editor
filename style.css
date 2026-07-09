@@ -177,6 +177,8 @@ body.resizing-toolbox {
   backdrop-filter: blur(10px);
   background: color-mix(in srgb, var(--panel-bg) 95%, transparent);
   resize: both;
+  min-width: 330px;
+  min-height: 200px;
 }
 
 .dockable-panel.dragging {
