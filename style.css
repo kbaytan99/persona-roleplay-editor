@@ -215,7 +215,7 @@ body.resizing-toolbox {
 }
 
 .scene-mode .brand-row {
-  display: block;
+  display: flex;
   padding: 12px;
   margin: -4px -4px 14px;
   border: 1px solid rgba(255, 255, 255, 0.06);
@@ -224,24 +224,32 @@ body.resizing-toolbox {
     linear-gradient(135deg, rgba(82, 209, 197, 0.12), rgba(198, 154, 255, 0.08) 45%, rgba(255, 107, 138, 0.08));
 }
 
-.scene-mode .brand-row .primary-action {
-  width: 100%;
-  margin-top: 10px;
-}
-
 .brand-row {
   display: flex;
   gap: 12px;
   justify-content: space-between;
-  align-items: flex-start;
+  align-items: center;
   margin-bottom: 14px;
 }
 
+.brand-row > div:first-child {
+  min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
 .mode-tabs {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: inline-grid;
+  grid-template-columns: repeat(2, minmax(74px, max-content));
   gap: 6px;
-  margin-bottom: 14px;
+  margin: 0;
   padding: 4px;
   border: 1px solid rgba(255, 255, 255, 0.075);
   border-radius: 8px;
@@ -251,8 +259,10 @@ body.resizing-toolbox {
 
 .mode-tab {
   min-height: 34px;
+  padding: 6px 12px;
   border-radius: 5px;
   background: transparent;
+  white-space: nowrap;
 }
 
 .mode-tab.active {

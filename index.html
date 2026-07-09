@@ -15,15 +15,16 @@
             <h1>Roll SS Editor</h1>
             <p>SA-MP / RAGE:MP text roleplay ekran goruntusu hazirlayici</p>
           </div>
-          <button id="downloadBtn" class="primary-action" type="button">PNG indir</button>
+          <div class="header-actions">
+            <div class="mode-tabs" role="tablist" aria-label="Editor modu">
+              <button id="sceneTab" class="mode-tab active" type="button">Sahne</button>
+              <button id="rollTab" class="mode-tab" type="button">Roll SS</button>
+            </div>
+            <button id="downloadBtn" class="primary-action" type="button">PNG indir</button>
+          </div>
         </div>
 
-        <div class="mode-tabs" role="tablist" aria-label="Editor modu">
-          <button id="rollTab" class="mode-tab active" type="button">Roll SS</button>
-          <button id="sceneTab" class="mode-tab" type="button">Sahne</button>
-        </div>
-
-        <div id="rollEditorPane" class="mode-pane active">
+        <div id="rollEditorPane" class="mode-pane">
           <label class="field-block">
             <span>Roll yazisi</span>
             <textarea id="sourceText" spellcheck="false"></textarea>
@@ -81,7 +82,7 @@
           <div id="statusText" class="status-text" aria-live="polite"></div>
         </div>
 
-        <section id="sceneEditorPane" class="scene-tools mode-pane" aria-label="Sahne olusturucu">
+        <section id="sceneEditorPane" class="scene-tools mode-pane active" aria-label="Sahne olusturucu">
           <div class="section-title">
             <h2>Sahne Olusturucu</h2>
             <div class="section-actions">
@@ -172,14 +173,14 @@
       </section>
 
       <section class="preview-panel" aria-label="SS onizleme">
-        <div id="rollPreviewPane" class="mode-pane active">
+        <div id="rollPreviewPane" class="mode-pane">
           <div id="previewViewport" class="preview-viewport">
           <div id="previewScaler" class="preview-scaler">
             <div id="renderSurface" class="render-surface"></div>
           </div>
           </div>
         </div>
-        <section id="scenePreviewPane" class="mode-pane">
+        <section id="scenePreviewPane" class="mode-pane active">
           <section id="sceneList" class="scene-list" aria-label="Sahneler"></section>
           <div id="sceneLayersPanel" class="scene-layers-panel" aria-label="Sahne katmanlari"></div>
           <aside class="shortcut-hud" aria-label="Sahne kisayollari">

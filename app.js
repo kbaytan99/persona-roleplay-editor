@@ -108,7 +108,7 @@ const sceneHistoryLimit = 20;
 const sceneUndoStack = [];
 const sceneRedoStack = [];
 let sceneClipboardScenes = [];
-let activeMode = "roll";
+let activeMode = "scene";
 let sceneViewportZoom = 1;
 let isSpacePanning = false;
 let selectedSceneId = "";
@@ -3105,6 +3105,7 @@ window.addEventListener("beforeunload", () => {
 document.addEventListener("pointerdown", startSceneViewportPan);
 
 renderPreview();
+switchMode("scene");
 loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
 
 /* ── Window Manager (Dock & Float) ── */
