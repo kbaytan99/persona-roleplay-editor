@@ -28,6 +28,8 @@ const apiFieldName = document.querySelector("#apiFieldName");
 const uploadSceneBtn = document.querySelector("#uploadSceneBtn");
 const apiStatus = document.querySelector("#apiStatus");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
+const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
+const sceneProjectInput = document.querySelector("#sceneProjectInput");
 const clearScenesBtn = document.querySelector("#clearScenesBtn");
 const hideToolboxBtn = document.querySelector("#hideToolboxBtn");
 const showToolboxBtn = document.querySelector("#showToolboxBtn");
@@ -93,6 +95,8 @@ const sceneCanvasDefaultWidth = 1200;
 const sceneCanvasDefaultHeight = 800;
 const sceneCanvasMaxDimension = 32767;
 const sceneCanvasBackground = "#10141b";
+const rseProjectMagic = "ROLEPLAY_SCENE_EXPORT";
+const rseProjectVersion = 1;
 const sceneImageFilterDefaults = {
   brightness: 106,
   contrast: 108,
@@ -1677,6 +1681,141 @@ function clearScenes() {
   setSceneStatus("Tum sahneler silindi.");
 }
 
+function exportSceneProject() {
+  ensureSceneModel();
+  if (!scenes.length) {
+    setSceneStatus("RSE icin once en az bir sahne/katman olustur.");
+    return;
+  }
+
+  const payload = createSceneProjectPayload();
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/vnd.rollss.rse+json;charset=utf-8",
+  });
+  const link = document.createElement("a");
+  link.download = createSceneProjectFileName(payload);
+  link.href = URL.createObjectURL(blob);
+  link.click();
+  window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
+  setSceneStatus(`RSE indirildi: ${payload.scenes.length} katman kaydedildi.`);
+}
+
+function createSceneProjectPayload() {
+  return {
+    magic: rseProjectMagic,
+    format: "rse",
+    version: rseProjectVersion,
+    app: "Roll SS Editor",
+    exportedAt: new Date().toISOString(),
+    sourceText: sourceText.value,
+    settings: {
+      sceneOutputWidth: getSceneOutputWidth(),
+      sceneBackgroundHeight: getSceneBackgroundHeight(),
+      sceneFontSize: getSceneFontSize(),
+      scenePadding: getScenePadding(),
+      sceneTransitionSize: getSceneTransitionSize(),
+      sceneTransitionStyle: getSceneTransitionStyle(),
+      sceneTransitionSides: getSceneTransitionSides(),
+    },
+    selection: {
+      selectedSceneId,
+      selectedSceneIds: [...selectedSceneIds],
+    },
+    scenes: JSON.parse(JSON.stringify(scenes)),
+  };
+}
+
+function createSceneProjectFileName(payload) {
+  const firstSceneName = payload.scenes.find((scene) => scene?.name)?.name || "sahne-projesi";
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[-:T]/g, "");
+  return `${safeFilePart(firstSceneName)}-${stamp}.rse`;
+}
+
+async function importSceneProject(event) {
+  const file = event.target.files?.[0];
+  if (!file) return;
+
+  try {
+    const payload = JSON.parse(await file.text());
+    const project = normalizeSceneProjectPayload(payload);
+    if (!project) {
+      setSceneStatus("RSE yuklenemedi: dosya bu programa ait degil.");
+      return;
+    }
+
+    if (scenes.length && !confirm("Mevcut sahne projesi RSE dosyasi ile degistirilsin mi?")) return;
+
+    pushSceneHistory();
+    applySceneProjectPayload(project);
+    saveState();
+    scheduleSceneAutosave();
+    switchMode("scene");
+    renderScenes();
+    setSceneStatus(`RSE yuklendi: ${scenes.length} katman geri getirildi.`);
+  } catch (error) {
+    setSceneStatus(`RSE yuklenemedi: ${error.message || "gecersiz dosya"}.`);
+  } finally {
+    sceneProjectInput.value = "";
+  }
+}
+
+function normalizeSceneProjectPayload(payload) {
+  if (!payload || typeof payload !== "object") return null;
+  if (payload.magic !== rseProjectMagic || payload.format !== "rse") return null;
+  if (!Array.isArray(payload.scenes)) return null;
+
+  const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
+  const selection = payload.selection && typeof payload.selection === "object" ? payload.selection : {};
+  return {
+    sourceText: typeof payload.sourceText === "string" ? payload.sourceText : "",
+    settings,
+    selection,
+    scenes: payload.scenes.map(normalizeImportedScene).filter(Boolean),
+  };
+}
+
+function normalizeImportedScene(scene, index) {
+  if (!scene || typeof scene !== "object") return null;
+  const clone = JSON.parse(JSON.stringify(scene));
+  clone.id = typeof clone.id === "string" && clone.id ? clone.id : createId();
+  clone.name = typeof clone.name === "string" && clone.name ? clone.name : `Katman ${index + 1}`;
+  clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
+  clone.isBlank = !clone.dataUrl;
+  clone.blocks = Array.isArray(clone.blocks) ? clone.blocks : [];
+  clone.blocks = clone.blocks
+    .filter((block) => block && typeof block === "object")
+    .map((block) => ({
+      ...block,
+      id: typeof block.id === "string" && block.id ? block.id : createId(),
+      text: typeof block.text === "string" ? block.text : "",
+    }));
+  return clone;
+}
+
+function applySceneProjectPayload(project) {
+  sourceText.value = project.sourceText || "";
+  sceneOutputWidth.value = clampNumber(project.settings.sceneOutputWidth, 640, sceneCanvasMaxDimension, sceneCanvasDefaultWidth);
+  sceneBackgroundHeight.value = clampNumber(project.settings.sceneBackgroundHeight, 300, sceneCanvasMaxDimension, sceneCanvasDefaultHeight);
+  sceneFontSize.value = clampNumber(project.settings.sceneFontSize, 10, 42, 18);
+  scenePadding.value = clampNumber(project.settings.scenePadding, 4, 80, 18);
+  sceneTransitionSize.value = clampNumber(project.settings.sceneTransitionSize, 0, 600, sceneTransitionPx);
+  sceneTransitionStyle.value = ["soft", "cinematic", "blur", "none"].includes(project.settings.sceneTransitionStyle)
+    ? project.settings.sceneTransitionStyle
+    : "none";
+  sceneTransitionSides.value = ["both", "top", "bottom"].includes(project.settings.sceneTransitionSides)
+    ? project.settings.sceneTransitionSides
+    : "both";
+
+  scenes.splice(0, scenes.length, ...project.scenes);
+  selectedSceneId = typeof project.selection.selectedSceneId === "string" ? project.selection.selectedSceneId : scenes[0]?.id || "";
+  selectedSceneIds = Array.isArray(project.selection.selectedSceneIds) ? project.selection.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
+  hoveredSceneId = "";
+  shouldAutoFitSceneViewport = true;
+  ensureSceneModel();
+  normalizeSceneSelection();
+  renderPreview();
+}
+
 function normalizeSceneSelection() {
   const sceneIds = new Set(scenes.map((scene) => scene.id));
   selectedSceneIds = selectedSceneIds.filter((id) => sceneIds.has(id));
@@ -2949,6 +3088,8 @@ copyRawBtn.addEventListener("click", copyRawText);
 copyBtn.addEventListener("click", copyParsedText);
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
 blankSceneBtn.addEventListener("click", addBlankScene);
+exportSceneProjectBtn.addEventListener("click", exportSceneProject);
+sceneProjectInput.addEventListener("change", importSceneProject);
 clearScenesBtn.addEventListener("click", clearScenes);
 hideToolboxBtn.addEventListener("click", hideToolbox);
 showToolboxBtn.addEventListener("click", showToolbox);

@@ -35,7 +35,10 @@ Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side c
 
 - `Resim ekle` ile bir veya daha fazla gorsel sec.
 - Panodaki gorseli `Ctrl+V` ile yapistirarak da sahne ekleyebilirsin.
-- Gorseller tek uzun sahne olarak birlestirilir; aralarina yumusak gecis uygulanir.
+- `RSE indir` ile sahne projesini `.rse` dosyasi olarak disari aktarabilirsin.
+- `RSE yukle` ile daha once kaydedilen `.rse` dosyasini geri yukleyebilirsin.
+- `.rse` dosyasi canvas ayarlarini, katmanlari, gomulu gorselleri, yazi kutularini, filtreleri, gecisleri ve secim bilgisini saklar.
+- Gorseller tek canvas uzerinde katman olarak calisir; katman sirasi, pozisyonu ve gecis efektleri korunur.
 - Her sahneye birden fazla yazi kutusu ekleyebilirsin.
 - Yazi kutularini gorsel uzerinde surukleyerek konumlandirabilir, sag alt koseden genisligini ayarlayabilirsin.
 - Her yazi kutusunun font boyutu ayri ayarlanabilir.
