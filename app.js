@@ -20,6 +20,7 @@ const sceneFontSize = document.querySelector("#sceneFontSize");
 const scenePadding = document.querySelector("#scenePadding");
 const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
+const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
 const apiEndpoint = document.querySelector("#apiEndpoint");
 const apiToken = document.querySelector("#apiToken");
 const apiFieldName = document.querySelector("#apiFieldName");
@@ -75,6 +76,7 @@ const storageKeys = {
   scenePadding: "rollSs.scenePadding",
   sceneTransitionSize: "rollSs.sceneTransitionSize",
   sceneTransitionStyle: "rollSs.sceneTransitionStyle",
+  sceneTransitionSides: "rollSs.sceneTransitionSides",
   apiEndpoint: "rollSs.apiEndpoint",
   apiToken: "rollSs.apiToken",
   apiFieldName: "rollSs.apiFieldName",
@@ -375,6 +377,7 @@ function saveState() {
   localStorage.setItem(clientStorageKey(storageKeys.scenePadding), scenePadding.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSize), sceneTransitionSize.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionStyle), sceneTransitionStyle.value);
+  localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSides), sceneTransitionSides.value);
   localStorage.setItem(clientStorageKey(storageKeys.apiEndpoint), apiEndpoint.value);
   localStorage.setItem(clientStorageKey(storageKeys.apiToken), apiToken.value);
   localStorage.setItem(clientStorageKey(storageKeys.apiFieldName), apiFieldName.value);
@@ -391,6 +394,7 @@ function restoreState() {
   scenePadding.value = getClientStoredValue(storageKeys.scenePadding) ?? scenePadding.value;
   sceneTransitionSize.value = getClientStoredValue(storageKeys.sceneTransitionSize) ?? sceneTransitionSize.value;
   sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
+  sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
   apiEndpoint.value = getClientStoredValue(storageKeys.apiEndpoint) ?? "";
   apiToken.value = getClientStoredValue(storageKeys.apiToken) ?? "";
   apiFieldName.value = getClientStoredValue(storageKeys.apiFieldName) ?? "image";
@@ -1131,6 +1135,62 @@ function renderScenes() {
     image.style.filter = getSceneImageFilter(scene);
     image.addEventListener("load", () => applySceneViewportZoom());
     wrap.append(image);
+
+    // Apply Transition Effects in HTML Preview
+    const transStyle = getSceneTransitionStyle();
+    const transSize = getSceneTransitionSize();
+    const transSides = getSceneTransitionSides();
+
+    if (transStyle !== "none" && transSize > 0) {
+      if (transStyle === "soft") {
+        let mask = "";
+        if (transSides === "both") {
+          mask = `linear-gradient(to bottom, transparent 0px, black ${transSize}px, black calc(100% - ${transSize}px), transparent 100%)`;
+        } else if (transSides === "top") {
+          mask = `linear-gradient(to bottom, transparent 0px, black ${transSize}px)`;
+        } else if (transSides === "bottom") {
+          mask = `linear-gradient(to top, transparent 0px, black ${transSize}px)`;
+        }
+        image.style.webkitMaskImage = mask;
+        image.style.maskImage = mask;
+      } else if (transStyle === "cinematic") {
+        if (transSides === "both" || transSides === "top") {
+          const topOverlay = document.createElement("div");
+          topOverlay.className = "scene-transition-overlay cinematic-top";
+          topOverlay.style.height = `${transSize}px`;
+          wrap.append(topOverlay);
+        }
+        if (transSides === "both" || transSides === "bottom") {
+          const bottomOverlay = document.createElement("div");
+          bottomOverlay.className = "scene-transition-overlay cinematic-bottom";
+          bottomOverlay.style.height = `${transSize}px`;
+          wrap.append(bottomOverlay);
+        }
+      } else if (transStyle === "blur") {
+        const blurImg = image.cloneNode(true);
+        blurImg.style.filter = (image.style.filter || "") + " blur(15px)";
+        blurImg.style.position = "absolute";
+        blurImg.style.top = "0";
+        blurImg.style.left = "0";
+        blurImg.style.width = "100%";
+        blurImg.style.height = "100%";
+        blurImg.style.zIndex = "1";
+        blurImg.style.pointerEvents = "none";
+        
+        let mask = "";
+        if (transSides === "both") {
+          mask = `linear-gradient(to bottom, black 0px, transparent ${transSize}px, transparent calc(100% - ${transSize}px), black 100%)`;
+        } else if (transSides === "top") {
+          mask = `linear-gradient(to bottom, black 0px, transparent ${transSize}px)`;
+        } else if (transSides === "bottom") {
+          mask = `linear-gradient(to top, black 0px, transparent ${transSize}px)`;
+        }
+        blurImg.style.webkitMaskImage = mask;
+        blurImg.style.maskImage = mask;
+        wrap.append(blurImg);
+      }
+    }
+
     wrap.append(createSceneImageTransformBox(scene));
     stage.append(wrap);
   });
@@ -1628,6 +1688,7 @@ function createSceneHistoryEntry() {
     sceneBackgroundHeight: sceneBackgroundHeight.value,
     sceneTransitionSize: sceneTransitionSize.value,
     sceneTransitionStyle: sceneTransitionStyle.value,
+    sceneTransitionSides: sceneTransitionSides.value,
   });
   return { key, snapshot: JSON.parse(key) };
 }
@@ -1638,6 +1699,7 @@ function restoreSceneHistoryEntry(entry, message) {
   if (entry.snapshot.sceneBackgroundHeight) sceneBackgroundHeight.value = entry.snapshot.sceneBackgroundHeight;
   if (entry.snapshot.sceneTransitionSize) sceneTransitionSize.value = entry.snapshot.sceneTransitionSize;
   if (entry.snapshot.sceneTransitionStyle) sceneTransitionStyle.value = entry.snapshot.sceneTransitionStyle;
+  if (entry.snapshot.sceneTransitionSides) sceneTransitionSides.value = entry.snapshot.sceneTransitionSides;
   selectedSceneId = entry.snapshot.selectedSceneId || scenes[0]?.id || "";
   selectedSceneIds = Array.isArray(entry.snapshot.selectedSceneIds) ? entry.snapshot.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
   hoveredSceneId = "";
@@ -2257,17 +2319,113 @@ function drawSceneLayerImage(context, image, scene, width, height) {
   const naturalWidth = image.naturalWidth || image.width;
   const naturalHeight = image.naturalHeight || image.height;
   const baseHeight = Math.round((naturalHeight * width) / Math.max(1, naturalWidth));
-  const drawWidth = width * zoom;
-  const drawHeight = baseHeight * zoom;
+  const drawWidth = Math.ceil(width * zoom);
+  const drawHeight = Math.ceil(baseHeight * zoom);
   const drawX = ((scene.imageX || 0) / 100) * width + (width - drawWidth) / 2;
   const drawY = ((scene.imageY || 0) / 100) * height + (baseHeight - drawHeight) / 2;
+
+  // Temporary canvas to process filters and masks/transitions per layer
+  const tempCanvas = document.createElement("canvas");
+  tempCanvas.width = drawWidth;
+  tempCanvas.height = drawHeight;
+  const tempCtx = tempCanvas.getContext("2d");
+
+  // Draw filtered image on temp canvas
+  tempCtx.save();
+  tempCtx.filter = getSceneImageFilter(scene);
+  tempCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+  tempCtx.restore();
+
+  const style = getSceneTransitionStyle();
+  const transSize = getSceneTransitionSize();
+  const sides = getSceneTransitionSides();
+
+  if (style !== "none" && transSize > 0) {
+    if (style === "soft") {
+      tempCtx.save();
+      tempCtx.globalCompositeOperation = "destination-in";
+      const grad = tempCtx.createLinearGradient(0, 0, 0, drawHeight);
+      if (sides === "both") {
+        const stop1 = Math.min(1, transSize / drawHeight);
+        const stop2 = Math.max(0, 1 - transSize / drawHeight);
+        grad.addColorStop(0, "rgba(0,0,0,0)");
+        grad.addColorStop(stop1, "rgba(0,0,0,1)");
+        grad.addColorStop(stop2, "rgba(0,0,0,1)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+      } else if (sides === "top") {
+        const stop = Math.min(1, transSize / drawHeight);
+        grad.addColorStop(0, "rgba(0,0,0,0)");
+        grad.addColorStop(stop, "rgba(0,0,0,1)");
+      } else if (sides === "bottom") {
+        const stop = Math.max(0, 1 - transSize / drawHeight);
+        grad.addColorStop(stop, "rgba(0,0,0,1)");
+        grad.addColorStop(1, "rgba(0,0,0,0)");
+      }
+      tempCtx.fillStyle = grad;
+      tempCtx.fillRect(0, 0, drawWidth, drawHeight);
+      tempCtx.restore();
+    } else if (style === "cinematic") {
+      tempCtx.save();
+      const gradTop = tempCtx.createLinearGradient(0, 0, 0, transSize);
+      gradTop.addColorStop(0, "#000000");
+      gradTop.addColorStop(1, "rgba(0,0,0,0)");
+
+      const gradBottom = tempCtx.createLinearGradient(0, drawHeight - transSize, 0, drawHeight);
+      gradBottom.addColorStop(0, "rgba(0,0,0,0)");
+      gradBottom.addColorStop(1, "#000000");
+
+      if (sides === "both" || sides === "top") {
+        tempCtx.fillStyle = gradTop;
+        tempCtx.fillRect(0, 0, drawWidth, transSize);
+      }
+      if (sides === "both" || sides === "bottom") {
+        tempCtx.fillStyle = gradBottom;
+        tempCtx.fillRect(0, drawHeight - transSize, drawWidth, transSize);
+      }
+      tempCtx.restore();
+    } else if (style === "blur") {
+      const blurCanvas = document.createElement("canvas");
+      blurCanvas.width = drawWidth;
+      blurCanvas.height = drawHeight;
+      const blurCtx = blurCanvas.getContext("2d");
+
+      blurCtx.save();
+      blurCtx.filter = `blur(15px) ${getSceneImageFilter(scene)}`;
+      blurCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+      blurCtx.restore();
+
+      blurCtx.save();
+      blurCtx.globalCompositeOperation = "destination-in";
+      const grad = blurCtx.createLinearGradient(0, 0, 0, drawHeight);
+      if (sides === "both") {
+        const stop1 = Math.min(1, transSize / drawHeight);
+        const stop2 = Math.max(0, 1 - transSize / drawHeight);
+        grad.addColorStop(0, "rgba(0,0,0,1)");
+        grad.addColorStop(stop1, "rgba(0,0,0,0)");
+        grad.addColorStop(stop2, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(0,0,0,1)");
+      } else if (sides === "top") {
+        const stop = Math.min(1, transSize / drawHeight);
+        grad.addColorStop(0, "rgba(0,0,0,1)");
+        grad.addColorStop(stop, "rgba(0,0,0,0)");
+      } else if (sides === "bottom") {
+        const stop = Math.max(0, 1 - transSize / drawHeight);
+        grad.addColorStop(stop, "rgba(0,0,0,0)");
+        grad.addColorStop(1, "rgba(0,0,0,1)");
+      }
+      blurCtx.fillStyle = grad;
+      blurCtx.fillRect(0, 0, drawWidth, drawHeight);
+      blurCtx.restore();
+
+      tempCtx.drawImage(blurCanvas, 0, 0);
+    }
+  }
 
   context.save();
   context.beginPath();
   context.rect(0, 0, width, height);
   context.clip();
-  context.filter = getSceneImageFilter(scene);
-  context.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+  context.drawImage(tempCanvas, drawX, drawY);
   context.restore();
 }
 
@@ -2331,6 +2489,11 @@ function getSceneTransitionSize() {
 function getSceneTransitionStyle() {
   const value = sceneTransitionStyle.value;
   return ["soft", "cinematic", "blur", "none"].includes(value) ? value : "soft";
+}
+
+function getSceneTransitionSides() {
+  const value = sceneTransitionSides.value;
+  return ["both", "top", "bottom"].includes(value) ? value : "both";
 }
 
 function getScenePreviewHeight() {
@@ -2496,11 +2659,16 @@ sceneBackgroundHeight.addEventListener("input", () => {
 });
 prepareSceneHistoryControl(sceneTransitionSize);
 prepareSceneHistoryControl(sceneTransitionStyle);
+prepareSceneHistoryControl(sceneTransitionSides);
 sceneTransitionSize.addEventListener("input", () => {
   saveState();
   renderScenes();
 });
 sceneTransitionStyle.addEventListener("change", () => {
+  saveState();
+  renderScenes();
+});
+sceneTransitionSides.addEventListener("change", () => {
   saveState();
   renderScenes();
 });

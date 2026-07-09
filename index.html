@@ -129,17 +129,25 @@
               <span>Sahne bosluk</span>
               <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
             </label>
-            <label class="single-canvas-hidden">
+            <label>
               <span>Gecis boyutu</span>
               <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
             </label>
-            <label class="single-canvas-hidden">
+            <label>
               <span>Gecis filtresi</span>
               <select id="sceneTransitionStyle">
                 <option value="soft" selected>Soft fade</option>
                 <option value="cinematic">Sinematik kararma</option>
                 <option value="blur">Blur gecis</option>
                 <option value="none">Keskin</option>
+              </select>
+            </label>
+            <label>
+              <span>Gecis yonu</span>
+              <select id="sceneTransitionSides">
+                <option value="both" selected>Her iki taraf (Ust & Alt)</option>
+                <option value="top">Sadece Ust (Baslangic)</option>
+                <option value="bottom">Sadece Alt (Bitis)</option>
               </select>
             </label>
           </div>
