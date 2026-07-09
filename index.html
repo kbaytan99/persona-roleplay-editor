@@ -1,0 +1,188 @@
+<!doctype html>
+<html lang="tr">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Roll SS Editor</title>
+    <link rel="stylesheet" href="./style.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="editor-panel" aria-label="Roll SS ayarlari">
+        <div class="brand-row">
+          <div>
+            <h1>Roll SS Editor</h1>
+            <p>SA-MP / RAGE:MP text roleplay ekran goruntusu hazirlayici</p>
+          </div>
+          <button id="downloadBtn" class="primary-action" type="button">PNG indir</button>
+        </div>
+
+        <div class="mode-tabs" role="tablist" aria-label="Editor modu">
+          <button id="rollTab" class="mode-tab active" type="button">Roll SS</button>
+          <button id="sceneTab" class="mode-tab" type="button">Sahne</button>
+        </div>
+
+        <div id="rollEditorPane" class="mode-pane active">
+          <label class="field-block">
+            <span>Roll yazisi</span>
+            <textarea id="sourceText" spellcheck="false"></textarea>
+          </label>
+
+          <div class="controls-grid">
+            <label>
+              <span>Genislik</span>
+              <input id="canvasWidth" type="number" min="360" max="1800" step="10" value="774" />
+            </label>
+            <label>
+              <span>Font</span>
+              <input id="fontSize" type="number" min="10" max="42" step="1" value="18" />
+            </label>
+            <label>
+              <span>Satir arasi</span>
+              <input id="lineGap" type="number" min="0" max="18" step="1" value="1" />
+            </label>
+            <label>
+              <span>Ic bosluk</span>
+              <input id="padding" type="number" min="0" max="40" step="1" value="4" />
+            </label>
+            <label>
+              <span>Yazi efekti</span>
+              <select id="textEffect">
+                <option value="outline" selected>Kontur / golge</option>
+                <option value="soft">Soft golge</option>
+                <option value="plain">Efektsiz</option>
+              </select>
+            </label>
+            <label>
+              <span>SS zemini</span>
+              <select id="backgroundMode">
+                <option value="black" selected>Siyah</option>
+                <option value="transparent">Zeminsiz</option>
+              </select>
+            </label>
+            <label>
+              <span>RP rengi</span>
+              <input id="emoteColor" type="color" value="#c69aff" />
+            </label>
+            <label>
+              <span>Chat rengi</span>
+              <input id="chatColor" type="color" value="#f5f5f5" />
+            </label>
+          </div>
+
+          <div class="actions-row">
+            <button id="sampleBtn" type="button">Ornegi yukle</button>
+            <button id="cleanBtn" type="button">Arindir</button>
+            <button id="clearAllBtn" type="button">Tum chat'i sil</button>
+            <button id="copyRawBtn" type="button">Tumunu kopyala</button>
+            <button id="copyBtn" type="button">Cozumlenmis metni kopyala</button>
+          </div>
+          <div id="statusText" class="status-text" aria-live="polite"></div>
+        </div>
+
+        <section id="sceneEditorPane" class="scene-tools mode-pane" aria-label="Sahne olusturucu">
+          <div class="section-title">
+            <h2>Sahne Olusturucu</h2>
+            <div class="section-actions">
+              <button id="blankSceneBtn" type="button">Bos sahne</button>
+              <label class="button-link file-button">
+                Resim ekle
+                <input id="sceneImageInput" type="file" accept="image/*" multiple />
+              </label>
+            </div>
+          </div>
+          <p class="helper-text">Resim sec veya panodaki gorseli Ctrl+V ile yapistir.</p>
+          <details class="api-panel">
+            <summary>HizliResim / upload API</summary>
+            <div class="api-grid">
+              <label>
+                <span>Endpoint</span>
+                <input id="apiEndpoint" type="url" placeholder="https://..." />
+              </label>
+              <label>
+                <span>Token</span>
+                <input id="apiToken" type="password" placeholder="Opsiyonel" />
+              </label>
+              <label>
+                <span>Form alani</span>
+                <input id="apiFieldName" type="text" value="image" />
+              </label>
+              <button id="uploadSceneBtn" type="button">Secili sahneyi yukle</button>
+            </div>
+            <div id="apiStatus" class="status-text" aria-live="polite"></div>
+          </details>
+
+          <div class="controls-grid compact-grid">
+            <label>
+              <span>Cikti genisligi</span>
+              <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="2500" />
+            </label>
+            <label>
+              <span>Arka plan yuksekligi</span>
+              <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="5000" />
+            </label>
+            <label>
+              <span>Sahne font</span>
+              <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
+            </label>
+            <label>
+              <span>Sahne bosluk</span>
+              <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
+            </label>
+            <label class="single-canvas-hidden">
+              <span>Gecis boyutu</span>
+              <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
+            </label>
+            <label class="single-canvas-hidden">
+              <span>Gecis filtresi</span>
+              <select id="sceneTransitionStyle">
+                <option value="soft" selected>Soft fade</option>
+                <option value="cinematic">Sinematik kararma</option>
+                <option value="blur">Blur gecis</option>
+                <option value="none">Keskin</option>
+              </select>
+            </label>
+          </div>
+
+          <div class="actions-row">
+            <button id="hideToolboxBtn" type="button">Toolbox gizle</button>
+            <button id="clearScenesBtn" type="button">Sahneleri sil</button>
+          </div>
+          <div id="sceneStatus" class="status-text" aria-live="polite"></div>
+          <div id="sceneLayersPanel" class="scene-layers-panel" aria-label="Sahne katmanlari"></div>
+        </section>
+      </section>
+
+      <section class="preview-panel" aria-label="SS onizleme">
+        <div id="rollPreviewPane" class="mode-pane active">
+          <div id="previewViewport" class="preview-viewport">
+          <div id="previewScaler" class="preview-scaler">
+            <div id="renderSurface" class="render-surface"></div>
+          </div>
+          </div>
+        </div>
+        <section id="scenePreviewPane" class="mode-pane">
+          <section id="sceneList" class="scene-list" aria-label="Sahneler"></section>
+          <aside class="shortcut-hud" aria-label="Sahne kisayollari">
+            <div><kbd>Ctrl</kbd><kbd>V</kbd><span>Yapistir</span></div>
+            <div><kbd>Ctrl</kbd><kbd>C</kbd><span>Kopyala</span></div>
+            <div><kbd>Ctrl</kbd><kbd>X</kbd><span>Kes</span></div>
+            <div><kbd>Ctrl</kbd><kbd>A</kbd><span>Tumunu sec</span></div>
+            <div><kbd>Del</kbd><span>Sil</span></div>
+            <div><kbd>Ctrl</kbd><kbd>Z</kbd><span>Geri al</span></div>
+            <div><kbd>Ctrl</kbd><kbd>Y</kbd><span>Ileri al</span></div>
+            <div><kbd>Ctrl</kbd><kbd>Scroll</kbd><span>Yakinlastir</span></div>
+            <div><kbd>Space</kbd><kbd>Surukle</kbd><span>Kaydir</span></div>
+            <div><kbd>Kenar</kbd><kbd>Surukle</kbd><span>Canvas</span></div>
+            <div><kbd>Alt</kbd><kbd>Yukari/Asagi</kbd><span>Sira</span></div>
+            <div><kbd>Ctrl</kbd><kbd>0</kbd><span>Sigdir</span></div>
+          </aside>
+        </section>
+        <canvas id="exportCanvas" hidden></canvas>
+      </section>
+      <button id="showToolboxBtn" class="toolbox-show-button" type="button">Toolbox</button>
+    </main>
+
+    <script src="./app.js"></script>
+  </body>
+</html>
