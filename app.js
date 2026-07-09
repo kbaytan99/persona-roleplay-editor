@@ -1242,8 +1242,9 @@ function renderScenes() {
   listContainer.className = "scene-editor-list-container";
 
   const layersTitle = document.createElement("div");
-  layersTitle.className = "layers-title";
+  layersTitle.className = "layers-title panel-drag-handle";
   layersTitle.textContent = "Katman Yoneticisi";
+  layersTitle.title = "Surukleyerek tasi";
   sceneLayersPanel.append(layersTitle);
 
   if (!scenes.length) {
@@ -2869,3 +2870,101 @@ document.addEventListener("pointerdown", startSceneViewportPan);
 
 renderPreview();
 loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
+
+/* ── Window Manager (Dock & Float) ── */
+document.addEventListener("pointerdown", (e) => {
+  if (activeMode !== "scene") return;
+  const handle = e.target.closest(".panel-drag-handle");
+  if (!handle) return;
+  
+  const panel = handle.closest(".editor-panel") || handle.closest(".scene-layers-panel");
+  if (!panel) return;
+
+  e.preventDefault();
+
+  const isEditorPanel = panel.classList.contains("editor-panel");
+  const isLayersPanel = panel.classList.contains("scene-layers-panel");
+
+  const rect = panel.getBoundingClientRect();
+  const offsetX = e.clientX - rect.left;
+  const offsetY = e.clientY - rect.top;
+
+  let indicator = document.querySelector(".dock-drop-indicator");
+  if (!indicator) {
+    indicator = document.createElement("div");
+    indicator.className = "dock-drop-indicator";
+    document.body.appendChild(indicator);
+  }
+
+  // Setup dragging state
+  panel.classList.add("dockable-panel", "floating", "dragging");
+  
+  if (isEditorPanel) {
+    document.body.classList.add("editor-floating");
+  } else if (isLayersPanel) {
+    document.body.classList.add("layers-floating");
+  }
+
+  panel.style.width = rect.width + "px";
+  panel.style.height = rect.height + "px";
+  panel.style.left = rect.left + "px";
+  panel.style.top = rect.top + "px";
+  
+  let currentDock = null;
+
+  const onPointerMove = (moveEvent) => {
+    moveEvent.preventDefault();
+    const newLeft = moveEvent.clientX - offsetX;
+    const newTop = moveEvent.clientY - offsetY;
+    panel.style.left = newLeft + "px";
+    panel.style.top = newTop + "px";
+
+    // Determine drop zones
+    if (moveEvent.clientX < 150) {
+      currentDock = "left";
+      indicator.style.display = "block";
+      indicator.style.left = "0";
+      indicator.style.top = "0";
+      indicator.style.width = "340px";
+      indicator.style.height = "100vh";
+    } else if (moveEvent.clientX > window.innerWidth - 150) {
+      currentDock = "right";
+      indicator.style.display = "block";
+      indicator.style.left = (window.innerWidth - 380) + "px";
+      indicator.style.top = "0";
+      indicator.style.width = "380px";
+      indicator.style.height = "100vh";
+    } else {
+      currentDock = null;
+      indicator.style.display = "none";
+    }
+  };
+
+  const onPointerUp = (upEvent) => {
+    document.removeEventListener("pointermove", onPointerMove);
+    document.removeEventListener("pointerup", onPointerUp);
+    
+    panel.classList.remove("dragging");
+    indicator.style.display = "none";
+
+    // Docking logic
+    if (currentDock === "left" && isEditorPanel) {
+      panel.classList.remove("floating", "dockable-panel");
+      document.body.classList.remove("editor-floating");
+      panel.style.width = "";
+      panel.style.height = "";
+      panel.style.left = "";
+      panel.style.top = "";
+    } else if (currentDock === "right" && isLayersPanel) {
+      panel.classList.remove("floating", "dockable-panel");
+      document.body.classList.remove("layers-floating");
+      panel.style.width = "";
+      panel.style.height = "";
+      panel.style.left = "";
+      panel.style.top = "";
+    }
+  };
+
+  document.addEventListener("pointermove", onPointerMove);
+  document.addEventListener("pointerup", onPointerUp);
+});
