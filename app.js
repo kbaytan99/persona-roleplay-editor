@@ -1,18 +1,7 @@
 "use strict";
 
-const sourceText = document.querySelector("#sourceText");
 const appShell = document.querySelector(".app-shell");
-const renderSurface = document.querySelector("#renderSurface");
-const previewViewport = document.querySelector("#previewViewport");
-const previewScaler = document.querySelector("#previewScaler");
-const exportCanvas = document.querySelector("#exportCanvas");
 const downloadBtn = document.querySelector("#downloadBtn");
-const sampleBtn = document.querySelector("#sampleBtn");
-const cleanBtn = document.querySelector("#cleanBtn");
-const clearAllBtn = document.querySelector("#clearAllBtn");
-const copyRawBtn = document.querySelector("#copyRawBtn");
-const copyBtn = document.querySelector("#copyBtn");
-const statusText = document.querySelector("#statusText");
 const sceneImageInput = document.querySelector("#sceneImageInput");
 const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
 const sceneBackgroundHeight = document.querySelector("#sceneBackgroundHeight");
@@ -39,43 +28,19 @@ const sceneList = document.querySelector("#sceneList");
 const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
 const appTitle = document.querySelector("#appTitle");
 const appSubtitle = document.querySelector("#appSubtitle");
-const rollTab = document.querySelector("#rollTab");
-const sceneTab = document.querySelector("#sceneTab");
-const rollEditorPane = document.querySelector("#rollEditorPane");
 const sceneEditorPane = document.querySelector("#sceneEditorPane");
-const rollPreviewPane = document.querySelector("#rollPreviewPane");
 const scenePreviewPane = document.querySelector("#scenePreviewPane");
 
 const controls = {
-  canvasWidth: document.querySelector("#canvasWidth"),
-  fontSize: document.querySelector("#fontSize"),
-  lineGap: document.querySelector("#lineGap"),
-  padding: document.querySelector("#padding"),
-  textEffect: document.querySelector("#textEffect"),
-  backgroundMode: document.querySelector("#backgroundMode"),
-  emoteColor: document.querySelector("#emoteColor"),
-  chatColor: document.querySelector("#chatColor"),
   sceneFontSize,
   scenePadding,
 };
-
-const sample = `* Santino Stayhigh iki elini ensesinde birlestirip gevsekce arkaya yaslanir, ikisine siritip omzunu silker.
-Santino Stayhigh: Ben yine konusurum da... boyle susup manzara izlemek de fena degilmis he.
-* Sophia Steinhelm kisa bir kahkaha atar, ardindan Rinn'in omzuna hafifce dokunur.
-Sophia Steinhelm: Sen fazla dalinca dunya susuyor saniyorum, o yuzden kontrol ediyorum seni.
-Rinn Gyeong: Merak etme, iyiyim... sadece ilk defa bir anin icine gercekten aitmisim gibi geliyor.
-* Rinn'in iyi oldugu belli olur. (( Sophia Steinhelm ))
-[CH: ***] [S: ***] Amanda Oliver: Muayene islemleri sonlandi.
-[?] Bandaj (( BIRIM FIYATI 1.000 DOLAR ))
-[Isyeri] Sahip: Nadia Yurasova Sistemsel Fiyat: $70,000
-(( Raijin Rinn Gyeong: OOC arindirilmali ))`;
 
 const systemGreen = "#5dde72";
 const tagOrange = "#ff9f2e";
 const tagYellow = "#ffd447";
 const adminRed = "#ff4f4f";
 const storageKeys = {
-  source: "rollSs.sourceText",
   sceneOutputWidth: "rollSs.sceneOutputWidth",
   sceneBackgroundHeight: "rollSs.sceneBackgroundHeight",
   sceneFontSize: "rollSs.sceneFontSize",
@@ -126,14 +91,14 @@ restoreState();
 
 function getOptions() {
   return {
-    width: clampNumber(controls.canvasWidth.value, 360, 1800, 774),
-    fontSize: clampNumber(controls.fontSize.value, 10, 42, 18),
-    lineGap: clampNumber(controls.lineGap.value, 0, 18, 1),
-    padding: clampNumber(controls.padding.value, 0, 40, 4),
-    textEffect: ["outline", "soft", "plain"].includes(controls.textEffect.value) ? controls.textEffect.value : "outline",
-    backgroundMode: ["black", "transparent"].includes(controls.backgroundMode.value) ? controls.backgroundMode.value : "black",
-    emoteColor: controls.emoteColor.value,
-    chatColor: controls.chatColor.value,
+    width: getSceneOutputWidth(),
+    fontSize: getSceneFontSize(),
+    lineGap: 1,
+    padding: getScenePadding(),
+    textEffect: "outline",
+    backgroundMode: "transparent",
+    emoteColor: "#c69aff",
+    chatColor: "#f5f5f5",
   };
 }
 
@@ -338,47 +303,7 @@ function normalizeName(value) {
   return value.replace(/^\*+/, "").replace(/\s+/g, " ").trim();
 }
 
-function renderPreview() {
-  const options = getOptions();
-  controls.canvasWidth.value = options.width;
-  controls.fontSize.value = options.fontSize;
-  controls.lineGap.value = options.lineGap;
-  controls.padding.value = options.padding;
-  controls.textEffect.value = options.textEffect;
-  controls.backgroundMode.value = options.backgroundMode;
-  const lines = parseLines(sourceText.value);
-
-  renderSurface.replaceChildren();
-  renderSurface.dataset.textEffect = options.textEffect;
-  renderSurface.dataset.backgroundMode = options.backgroundMode;
-  renderSurface.style.width = `${options.width}px`;
-  renderSurface.style.padding = `${options.padding}px`;
-  renderSurface.style.setProperty("--emote-line-color", options.emoteColor);
-  renderSurface.style.setProperty("--chat-line-color", options.chatColor);
-
-  lines.forEach((line) => {
-    const element = document.createElement("p");
-    element.className = `chat-line ${line.type}`;
-    appendSegments(element, line, options);
-    element.style.fontSize = `${options.fontSize}px`;
-    element.style.lineHeight = `${options.fontSize + options.lineGap}px`;
-    renderSurface.append(element);
-  });
-
-  drawCanvas(lines, options);
-  scalePreview(options);
-}
-
-function scalePreview(options) {
-  const availableWidth = Math.max(1, previewViewport.clientWidth);
-  const scale = Math.min(1, availableWidth / options.width);
-  previewScaler.style.transform = `scale(${scale})`;
-  previewScaler.style.width = `${options.width}px`;
-  previewScaler.style.height = `${renderSurface.offsetHeight * scale}px`;
-}
-
 function saveState() {
-  localStorage.setItem(clientStorageKey(storageKeys.source), sourceText.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneOutputWidth), sceneOutputWidth.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneBackgroundHeight), sceneBackgroundHeight.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneFontSize), sceneFontSize.value);
@@ -391,7 +316,6 @@ function saveState() {
 
 function restoreState() {
   migrateLegacyClientStorage();
-  sourceText.value = getClientStoredValue(storageKeys.source) ?? sample;
   const savedSceneWidth = getClientStoredValue(storageKeys.sceneOutputWidth);
   const savedSceneHeight = getClientStoredValue(storageKeys.sceneBackgroundHeight);
   sceneOutputWidth.value = !savedSceneWidth || savedSceneWidth === "1920" ? sceneCanvasDefaultWidth : savedSceneWidth;
@@ -544,38 +468,6 @@ function appendSegments(element, line, options) {
   });
 }
 
-function drawCanvas(lines, options) {
-  const scale = window.devicePixelRatio || 1;
-  const fontFamily = "Arial, Helvetica, sans-serif";
-  const lineHeight = options.fontSize + options.lineGap;
-  const availableWidth = options.width - options.padding * 2;
-  const context = exportCanvas.getContext("2d");
-
-  context.font = `800 ${options.fontSize}px Arial`;
-  const wrapped = lines.flatMap((line) => wrapLine(context, line, availableWidth, options));
-  const height = Math.max(44, options.padding * 2 + wrapped.length * lineHeight);
-
-  exportCanvas.width = Math.ceil(options.width * scale);
-  exportCanvas.height = Math.ceil(height * scale);
-  exportCanvas.style.width = `${options.width}px`;
-  exportCanvas.style.height = `${height}px`;
-
-  context.setTransform(scale, 0, 0, scale, 0, 0);
-  context.clearRect(0, 0, options.width, height);
-  if (options.backgroundMode === "black") {
-    context.fillStyle = "#000000";
-    context.fillRect(0, 0, options.width, height);
-  }
-  context.font = `800 ${options.fontSize}px ${fontFamily}`;
-  context.textBaseline = "top";
-
-  wrapped.forEach((line, index) => {
-    const x = options.padding;
-    const y = options.padding + index * lineHeight;
-    drawSegmentedText(context, line.segments, x, y, options);
-  });
-}
-
 function wrapLine(context, line, width, options) {
   const words = getLineSegments(line, options).flatMap((segment) => splitSegmentWords(segment));
   const wrapped = [];
@@ -647,62 +539,6 @@ function drawStyledText(context, text, x, y, fillStyle, options) {
   if (options.textEffect === "soft") context.restore();
 }
 
-function downloadPng() {
-  renderPreview();
-  const link = document.createElement("a");
-  link.download = `roll-ss-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.png`;
-  link.href = exportCanvas.toDataURL("image/png");
-  link.click();
-}
-
-function copyParsedText() {
-  const parsed = parseLines(sourceText.value).map((line) => line.text).join("\n");
-  copyText(parsed, "Cozumlenmis metin kopyalandi.");
-}
-
-function copyRawText() {
-  copyText(sourceText.value, "Tum metin kopyalandi.");
-}
-
-async function copyText(text, successMessage) {
-  if (navigator.clipboard?.writeText) {
-    try {
-      await navigator.clipboard.writeText(text);
-      setStatus(successMessage);
-      return;
-    } catch {
-      // Fall through to the textarea-based copy path.
-    }
-  }
-
-  if (fallbackCopyText(text)) {
-    setStatus(successMessage);
-    return;
-  }
-
-  sourceText.focus();
-  sourceText.select();
-  setStatus("Kopyalama engellendi; metin secildi, Ctrl+C ile alabilirsin.");
-}
-
-function fallbackCopyText(text) {
-  const helper = document.createElement("textarea");
-  helper.value = text;
-  helper.setAttribute("readonly", "");
-  helper.style.position = "fixed";
-  helper.style.left = "-9999px";
-  helper.style.top = "0";
-  document.body.append(helper);
-  helper.select();
-  const copied = document.execCommand("copy");
-  helper.remove();
-  return copied;
-}
-
-function setStatus(message) {
-  statusText.textContent = message;
-}
-
 function setIconButtonContent(button, icon, label) {
   button.replaceChildren();
   const iconNode = document.createElement("i");
@@ -714,31 +550,19 @@ function setIconButtonContent(button, icon, label) {
 }
 
 function switchMode(mode) {
-  activeMode = mode;
-  const isScene = mode === "scene";
-  appShell.classList.toggle("scene-mode", isScene);
-  rollTab.classList.toggle("active", !isScene);
-  sceneTab.classList.toggle("active", isScene);
-  rollEditorPane.classList.toggle("active", !isScene);
-  sceneEditorPane.classList.toggle("active", isScene);
-  rollPreviewPane.classList.toggle("active", !isScene);
-  scenePreviewPane.classList.toggle("active", isScene);
-  setIconButtonContent(downloadBtn, "download", isScene ? "Tek PNG indir" : "PNG indir");
-  appTitle.textContent = isScene ? "Sahne Olusturucu" : "Roll SS Editor";
-  appSubtitle.textContent = isScene
-    ? "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici"
-    : "SA-MP / RAGE:MP text roleplay ekran goruntusu hazirlayici";
-  document.title = isScene ? "Sahne Olusturucu" : "Roll SS Editor";
-  if (isScene) renderScenes();
-  else renderPreview();
+  activeMode = "scene";
+  appShell.classList.add("scene-mode");
+  sceneEditorPane.classList.add("active");
+  scenePreviewPane.classList.add("active");
+  setIconButtonContent(downloadBtn, "download", "Tek PNG indir");
+  appTitle.textContent = "Sahne Olusturucu";
+  appSubtitle.textContent = "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici";
+  document.title = "Sahne Olusturucu";
+  renderScenes();
 }
 
 function handleMainDownload() {
-  if (activeMode === "scene") {
-    downloadCompositeScene();
-    return;
-  }
-  downloadPng();
+  downloadCompositeScene();
 }
 
 function hideToolbox() {
@@ -1107,28 +931,6 @@ function isEditableTarget(target) {
 
 function isTextEntryTarget(target) {
   return target?.closest?.("input, textarea, select, [contenteditable='true']");
-}
-
-function cleanText() {
-  resetNotificationDedupe();
-  const cleaned = sourceText.value
-    .split(/\r?\n/)
-    .map((line) => line.trim())
-    .filter((line) => line && shouldKeepCleanLine(line))
-    .map(stripInlineTags)
-    .filter(uniqueNotificationLine)
-    .join("\n");
-
-  sourceText.value = cleaned;
-  renderPreview();
-  saveState();
-}
-
-function clearAllChats() {
-  sourceText.value = "";
-  saveState();
-  renderPreview();
-  setStatus("Editor chat alani silindi.");
 }
 
 async function addSceneImages(files) {
@@ -1849,7 +1651,7 @@ function exportSceneProject() {
 
   const payload = createSceneProjectPayload();
   const blob = new Blob([JSON.stringify(payload, null, 2)], {
-    type: "application/vnd.rollss.rse+json;charset=utf-8",
+    type: "application/vnd.roleplay-scene.rse+json;charset=utf-8",
   });
   const link = document.createElement("a");
   link.download = createSceneProjectFileName(payload);
@@ -1864,9 +1666,8 @@ function createSceneProjectPayload() {
     magic: rseProjectMagic,
     format: "rse",
     version: rseProjectVersion,
-    app: "Roll SS Editor",
+    app: "Sahne Olusturucu",
     exportedAt: new Date().toISOString(),
-    sourceText: sourceText.value,
     settings: {
       sceneOutputWidth: getSceneOutputWidth(),
       sceneBackgroundHeight: getSceneBackgroundHeight(),
@@ -1926,7 +1727,6 @@ function normalizeSceneProjectPayload(payload) {
   const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
   const selection = payload.selection && typeof payload.selection === "object" ? payload.selection : {};
   return {
-    sourceText: typeof payload.sourceText === "string" ? payload.sourceText : "",
     settings,
     selection,
     scenes: payload.scenes.map(normalizeImportedScene).filter(Boolean),
@@ -1952,7 +1752,6 @@ function normalizeImportedScene(scene, index) {
 }
 
 function applySceneProjectPayload(project) {
-  sourceText.value = project.sourceText || "";
   sceneOutputWidth.value = clampNumber(project.settings.sceneOutputWidth, 640, sceneCanvasMaxDimension, sceneCanvasDefaultWidth);
   sceneBackgroundHeight.value = clampNumber(project.settings.sceneBackgroundHeight, 300, sceneCanvasMaxDimension, sceneCanvasDefaultHeight);
   sceneFontSize.value = clampNumber(project.settings.sceneFontSize, 10, 42, 18);
@@ -1972,7 +1771,6 @@ function applySceneProjectPayload(project) {
   shouldAutoFitSceneViewport = true;
   ensureSceneModel();
   normalizeSceneSelection();
-  renderPreview();
 }
 
 function normalizeSceneSelection() {
@@ -3226,52 +3024,13 @@ function dataUrlToBlob(dataUrl) {
   return new Blob([bytes], { type: mime });
 }
 
-function shouldKeepCleanLine(line) {
-  if (isOoc(line) || isSystemLine(line) || isStarredSystemLine(line) || isAdminLine(line) || isHelpdeskLine(line) || isRoleplayUtilityLine(line) || isMechanicalActionLine(line) || isWhisperLogLine(line) || isIdLookupLine(line) || isGlobalSystemLine(line) || isDoingActionLine(line)) return false;
-  if (line.startsWith("**")) return true;
-  if (line.startsWith("*")) return true;
-  return /^[^\[][^:]{1,70}:\s*\S/.test(line) || /^[^\[]+?\s+\([^)]+\):\s*\S/.test(line) || /^[^\[]+?\s+seslenir\s+\([^)]+\):\s*\S/i.test(line);
-}
-
-function stripInlineTags(line) {
-  return line
-    .replace(/\[\/?emote\]/gi, "")
-    .replace(/,\s*\*([^\s*][^.]*)/g, ", $1")
-    .replace(/\s{2,}/g, " ")
-    .trim();
-}
-
-function uniqueNotificationLine(line) {
-  const key = getNotificationKey(line);
-  if (!key) return true;
-
-  uniqueNotificationLine.seen ??= new Set();
-  if (uniqueNotificationLine.seen.has(key)) return false;
-  uniqueNotificationLine.seen.add(key);
-  return true;
-}
-
-function resetNotificationDedupe() {
-  uniqueNotificationLine.seen = new Set();
-}
-
-function getNotificationKey(line) {
-  const folded = foldText(line);
-  const match = folded.match(/^\*\s+telefonu\s+(calmaktadir|titremektedir)\.\s+\(\(\s*(.+?)\s*\)\)\s*$/);
-  if (!match) return "";
-  return `phone:${match[1]}:${match[2]}`;
-}
-
 function setDateDefaults() {
   const today = new Date().toISOString().slice(0, 10);
   controls.startDate.value = today;
   controls.endDate.value = today;
 }
 
-Object.values(controls).forEach((control) => control.addEventListener("input", renderPreview));
 Object.values(controls).forEach((control) => control.addEventListener("input", saveState));
-controls.textEffect.addEventListener("change", renderPreview);
-controls.backgroundMode.addEventListener("change", renderPreview);
 sceneOutputWidth.addEventListener("input", () => {
   saveState();
   renderScenes();
@@ -3328,25 +3087,9 @@ sceneFontSize.addEventListener("input", () => {
 });
 scenePadding.addEventListener("input", refreshSceneStyles);
 window.addEventListener("resize", () => {
-  renderPreview();
   if (activeMode === "scene") renderScenes();
 });
-sourceText.addEventListener("input", () => {
-  renderPreview();
-  saveState();
-});
 downloadBtn.addEventListener("click", handleMainDownload);
-rollTab.addEventListener("click", () => switchMode("roll"));
-sceneTab.addEventListener("click", () => switchMode("scene"));
-sampleBtn.addEventListener("click", () => {
-  sourceText.value = sample;
-  renderPreview();
-  saveState();
-});
-cleanBtn.addEventListener("click", cleanText);
-clearAllBtn.addEventListener("click", clearAllChats);
-copyRawBtn.addEventListener("click", copyRawText);
-copyBtn.addEventListener("click", copyParsedText);
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
 blankSceneBtn.addEventListener("click", addBlankScene);
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);

@@ -19,70 +19,8 @@
             </div>
           </div>
           <div class="header-actions">
-            <div class="mode-tabs" role="tablist" aria-label="Editor modu">
-              <button id="sceneTab" class="mode-tab active" type="button"><i data-lucide="clapperboard"></i><span>Sahne</span></button>
-              <button id="rollTab" class="mode-tab" type="button"><i data-lucide="image"></i><span>Roll SS</span></button>
-            </div>
             <button id="downloadBtn" class="primary-action" type="button"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
           </div>
-        </div>
-
-        <div id="rollEditorPane" class="mode-pane">
-          <label class="field-block">
-            <span>Roll yazisi</span>
-            <textarea id="sourceText" spellcheck="false"></textarea>
-          </label>
-
-          <div class="controls-grid">
-            <label>
-              <span>Genislik</span>
-              <input id="canvasWidth" type="number" min="360" max="1800" step="10" value="774" />
-            </label>
-            <label>
-              <span>Font</span>
-              <input id="fontSize" type="number" min="10" max="42" step="1" value="18" />
-            </label>
-            <label>
-              <span>Satir arasi</span>
-              <input id="lineGap" type="number" min="0" max="18" step="1" value="1" />
-            </label>
-            <label>
-              <span>Ic bosluk</span>
-              <input id="padding" type="number" min="0" max="40" step="1" value="4" />
-            </label>
-            <label>
-              <span>Yazi efekti</span>
-              <select id="textEffect">
-                <option value="outline" selected>Kontur / golge</option>
-                <option value="soft">Soft golge</option>
-                <option value="plain">Efektsiz</option>
-              </select>
-            </label>
-            <label>
-              <span>SS zemini</span>
-              <select id="backgroundMode">
-                <option value="black" selected>Siyah</option>
-                <option value="transparent">Zeminsiz</option>
-              </select>
-            </label>
-            <label>
-              <span>RP rengi</span>
-              <input id="emoteColor" type="color" value="#c69aff" />
-            </label>
-            <label>
-              <span>Chat rengi</span>
-              <input id="chatColor" type="color" value="#f5f5f5" />
-            </label>
-          </div>
-
-          <div class="actions-row">
-            <button id="sampleBtn" type="button">Ornegi yukle</button>
-            <button id="cleanBtn" type="button">Arindir</button>
-            <button id="clearAllBtn" type="button">Tum chat'i sil</button>
-            <button id="copyRawBtn" type="button">Tumunu kopyala</button>
-            <button id="copyBtn" type="button">Cozumlenmis metni kopyala</button>
-          </div>
-          <div id="statusText" class="status-text" aria-live="polite"></div>
         </div>
 
         <section id="sceneEditorPane" class="scene-tools mode-pane active" aria-label="Sahne olusturucu">
@@ -178,13 +116,6 @@
       </section>
 
       <section class="preview-panel" aria-label="SS onizleme">
-        <div id="rollPreviewPane" class="mode-pane">
-          <div id="previewViewport" class="preview-viewport">
-          <div id="previewScaler" class="preview-scaler">
-            <div id="renderSurface" class="render-surface"></div>
-          </div>
-          </div>
-        </div>
         <section id="scenePreviewPane" class="mode-pane active">
           <section id="sceneList" class="scene-list" aria-label="Sahneler"></section>
           <div id="sceneLayersPanel" class="scene-layers-panel" aria-label="Sahne katmanlari"></div>
@@ -208,7 +139,6 @@
             <div><kbd>Ctrl</kbd><kbd>0</kbd><span>Sigdir</span></div>
           </aside>
         </section>
-        <canvas id="exportCanvas" hidden></canvas>
       </section>
       <button id="showToolboxBtn" class="toolbox-show-button" type="button">Toolbox</button>
       <button id="showLayersBtn" class="layers-show-button" type="button">Katmanlar</button>

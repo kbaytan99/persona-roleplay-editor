@@ -1,6 +1,6 @@
-# Roll SS Editor
+# Sahne Olusturucu
 
-Text based roleplay sunuculari icin siyah arka planli roll SS hazirlayici.
+Text based roleplay sahnelerini tek canvas uzerinde duzenleyip tek PNG olarak disari aktaran client-side web uygulamasi.
 
 Canli web adresi: https://kbaytan99.github.io/SS-EDITOR/
 
@@ -14,40 +14,22 @@ Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side c
 
 ## Kullanim
 
-- Gercek chatlogdan gelen `* Isim Soyisim aksiyon` satiri `/me` gibi aynen korunur.
-- Gercek chatlogdan gelen `* durum (( Isim Soyisim ))` satiri `/do` gibi algilanir.
-- Elle hizli yazmak icin `** Isim Soyisim durum` girersen `/do` bicimine cevrilir: `* durum (( Isim Soyisim ))`.
-- Basinda `*` olmayan satir normal chat olarak kalir.
-- `Isim Soyisim: metin` ve `* Isim Soyisim: metin` bicimleri de desteklenir.
-- `(( ... ))` OOC satirlari onizlemede gosterilmez.
-- `[CH: ...]` turuncu, `[S: ...]` sari; `[?]`, `[Isyeri]`, `[Ev]`, `[Arac]` ve benzeri sistem satirlari yesil gosterilir.
-- `ADM:` ile baslayan admin/ceza satirlari kirmizi gosterilir.
-- `(Helpdesk)[Talep #...]` ile baslayan helpdesk satirlari kirmizi gosterilir.
-- `Arindir` dugmesi OOC ve sistem satirlarini siler, sadece normal konusma ile me/do satirlarini birakir.
-- Arindir ayrica `** ... - ID:`, `** ... fisildadi/fisildadin`, `* +`, `* pm`, `* ooc`, `LS LOTTO:`, `Catedral:` ve kapi/isyeri sistem aksiyonlarini temizler.
-- `Aksiyon: ... (/doing)` satirlari da arindirmada temizlenir.
-- Tekrarlayan `* Telefonu calmaktadir/titremektedir. (( Kisi ))` satirlari arindirmada kisi ve bildirim turu basina bir kez birakilir.
-- Arac kilidi, kontak/motor, emniyet kemeri ve canta envanter tuketim satirlari arindirmada temizlenir.
-- Telefon arama/bitirme, cam acma/kapama, esya verme, kimlik gosterme ve recete yazma sistem satirlari arindirmada temizlenir.
-- Okunmamis kisa mesaj bildirimi ve arac surus modu degistirme satirlari arindirmada temizlenir.
-
-## Sahne olusturucu
-
 - `Resim ekle` ile bir veya daha fazla gorsel sec.
 - Panodaki gorseli `Ctrl+V` ile yapistirarak da sahne ekleyebilirsin.
+- `Bos sahne` ile sadece yazi/katman icin bos canvas olusturabilirsin.
 - `RSE indir` ile sahne projesini `.rse` dosyasi olarak disari aktarabilirsin.
 - `RSE yukle` ile daha once kaydedilen `.rse` dosyasini geri yukleyebilirsin.
 - `.rse` dosyasi canvas ayarlarini, katmanlari, gomulu gorselleri, yazi kutularini, filtreleri, gecisleri ve secim bilgisini saklar.
 - Gorseller tek canvas uzerinde katman olarak calisir; katman sirasi, pozisyonu ve gecis efektleri korunur.
 - Her sahneye birden fazla yazi kutusu ekleyebilirsin.
 - Yazi kutularini gorsel uzerinde surukleyerek konumlandirabilir, sag alt koseden genisligini ayarlayabilirsin.
-- Her yazi kutusunun font boyutu ayri ayarlanabilir.
-- Sahne gorselinin boyutunu ve sag-sol konumunu sahne kontrollerinden ayarlayabilirsin.
-- `*` ve `/do` satirlari RP rengiyle, normal chat satirlari chat rengiyle gosterilir.
+- Her yazi kutusunun font boyutu ve arka plan/efekt stili ayri ayarlanabilir.
+- Sahne gorselinin boyutunu, genisligini, yuksekligini ve X/Y konumunu katman kontrollerinden ayarlayabilirsin.
 - `Tek PNG indir` dugmesi tum sahneleri tek resim olarak indirir.
-
-PNG indir dugmesi gorunen SS'i siyah arka planla disari aktarir.
+- Imgur Client ID girerek secili sahneyi Imgur'a yukleyebilirsin.
 
 ## Notlar
 
-SA-MP chat renkleri kaynaklarda yaygin olarak `0xRRGGBBAA` biciminde tanimlaniyor. RAGE:MP tarafinda chat stilleri istemci arayuzundeki CSS dosyalarindan ozellestirilebiliyor. Bu arac, ekran goruntusundeki roleplay chat hissine yakin bir varsayilan kullanir: siyah arka plan, kalin Arial/Helvetica, beyaz chat ve mor emote.
+- `*` ile baslayan emote satirlari mor RP rengiyle, normal chat satirlari beyaz gosterilir.
+- `** Isim Soyisim durum` bicimi sahne yazisinda `* durum (( Isim Soyisim ))` formatina uyarlanir.
+- `(( ... ))` OOC satirlari sahne yazisinda gosterilmez.
