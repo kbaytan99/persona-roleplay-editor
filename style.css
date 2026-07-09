@@ -692,6 +692,37 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   pointer-events: none;
 }
 
+.scene-smart-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 9998;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.smart-guide-line {
+  position: absolute;
+  display: block;
+  background: #c064ff;
+  box-shadow:
+    0 0 0 1px rgba(10, 5, 20, 0.34),
+    0 0 12px rgba(192, 100, 255, 0.78);
+}
+
+.smart-guide-line.vertical {
+  top: -9999px;
+  bottom: -9999px;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+.smart-guide-line.horizontal {
+  left: -9999px;
+  right: -9999px;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+
 .scene-image-wrap {
   position: absolute;
   top: 0;

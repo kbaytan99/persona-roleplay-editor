@@ -107,6 +107,7 @@ const sceneImageFilterDefaults = {
   sepia: 4,
   blur: 0,
 };
+const sceneSnapThresholdPx = 9;
 const sceneHistoryLimit = 20;
 const sceneUndoStack = [];
 const sceneRedoStack = [];
@@ -852,6 +853,108 @@ function fitSceneToViewport() {
   setSceneViewportZoom(Math.min(horizontalFit, verticalFit), undefined, undefined);
   viewport.scrollLeft = 0;
   viewport.scrollTop = 0;
+}
+
+function getSmartGuideLayer(stage) {
+  let layer = stage.querySelector(".scene-smart-guides");
+  if (!layer) {
+    layer = document.createElement("div");
+    layer.className = "scene-smart-guides";
+    stage.append(layer);
+  }
+  return layer;
+}
+
+function clearSmartGuides(stage = document.querySelector(".composite-stage")) {
+  stage?.querySelector(".scene-smart-guides")?.replaceChildren();
+}
+
+function drawSmartGuides(stage, guides) {
+  const layer = getSmartGuideLayer(stage);
+  layer.replaceChildren();
+  const stageRect = stage.getBoundingClientRect();
+  const scaleX = stage.offsetWidth / Math.max(1, stageRect.width);
+  const scaleY = stage.offsetHeight / Math.max(1, stageRect.height);
+
+  guides.vertical.forEach((x) => {
+    const guide = document.createElement("span");
+    guide.className = "smart-guide-line vertical";
+    guide.style.left = `${x * scaleX}px`;
+    layer.append(guide);
+  });
+
+  guides.horizontal.forEach((y) => {
+    const guide = document.createElement("span");
+    guide.className = "smart-guide-line horizontal";
+    guide.style.top = `${y * scaleY}px`;
+    layer.append(guide);
+  });
+}
+
+function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = false } = {}) {
+  const stageRect = stage.getBoundingClientRect();
+  const stageWidth = stageRect.width;
+  const stageHeight = stageRect.height;
+  const result = {
+    deltaX: 0,
+    deltaY: 0,
+    guides: { vertical: [], horizontal: [] },
+  };
+
+  if (disabled) {
+    clearSmartGuides(stage);
+    return result;
+  }
+
+  if (allowX) {
+    const xTargets = [0, stageWidth / 2, stageWidth];
+    const xPoints = [box.left, box.left + box.width / 2, box.left + box.width];
+    const snap = findNearestSnapDelta(xPoints, xTargets);
+    if (snap) {
+      result.deltaX = snap.delta;
+      result.guides.vertical.push(snap.target);
+    }
+  }
+
+  if (allowY) {
+    const yTargets = [0, stageHeight / 2, stageHeight];
+    const yPoints = [box.top, box.top + box.height / 2, box.top + box.height];
+    const snap = findNearestSnapDelta(yPoints, yTargets);
+    if (snap) {
+      result.deltaY = snap.delta;
+      result.guides.horizontal.push(snap.target);
+    }
+  }
+
+  drawSmartGuides(stage, result.guides);
+  return result;
+}
+
+function findNearestSnapDelta(points, targets) {
+  let best = null;
+  points.forEach((point) => {
+    targets.forEach((target) => {
+      const delta = target - point;
+      const distance = Math.abs(delta);
+      if (distance <= sceneSnapThresholdPx && (!best || distance < best.distance)) {
+        best = { delta, distance, target };
+      }
+    });
+  });
+  return best;
+}
+
+function getImageVisualBox(stageRect, scene, visualWidth, visualHeight) {
+  const stageWidth = stageRect.width;
+  const stageHeight = stageRect.height;
+  const baseLeft = ((scene.imageX || 0) / 100) * stageWidth;
+  const baseTop = ((scene.imageY || 0) / 100) * stageHeight;
+  return {
+    left: baseLeft + (stageWidth - visualWidth) / 2,
+    top: baseTop + (stageHeight - visualHeight) / 2,
+    width: visualWidth,
+    height: visualHeight,
+  };
 }
 
 function handleSceneKeyDown(event) {
@@ -2416,6 +2519,9 @@ function startSceneImagePan(event, scene) {
   setSelectedScene(scene.id);
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
+  const startBoxRect = box.getBoundingClientRect();
+  const visualWidth = startBoxRect.width;
+  const visualHeight = startBoxRect.height;
   const startX = event.clientX;
   const startY = event.clientY;
   const initialX = scene.imageX || 0;
@@ -2429,10 +2535,14 @@ function startSceneImagePan(event, scene) {
     const deltaY = ((moveEvent.clientY - startY) / Math.max(1, stageRect.height)) * 100;
     scene.imageX = roundPositionValue(initialX + deltaX);
     scene.imageY = roundPositionValue(initialY + deltaY);
+    const snap = snapStageBox(stage, getImageVisualBox(stageRect, scene, visualWidth, visualHeight), { disabled: moveEvent.altKey });
+    scene.imageX = roundPositionValue(scene.imageX + (snap.deltaX / Math.max(1, stageRect.width)) * 100);
+    scene.imageY = roundPositionValue(scene.imageY + (snap.deltaY / Math.max(1, stageRect.height)) * 100);
     updateSceneImageTransform(scene);
   };
 
   const onUp = () => {
+    clearSmartGuides(stage);
     box.classList.remove("moving");
     box.removeEventListener("pointermove", onMove);
     box.removeEventListener("pointerup", onUp);
@@ -2568,9 +2678,20 @@ function startSceneImageScale(event, scene) {
       keepOppositeSideAnchored();
     }
     updateSceneImageTransform(scene);
+    if (moveEvent.altKey) clearSmartGuides(stage);
+    else {
+      const liveRect = box.getBoundingClientRect();
+      snapStageBox(stage, {
+        left: liveRect.left - stageRect.left,
+        top: liveRect.top - stageRect.top,
+        width: liveRect.width,
+        height: liveRect.height,
+      }, { allowX: true, allowY: true });
+    }
   };
 
   const onUp = () => {
+    clearSmartGuides(stage);
     box.classList.remove("scaling");
     handle.removeEventListener("pointermove", onMove);
     handle.removeEventListener("pointerup", onUp);
@@ -2610,19 +2731,28 @@ function startSceneTextDrag(event, textBlock) {
   block.setPointerCapture(event.pointerId);
   block.classList.add("dragging");
 
-  const moveBlock = (clientX, clientY) => {
+  const moveBlock = (clientX, clientY, snapDisabled = false) => {
     const maxLeft = Math.max(0, stageRect.width - blockRect.width);
     const maxTop = Math.max(0, stageRect.height - blockRect.height);
-    const left = Math.min(maxLeft, Math.max(0, clientX - stageRect.left - offsetX));
-    const top = Math.min(maxTop, Math.max(0, clientY - stageRect.top - offsetY));
+    let left = Math.min(maxLeft, Math.max(0, clientX - stageRect.left - offsetX));
+    let top = Math.min(maxTop, Math.max(0, clientY - stageRect.top - offsetY));
+    const snap = snapStageBox(stage, {
+      left,
+      top,
+      width: blockRect.width,
+      height: blockRect.height,
+    }, { disabled: snapDisabled });
+    left = Math.min(maxLeft, Math.max(0, left + snap.deltaX));
+    top = Math.min(maxTop, Math.max(0, top + snap.deltaY));
     textBlock.x = (left / stageRect.width) * 100;
     textBlock.y = (top / stageRect.height) * 100;
     block.style.left = `${textBlock.x}%`;
     block.style.top = `${textBlock.y}%`;
   };
 
-  const onMove = (moveEvent) => moveBlock(moveEvent.clientX, moveEvent.clientY);
+  const onMove = (moveEvent) => moveBlock(moveEvent.clientX, moveEvent.clientY, moveEvent.altKey);
   const onUp = () => {
+    clearSmartGuides(stage);
     block.classList.remove("dragging");
     block.removeEventListener("pointermove", onMove);
     block.removeEventListener("pointerup", onUp);
@@ -2653,17 +2783,25 @@ function startSceneTextResize(event, textBlock) {
   handle.setPointerCapture(event.pointerId);
   block.classList.add("resizing");
 
-  const resizeBlock = (clientX) => {
+  const resizeBlock = (clientX, snapDisabled = false) => {
     const nextWidth = startWidth + clientX - startX;
     const minWidth = Math.min(260, stageRect.width * 0.42);
     const maxWidth = Math.max(minWidth, stageRect.width - left);
-    const clampedWidth = Math.min(maxWidth, Math.max(minWidth, nextWidth));
+    let clampedWidth = Math.min(maxWidth, Math.max(minWidth, nextWidth));
+    const snap = snapStageBox(stage, {
+      left,
+      top: blockRect.top - stageRect.top,
+      width: clampedWidth,
+      height: blockRect.height,
+    }, { allowY: false, disabled: snapDisabled });
+    clampedWidth = Math.min(maxWidth, Math.max(minWidth, clampedWidth + snap.deltaX));
     textBlock.width = (clampedWidth / stageRect.width) * 100;
     block.style.width = `${textBlock.width}%`;
   };
 
-  const onMove = (moveEvent) => resizeBlock(moveEvent.clientX);
+  const onMove = (moveEvent) => resizeBlock(moveEvent.clientX, moveEvent.altKey);
   const onUp = () => {
+    clearSmartGuides(stage);
     block.classList.remove("resizing");
     handle.removeEventListener("pointermove", onMove);
     handle.removeEventListener("pointerup", onUp);
