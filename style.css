@@ -692,6 +692,18 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   pointer-events: none;
 }
 
+.stage-text-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9500;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stage-text-overlay .scene-text-block {
+  pointer-events: auto;
+}
+
 .scene-smart-guides {
   position: absolute;
   inset: 0;
@@ -778,8 +790,26 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
     0 0 28px rgba(242, 184, 75, 0.12);
 }
 
+.scene-image-transform-box.selected::after,
+.scene-image-transform-box.moving::after,
+.scene-image-transform-box.scaling::after,
+.scene-text-block.selected::after,
+.scene-text-block.dragging::after,
+.scene-text-block.resizing::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: 30;
+  border: 1px dashed rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 0 14px rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
 .image-transform-handle {
   position: absolute;
+  z-index: 40;
   width: 16px;
   height: 16px;
   border: 2px solid #e8fff9;
@@ -914,6 +944,7 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 
 .scene-resize-handle {
   position: absolute;
+  z-index: 40;
   right: 4px;
   bottom: 4px;
   width: 16px;
@@ -982,11 +1013,11 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   box-shadow: 0 0 6px var(--cyan);
 }
 
-/* ── 2-column vertical grid container ── */
+/* Layer manager grid */
 .scene-editor-list-container {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 12px;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
@@ -1026,7 +1057,8 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 .scene-editor-item {
   display: flex;
   flex-direction: row;
-  max-height: 320px;
+  min-height: 280px;
+  max-height: min(76vh, 640px);
   border: 1px solid rgba(255, 255, 255, 0.07);
   border-radius: 10px;
   overflow: hidden;
@@ -1034,7 +1066,6 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
     linear-gradient(160deg,
       color-mix(in srgb, var(--scene-accent, #6f98ff) 5%, #0e1016),
       #090b0f 60%);
-  min-height: 0;
   transition: border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
@@ -1809,13 +1840,63 @@ button:hover,
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     0 14px 40px rgba(0, 0, 0, 0.28);
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 .shortcut-hud div {
   display: flex;
   gap: 5px;
   align-items: center;
+}
+
+.shortcut-hud-header {
+  margin: -2px 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: space-between;
+}
+
+.shortcut-hud-header strong {
+  color: #f4f7fb;
+  font-size: 11px;
+}
+
+.shortcut-hide-button {
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1;
+}
+
+.shortcut-toggle-button {
+  display: none;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-hud {
+  display: none;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  display: inline-flex;
+  position: fixed;
+  right: 398px;
+  bottom: 18px;
+  z-index: 19;
+  min-height: 34px;
+  align-items: center;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
+    #202530;
+  border-color: rgba(255, 255, 255, 0.16);
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button,
+body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
+.scene-mode.toolbox-hidden .shortcut-toggle-button {
+  right: 18px;
 }
 
 .shortcut-hud kbd {
@@ -2083,6 +2164,10 @@ body.layers-hidden .scene-mode .shortcut-hud {
   right: 18px;
 }
 
+body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  right: 18px;
+}
+
 body.layers-hidden .layers-show-button {
   display: inline-flex;
   position: fixed;
@@ -2192,6 +2277,11 @@ body.layers-floating .scene-mode .shortcut-hud,
   right: 18px;
 }
 
+body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button,
+body.shortcuts-hidden .scene-mode.toolbox-hidden .shortcut-toggle-button {
+  right: 18px;
+}
+
 @media (max-width: 1180px) {
   .scene-mode #scenePreviewPane.active {
     grid-template-columns: minmax(0, 1fr);
@@ -2202,6 +2292,10 @@ body.layers-floating .scene-mode .shortcut-hud,
   }
 
   .scene-mode .shortcut-hud {
+    right: 18px;
+  }
+
+  body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
     right: 18px;
   }
 }

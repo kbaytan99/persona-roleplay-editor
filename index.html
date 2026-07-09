@@ -184,6 +184,10 @@
           <section id="sceneList" class="scene-list" aria-label="Sahneler"></section>
           <div id="sceneLayersPanel" class="scene-layers-panel" aria-label="Sahne katmanlari"></div>
           <aside class="shortcut-hud" aria-label="Sahne kisayollari">
+            <div class="shortcut-hud-header">
+              <strong>Kisayollar</strong>
+              <button id="hideShortcutsBtn" class="shortcut-hide-button" type="button">Kapat</button>
+            </div>
             <div><kbd>Ctrl</kbd><kbd>V</kbd><span>Yapistir</span></div>
             <div><kbd>Ctrl</kbd><kbd>C</kbd><span>Kopyala</span></div>
             <div><kbd>Ctrl</kbd><kbd>X</kbd><span>Kes</span></div>
@@ -203,6 +207,7 @@
       </section>
       <button id="showToolboxBtn" class="toolbox-show-button" type="button">Toolbox</button>
       <button id="showLayersBtn" class="layers-show-button" type="button">Katmanlar</button>
+      <button id="showShortcutsBtn" class="shortcut-toggle-button" type="button">Kisayollar</button>
     </main>
 
     <script src="./app.js"></script>

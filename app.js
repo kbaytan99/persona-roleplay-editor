@@ -34,6 +34,8 @@ const clearScenesBtn = document.querySelector("#clearScenesBtn");
 const hideToolboxBtn = document.querySelector("#hideToolboxBtn");
 const showToolboxBtn = document.querySelector("#showToolboxBtn");
 const showLayersBtn = document.querySelector("#showLayersBtn");
+const hideShortcutsBtn = document.querySelector("#hideShortcutsBtn");
+const showShortcutsBtn = document.querySelector("#showShortcutsBtn");
 const sceneStatus = document.querySelector("#sceneStatus");
 const sceneList = document.querySelector("#sceneList");
 const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
@@ -88,6 +90,7 @@ const storageKeys = {
   apiFieldName: "rollSs.apiFieldName",
   toolboxWidth: "rollSs.toolboxWidth",
   toolboxHidden: "rollSs.toolboxHidden",
+  shortcutsHidden: "rollSs.shortcutsHidden",
 };
 const localClientId = "local-client";
 const legacyUserRegistryKey = "rollSs.users";
@@ -409,6 +412,7 @@ function restoreState() {
   apiFieldName.value = getClientStoredValue(storageKeys.apiFieldName) ?? "image";
   appShell.style.setProperty("--toolbox-width", `${getSavedToolboxWidth()}px`);
   appShell.classList.toggle("toolbox-hidden", getClientStoredValue(storageKeys.toolboxHidden) === "true");
+  document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
 }
 
 function clientStorageKey(key) {
@@ -759,6 +763,16 @@ function closeLayersPanel() {
 
 function showLayersPanel() {
   document.body.classList.remove("layers-hidden");
+}
+
+function hideShortcuts() {
+  document.body.classList.add("shortcuts-hidden");
+  localStorage.setItem(clientStorageKey(storageKeys.shortcutsHidden), "true");
+}
+
+function showShortcuts() {
+  document.body.classList.remove("shortcuts-hidden");
+  localStorage.setItem(clientStorageKey(storageKeys.shortcutsHidden), "false");
 }
 
 function startToolboxResize(event) {
@@ -1252,7 +1266,9 @@ function renderScenes() {
   renderClip.className = "stage-render-clip";
   const transformOverlay = document.createElement("div");
   transformOverlay.className = "stage-transform-overlay";
-  stage.append(renderClip, transformOverlay);
+  const textOverlay = document.createElement("div");
+  textOverlay.className = "stage-text-overlay";
+  stage.append(renderClip, transformOverlay, textOverlay);
 
   scenes.forEach((scene, index) => {
     if (!scene.dataUrl) return;
@@ -1348,28 +1364,29 @@ function renderScenes() {
   scenes.forEach((scene) => {
     const sceneIndex = scenes.findIndex((candidate) => candidate.id === scene.id);
     scene.blocks.forEach((textBlock) => {
-    const block = document.createElement("div");
-    block.className = "scene-text-block";
-    block.dataset.sceneId = scene.id;
+      const block = document.createElement("div");
+      block.className = "scene-text-block";
+      block.dataset.sceneId = scene.id;
       block.dataset.blockId = textBlock.id;
       block.dataset.textStyle = textBlock.textStyle || "box";
+      if (isSceneSelected(scene.id)) block.classList.add("selected");
       block.style.zIndex = String(getSceneLayerZIndex(sceneIndex, 5));
       block.style.fontSize = `${textBlock.fontSize || getSceneFontSize()}px`;
       block.style.left = `${textBlock.x}%`;
       block.style.top = `${textBlock.y}%`;
       block.style.width = `${textBlock.width}%`;
-    block.title = "Surukleyerek konumlandir";
-    const content = document.createElement("div");
-    content.className = "scene-text-content";
+      block.title = "Surukleyerek konumlandir";
+      const content = document.createElement("div");
+      content.className = "scene-text-content";
       renderSceneTextBlock(content, textBlock.text);
-    block.append(content);
+      block.append(content);
       block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, textBlock));
-    const resizeHandle = document.createElement("span");
-    resizeHandle.className = "scene-resize-handle";
-    resizeHandle.title = "Genisligi ayarla";
+      const resizeHandle = document.createElement("span");
+      resizeHandle.className = "scene-resize-handle";
+      resizeHandle.title = "Genisligi ayarla";
       resizeHandle.addEventListener("pointerdown", (event) => startSceneTextResize(event, textBlock));
-    block.append(resizeHandle);
-    renderClip.append(block);
+      block.append(resizeHandle);
+      textOverlay.append(block);
     });
   });
 
@@ -2015,6 +2032,9 @@ function refreshSceneSelection() {
   });
   document.querySelectorAll(".scene-editor-item").forEach((item) => {
     item.classList.toggle("selected", isSceneSelected(item.dataset.sceneEditorId));
+  });
+  document.querySelectorAll(".scene-text-block").forEach((block) => {
+    block.classList.toggle("selected", isSceneSelected(block.dataset.sceneId));
   });
 }
 
@@ -3339,6 +3359,8 @@ clearScenesBtn.addEventListener("click", clearScenes);
 hideToolboxBtn.addEventListener("click", hideToolbox);
 showToolboxBtn.addEventListener("click", showToolbox);
 showLayersBtn.addEventListener("click", showLayersPanel);
+hideShortcutsBtn.addEventListener("click", hideShortcuts);
+showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".editor-panel").addEventListener("pointerdown", startToolboxResize);
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
