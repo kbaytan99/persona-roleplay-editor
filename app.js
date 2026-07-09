@@ -89,8 +89,8 @@ const legacyUserRegistryKey = "rollSs.users";
 const legacyActiveUserKey = "rollSs.activeUser";
 const scenes = [];
 const sceneTransitionPx = 150;
-const sceneCanvasDefaultWidth = 2500;
-const sceneCanvasDefaultHeight = 5000;
+const sceneCanvasDefaultWidth = 1200;
+const sceneCanvasDefaultHeight = 800;
 const sceneCanvasMaxDimension = 32767;
 const sceneCanvasBackground = "#10141b";
 const sceneImageFilterDefaults = {
@@ -1429,9 +1429,18 @@ function renderScenes() {
       fontInput.dataset.blockFontInputId = textBlock.id;
       prepareSceneHistoryControl(fontInput);
       fontInput.addEventListener("input", () => {
+        const val = parseInt(fontInput.value, 10);
+        if (!isNaN(val)) {
+          textBlock.fontSize = Math.max(10, Math.min(48, val));
+          const block = stage.querySelector(`[data-block-id="${CSS.escape(textBlock.id)}"]`);
+          if (block) block.style.fontSize = `${textBlock.fontSize}px`;
+        }
+      });
+      fontInput.addEventListener("change", () => {
         textBlock.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
-        const block = stage.querySelector(`[data-block-id="${CSS.escape(textBlock.id)}"]`);
-        if (block) block.style.fontSize = `${textBlock.fontSize}px`;
+        fontInput.value = textBlock.fontSize;
+        saveState();
+        renderScenes();
       });
 
       const styleSelect = document.createElement("select");
@@ -2173,8 +2182,8 @@ function startStageResize(event, direction) {
   const onMove = (moveEvent) => {
     const deltaX = (moveEvent.clientX - startX) / Math.max(0.1, sceneViewportZoom);
     const deltaY = (moveEvent.clientY - startY) / Math.max(0.1, sceneViewportZoom);
-    const nextWidth = direction.includes("e") ? startWidth + deltaX : startWidth;
-    const nextHeight = direction.includes("s") ? startHeight + deltaY : startHeight;
+    const nextWidth = Math.round((direction.includes("e") ? startWidth + deltaX : startWidth) / 10) * 10;
+    const nextHeight = Math.round((direction.includes("s") ? startHeight + deltaY : startHeight) / 10) * 10;
     setSceneCanvasSize(nextWidth, nextHeight, stage);
   };
 
@@ -2478,7 +2487,7 @@ function drawSceneLayerImage(context, image, scene, width, height) {
 }
 
 function drawSceneTextBlock(context, text, textBlock, width, height) {
-  const stageWidth = document.querySelector(".composite-stage")?.clientWidth || 934;
+  const stageWidth = getSceneOutputWidth() || 934;
   const scale = width / Math.max(1, stageWidth);
   const blockWidth = Math.min(width - getScenePadding() * scale * 2, Math.round(width * (textBlock.width || 88) / 100));
   const fontSize = (textBlock.fontSize || getSceneFontSize()) * scale;
@@ -2512,9 +2521,9 @@ function getSceneFontSize() {
 }
 
 function getSceneOutputWidth() {
-  const parsed = clampNumber(sceneOutputWidth.value, 640, sceneCanvasMaxDimension, sceneCanvasDefaultWidth);
-  sceneOutputWidth.value = parsed;
-  return parsed;
+  const val = parseInt(sceneOutputWidth.value, 10);
+  if (isNaN(val)) return sceneCanvasDefaultWidth;
+  return Math.max(640, Math.min(sceneCanvasMaxDimension, val));
 }
 
 function getScenePreviewWidth() {
@@ -2522,9 +2531,9 @@ function getScenePreviewWidth() {
 }
 
 function getSceneBackgroundHeight() {
-  const parsed = clampNumber(sceneBackgroundHeight.value, 300, sceneCanvasMaxDimension, sceneCanvasDefaultHeight);
-  sceneBackgroundHeight.value = parsed;
-  return parsed;
+  const val = parseInt(sceneBackgroundHeight.value, 10);
+  if (isNaN(val)) return sceneCanvasDefaultHeight;
+  return Math.max(300, Math.min(sceneCanvasMaxDimension, val));
 }
 
 function getSceneTransitionSize() {
@@ -2701,7 +2710,17 @@ sceneOutputWidth.addEventListener("input", () => {
   saveState();
   renderScenes();
 });
+sceneOutputWidth.addEventListener("change", () => {
+  sceneOutputWidth.value = getSceneOutputWidth();
+  saveState();
+  renderScenes();
+});
 sceneBackgroundHeight.addEventListener("input", () => {
+  saveState();
+  renderScenes();
+});
+sceneBackgroundHeight.addEventListener("change", () => {
+  sceneBackgroundHeight.value = getSceneBackgroundHeight();
   saveState();
   renderScenes();
 });
