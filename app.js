@@ -36,6 +36,8 @@ const showToolboxBtn = document.querySelector("#showToolboxBtn");
 const sceneStatus = document.querySelector("#sceneStatus");
 const sceneList = document.querySelector("#sceneList");
 const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
+const appTitle = document.querySelector("#appTitle");
+const appSubtitle = document.querySelector("#appSubtitle");
 const rollTab = document.querySelector("#rollTab");
 const sceneTab = document.querySelector("#sceneTab");
 const rollEditorPane = document.querySelector("#rollEditorPane");
@@ -714,6 +716,11 @@ function switchMode(mode) {
   rollPreviewPane.classList.toggle("active", !isScene);
   scenePreviewPane.classList.toggle("active", isScene);
   downloadBtn.textContent = isScene ? "Tek PNG indir" : "PNG indir";
+  appTitle.textContent = isScene ? "Sahne Olusturucu" : "Roll SS Editor";
+  appSubtitle.textContent = isScene
+    ? "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici"
+    : "SA-MP / RAGE:MP text roleplay ekran goruntusu hazirlayici";
+  document.title = isScene ? "Sahne Olusturucu" : "Roll SS Editor";
   if (isScene) renderScenes();
   else renderPreview();
 }
@@ -3104,7 +3111,6 @@ window.addEventListener("beforeunload", () => {
 });
 document.addEventListener("pointerdown", startSceneViewportPan);
 
-renderPreview();
 switchMode("scene");
 loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
 
