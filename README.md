@@ -2,6 +2,8 @@
 
 Text based roleplay sunuculari icin siyah arka planli roll SS hazirlayici.
 
+Canli web adresi: https://kbaytan99.github.io/SS-EDITOR/
+
 ## Calistirma
 
 ```powershell
