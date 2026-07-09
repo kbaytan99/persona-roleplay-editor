@@ -1106,8 +1106,11 @@ function renderScenes() {
   stage.style.width = `${getScenePreviewWidth()}px`;
   stage.style.height = `${getScenePreviewHeight()}px`;
   stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
-  stage.addEventListener("pointerdown", () => {
+  stage.addEventListener("pointerdown", (event) => {
     hoveredSceneId = "";
+    if (event.target === stage || event.target.classList.contains("stage-resize-frame")) {
+      clearSceneSelection();
+    }
   });
 
   scenes.forEach((scene, index) => {
@@ -1192,7 +1195,9 @@ function renderScenes() {
       }
     }
 
-    wrap.append(createSceneImageTransformBox(scene));
+    if (!scene.isLocked) {
+      wrap.append(createSceneImageTransformBox(scene));
+    }
     stage.append(wrap);
   });
 
@@ -1233,19 +1238,19 @@ function renderScenes() {
   zoomShell.append(stage);
   canvasViewport.append(zoomShell);
 
-  const editorList = document.createElement("div");
-  editorList.className = "scene-editor-list";
+  const listContainer = document.createElement("div");
+  listContainer.className = "scene-editor-list-container";
 
   const layersTitle = document.createElement("div");
   layersTitle.className = "layers-title";
-  layersTitle.textContent = "Katmanlar";
+  layersTitle.textContent = "Katman Yoneticisi";
   sceneLayersPanel.append(layersTitle);
 
   if (!scenes.length) {
     const empty = document.createElement("div");
     empty.className = "empty-layers";
     empty.textContent = "Bos canvas hazir. Resim ekle veya bos sahne olustur.";
-    sceneLayersPanel.append(empty);
+    listContainer.append(empty);
   }
 
   scenes.forEach((scene, index) => {
@@ -1305,6 +1310,17 @@ function renderScenes() {
     addTextButton.textContent = "Yazi ekle";
     addTextButton.addEventListener("click", () => addTextBlock(scene.id));
 
+    const lockButton = document.createElement("button");
+    lockButton.type = "button";
+    lockButton.textContent = scene.isLocked ? "Kilidi Ac" : "Kilitle";
+    lockButton.title = scene.isLocked ? "Katman kilidini ac" : "Katman hareketini kilitle";
+    lockButton.style.background = scene.isLocked ? "linear-gradient(180deg, #5b21b6, #3b0764)" : "";
+    lockButton.addEventListener("click", () => {
+      pushSceneHistory();
+      scene.isLocked = !scene.isLocked;
+      renderScenes();
+    });
+
     const orderActions = document.createElement("div");
     orderActions.className = "scene-order-actions";
     orderActions.append(
@@ -1316,7 +1332,7 @@ function renderScenes() {
 
     const headerActions = document.createElement("div");
     headerActions.className = "actions-row tight-actions";
-    headerActions.append(orderActions, addTextButton, removeButton);
+    headerActions.append(orderActions, addTextButton, lockButton, removeButton);
 
     itemHeader.append(dragHandle, itemIdentity, headerActions);
 
@@ -1485,11 +1501,15 @@ function renderScenes() {
 
     if (!scene.dataUrl) filterActions.hidden = true;
 
-    item.append(itemHeader, imageControls, filterActions, blockEditors);
-    editorList.append(item);
+    const scrollableBody = document.createElement("div");
+    scrollableBody.className = "scene-editor-item-scrollable";
+    scrollableBody.append(imageControls, filterActions, blockEditors);
+
+    item.append(itemHeader, scrollableBody);
+    listContainer.append(item);
   });
 
-  sceneLayersPanel.append(editorList);
+  sceneLayersPanel.append(listContainer);
 
   composer.append(toolbar, canvasViewport);
   sceneList.append(composer);
@@ -1622,6 +1642,12 @@ function setSelectedScene(id) {
   if (!scenes.some((scene) => scene.id === id)) return;
   selectedSceneId = id;
   selectedSceneIds = [id];
+  refreshSceneSelection();
+}
+
+function clearSceneSelection() {
+  selectedSceneId = "";
+  selectedSceneIds = [];
   refreshSceneSelection();
 }
 
@@ -1908,6 +1934,7 @@ function ensureSceneModel() {
     scene.filterSaturate ??= sceneImageFilterDefaults.saturate;
     scene.filterSepia ??= sceneImageFilterDefaults.sepia;
     scene.filterBlur ??= sceneImageFilterDefaults.blur;
+    scene.isLocked ??= false;
     scene.transitionStyle ??= (sceneTransitionStyle ? sceneTransitionStyle.value : "none") || "none";
     scene.transitionSize ??= Number(sceneTransitionSize ? sceneTransitionSize.value : 150) || 150;
     scene.transitionSides ??= (sceneTransitionSides ? sceneTransitionSides.value : "both") || "both";
@@ -2122,6 +2149,7 @@ function formatControlValue(value) {
 }
 
 function startSceneImagePan(event, scene) {
+  if (scene.isLocked) return;
   if (isSpacePanning) return;
   if (event.button !== 0 || event.target.closest(".image-transform-handle")) return;
   const box = event.currentTarget;
@@ -2217,6 +2245,7 @@ function setSceneCanvasSize(width, height, stage) {
 }
 
 function startSceneImageScale(event, scene) {
+  if (scene.isLocked) return;
   if (event.button !== 0) return;
   const handle = event.currentTarget;
   const box = handle.closest(".scene-image-transform-box");
