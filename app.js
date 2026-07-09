@@ -50,9 +50,11 @@ const storageKeys = {
   sceneTransitionSides: "rollSs.sceneTransitionSides",
   imgurClientId: "rollSs.imgurClientId",
   toolboxWidth: "rollSs.toolboxWidth",
+  toolboxLayoutVersion: "rollSs.toolboxLayoutVersion",
   toolboxHidden: "rollSs.toolboxHidden",
   shortcutsHidden: "rollSs.shortcutsHidden",
 };
+const toolboxLayoutVersion = "scene-toolbox-20260710";
 const localClientId = "local-client";
 const legacyUserRegistryKey = "rollSs.users";
 const legacyActiveUserKey = "rollSs.activeUser";
@@ -2860,6 +2862,11 @@ function getScenePadding() {
 }
 
 function getSavedToolboxWidth() {
+  if (getClientStoredValue(storageKeys.toolboxLayoutVersion) !== toolboxLayoutVersion) {
+    localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), "520");
+    localStorage.setItem(clientStorageKey(storageKeys.toolboxLayoutVersion), toolboxLayoutVersion);
+    return 520;
+  }
   const savedWidth = Number(getClientStoredValue(storageKeys.toolboxWidth));
   if (!Number.isFinite(savedWidth)) return 520;
   return clampNumber(savedWidth, 380, 640, 520);

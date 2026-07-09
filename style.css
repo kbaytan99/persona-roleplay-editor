@@ -2761,8 +2761,8 @@ input[type="range"] {
   gap: 14px;
 }
 
-.scene-mode button,
-.scene-mode .button-link {
+.scene-mode .editor-panel button,
+.scene-mode .editor-panel .button-link {
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -2781,8 +2781,8 @@ input[type="range"] {
   -webkit-text-stroke: 0 transparent;
 }
 
-.scene-mode button:hover,
-.scene-mode .button-link:hover {
+.scene-mode .editor-panel button:hover,
+.scene-mode .editor-panel .button-link:hover {
   border-color: rgba(122, 162, 255, 0.58);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.09), rgba(255, 255, 255, 0.018)),
@@ -2951,7 +2951,7 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   stroke-width: 2.1;
 }
 
-@container scene-toolbox (min-width: 520px) {
+@container scene-toolbox (min-width: 480px) {
   .scene-mode .section-title .section-actions,
   .scene-mode .compact-grid,
   .scene-mode .scene-footer-card .actions-row {
@@ -3029,8 +3029,8 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   font-size: clamp(18px, 4.4cqi, 23px);
 }
 
-.scene-mode button,
-.scene-mode .button-link {
+.scene-mode .editor-panel button,
+.scene-mode .editor-panel .button-link {
   min-height: 50px;
   border-radius: 10px;
   font-size: clamp(13px, 3.2cqi, 16px);
