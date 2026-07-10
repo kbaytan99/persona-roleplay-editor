@@ -65,8 +65,9 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 - **Tekli/Coklu Secim** — bir veya birden fazla katmani tiklayarak secme.
   *(`setSelectedScene`, `selectedSceneIds`)*
-- **Kutu ile Secim** (Marquee Select) — bos canvas alaninda suruklenerek
-  cizilen kutunun kesistigi tum resim katmanlarini secme.
+- **Kutu ile Secim** (Marquee Select) — canvas'in bos bir noktasindan (ya da
+  canvas'in disindaki bos gorunum alanindan) suruklenerek cizilen kutunun
+  kesistigi tum resim ve yazi katmanlarini birlikte secme.
   *(`startSceneMarqueeSelect`)*
 - **Sag Tik Menusu** (Context Menu) — canvas uzerinde sag tiklayinca cikan
   Kopyala/Kes/Yapistir/Cogalt/Sil/RSE menusu. *(`showSceneContextMenu`)*

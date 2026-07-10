@@ -1,7 +1,16 @@
 "use strict";
 
-const appVersion = "2.3.0";
+const appVersion = "2.3.1";
 const appChangelog = [
+  {
+    version: "2.3.1",
+    date: "2026-07-10",
+    title: "Canvas'ta kutu ile secim genisletildi",
+    notes: [
+      "Kutu ile secim artik canvas'in disindaki (etraftaki bos gorunum alani) bir noktadan baslayip icine dogru surukleyerek de calisiyor; onceden sadece sahnenin bos bir noktasindan baslatilabiliyordu.",
+      "Kutu ile secim artik yazi katmanlarini da yakaliyor (onceden sadece resim katmanlari secilebiliyordu); kesisen tum resim+yazi katmanlari birlikte secilip Kopyala/Kes/Yapistir/Sil gibi islemler hepsine birden uygulanabiliyor (Windows dosya gezgini mantigi).",
+    ],
+  },
   {
     version: "2.3.0",
     date: "2026-07-10",
@@ -783,16 +792,19 @@ function startSceneMarqueeSelect(event, stage) {
     marqueeEl.remove();
 
     const hitIds = scenes
-      .filter((scene) => scene.type !== "text" && scene.dataUrl)
+      .filter((scene) => scene.type === "text" || scene.dataUrl)
       .filter((scene) => {
-        const wrap = stage.querySelector(`.scene-image-wrap[data-scene-id="${CSS.escape(scene.id)}"]`);
-        if (!wrap) return false;
-        const wrapRect = wrap.getBoundingClientRect();
+        const selector = scene.type === "text"
+          ? `.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`
+          : `.scene-image-wrap[data-scene-id="${CSS.escape(scene.id)}"]`;
+        const el = stage.querySelector(selector);
+        if (!el) return false;
+        const elRect = el.getBoundingClientRect();
         return !(
-          wrapRect.right < marqueeRect.left ||
-          wrapRect.left > marqueeRect.right ||
-          wrapRect.bottom < marqueeRect.top ||
-          wrapRect.top > marqueeRect.bottom
+          elRect.right < marqueeRect.left ||
+          elRect.left > marqueeRect.right ||
+          elRect.bottom < marqueeRect.top ||
+          elRect.top > marqueeRect.bottom
         );
       })
       .map((scene) => scene.id);
@@ -1560,9 +1572,10 @@ function renderScenes() {
   const canvasViewport = document.createElement("div");
   canvasViewport.className = "scene-canvas-viewport";
   canvasViewport.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || isSpacePanning) return;
     if (event.target === canvasViewport || event.target === zoomShell) {
       hoveredSceneId = "";
-      clearSceneSelection();
+      startSceneMarqueeSelect(event, stage);
     }
   });
   canvasViewport.addEventListener("contextmenu", (event) => {
