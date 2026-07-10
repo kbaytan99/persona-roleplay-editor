@@ -613,20 +613,29 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   overscroll-behavior: contain;
   padding: 48px;
   background:
-    linear-gradient(45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255,255,255,0.028) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.028) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.028) 75%),
-    linear-gradient(180deg, #0e1014, #090a0d);
-  background-size: 32px 32px, 32px 32px, 32px 32px, 32px 32px, auto;
-  background-position: 0 0, 0 16px, 16px -16px, -16px 0, 0 0;
+    linear-gradient(45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
+    linear-gradient(180deg, #11141a, #08090c);
+  background-size: 34px 34px, 34px 34px, 34px 34px, 34px 34px, auto;
+  background-position: 0 0, 0 17px, 17px -17px, -17px 0, 0 0;
 }
 
 .scene-mode .scene-canvas-viewport {
   display: grid;
-  align-items: start;
+  align-items: center;
   justify-items: center;
   min-height: 0;
+  padding: 72px;
+  background:
+    linear-gradient(45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
+    linear-gradient(180deg, #101318, #08090c);
+  background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, auto;
+  background-position: 0 0, 0 18px, 18px -18px, -18px 0, 0 0;
 }
 
 .scene-title {
@@ -1511,17 +1520,6 @@ input[type="range"] {
   box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
 }
 
-.scene-canvas-viewport {
-  background:
-    linear-gradient(45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
-    #0d0f13;
-  background-size: 30px 30px, 30px 30px, 30px 30px, 30px 30px, auto;
-  background-position: 0 0, 0 15px, 15px -15px, -15px 0, 0 0;
-}
-
 .composite-stage {
   border: 1px solid #2a303b;
   box-shadow:
@@ -1686,17 +1684,6 @@ body.space-panning .scene-canvas-viewport {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
     rgba(20, 24, 31, 0.96);
-}
-
-.scene-canvas-viewport {
-  background:
-    linear-gradient(45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
-    linear-gradient(180deg, #11141a, #08090c);
-  background-size: 34px 34px, 34px 34px, 34px 34px, 34px 34px, auto;
-  background-position: 0 0, 0 17px, 17px -17px, -17px 0, 0 0;
 }
 
 .scene-mode .composite-toolbar {
@@ -1878,18 +1865,6 @@ body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 80px),
     #0a0c10;
-}
-
-.scene-mode .scene-canvas-viewport {
-  padding: 72px;
-  background:
-    linear-gradient(45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255,255,255,0.024) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.024) 75%),
-    linear-gradient(180deg, #11151c, #07080b);
-  background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, auto;
-  background-position: 0 0, 0 18px, 18px -18px, -18px 0, 0 0;
 }
 
 .scene-mode .composite-toolbar {
@@ -2508,16 +2483,6 @@ label span {
 
 .scene-mode .actions-row {
   gap: 10px;
-}
-
-.scene-mode .scene-canvas-viewport {
-  background:
-    linear-gradient(45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
-    linear-gradient(-45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
-    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
-    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
-    linear-gradient(180deg, #101318, #08090c);
-  background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, auto;
 }
 
 .scene-mode .composite-toolbar {
