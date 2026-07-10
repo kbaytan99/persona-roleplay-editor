@@ -1155,6 +1155,10 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 
 .scene-caption-line {
   margin: 0;
+  /* .scene-caption-line is a <p>, and the global "p { font-size: 13px }"
+     reset hard-locks its text size regardless of the parent scene-text-block's
+     dynamically-set font-size - restore normal inheritance. */
+  font-size: inherit;
 }
 
 .muted-line {

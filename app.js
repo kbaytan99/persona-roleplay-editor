@@ -1,7 +1,15 @@
 "use strict";
 
-const appVersion = "2.5.0";
+const appVersion = "2.5.1";
 const appChangelog = [
+  {
+    version: "2.5.1",
+    date: "2026-07-11",
+    title: "Yazi boyutu artik sahnede gercekten degisiyor",
+    notes: [
+      "Onemli bir hata duzeltildi: sahne yazisinin gercek metni bir <p> etiketiydi ve uygulama genelindeki genel bir stil kurali tum <p> etiketlerinin yazi boyutunu 13px'e sabitliyordu. Bu yuzden katman font boyutunu (or. 48'e) degistirmek katmanin kendisini buyutuyordu ama gorunen yazi hep ayni kucuk boyutta kaliyordu. PNG disa aktarma etkilenmemisti, sadece canli onizleme."
+    ],
+  },
   {
     version: "2.5.0",
     date: "2026-07-11",
