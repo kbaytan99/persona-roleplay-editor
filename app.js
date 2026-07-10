@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.4.3";
+const appVersion = "2.5.0";
 const appChangelog = [
+  {
+    version: "2.5.0",
+    date: "2026-07-11",
+    title: "Yazi boyutu buyutme hatasi + Katman Yoneticisi'nde gorsel yenileme",
+    notes: [
+      "Yazi boyutunu buyuturken (or. 18'den 24'e) yazarken sahnedeki metin once yanlislikla en kucuk boyuta zipliyordu; artik yazarken oldugu gibi anlik guncelleniyor, sadece kutudan cikinca gecerli araliga (10-48) sabitleniyor.",
+      "Katman kartlari gorsel olarak yenilendi: daha yuvarlak kenarlar, secili katmanda net bir parlama/cerceve, daha ferah baslik ve daha tutarli renk/golge kullanimi.",
+      "Sira degistirme butonlari (En ust/Uste/Alta/En alt) kucuk metin yerine artik temiz ok ikonlariyla gosteriliyor.",
+    ],
+  },
   {
     version: "2.4.3",
     date: "2026-07-11",
@@ -1834,10 +1844,10 @@ function renderScenes() {
       const orderRow = document.createElement("div");
       orderRow.className = "layer-order-row";
       orderRow.append(
-        createSceneOrderButton("En ust", scene.id, "top", index === 0),
-        createSceneOrderButton("Uste", scene.id, "up", index === 0),
-        createSceneOrderButton("Alta", scene.id, "down", index === scenes.length - 1),
-        createSceneOrderButton("En alt", scene.id, "bottom", index === scenes.length - 1),
+        createSceneOrderButton("En ust", "chevrons-up", scene.id, "top", index === 0),
+        createSceneOrderButton("Uste", "chevron-up", scene.id, "up", index === 0),
+        createSceneOrderButton("Alta", "chevron-down", scene.id, "down", index === scenes.length - 1),
+        createSceneOrderButton("En alt", "chevrons-down", scene.id, "bottom", index === scenes.length - 1),
       );
 
       // ── Scrollable body ──
@@ -1858,10 +1868,14 @@ function renderScenes() {
         prepareSceneHistoryControl(fontInput);
         fontInput.addEventListener("input", () => {
           const val = parseInt(fontInput.value, 10);
-          if (!isNaN(val)) {
-            scene.fontSize = Math.max(10, Math.min(48, val));
+          if (!isNaN(val) && val > 0) {
+            // Don't clamp to min/max mid-typing (e.g. typing "24" passes
+            // through "2", which is below the min) - that causes a jarring
+            // jump to the clamped floor before the real value lands. Only
+            // the "change" handler below enforces the strict 10-48 range.
+            scene.fontSize = val;
             const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-            if (block) block.style.fontSize = `${scene.fontSize}px`;
+            if (block) block.style.fontSize = `${val}px`;
           }
         });
         fontInput.addEventListener("change", () => {
@@ -2640,11 +2654,12 @@ function ensureSceneModel() {
   });
 }
 
-function createSceneOrderButton(label, sceneId, placement, disabled) {
+function createSceneOrderButton(label, icon, sceneId, placement, disabled) {
   const button = document.createElement("button");
   button.type = "button";
   button.className = "scene-order-button";
-  button.textContent = label;
+  button.innerHTML = `<i data-lucide="${icon}"></i>`;
+  button.title = label;
   button.disabled = disabled;
   button.addEventListener("click", () => reorderScene(sceneId, placement));
   return button;
