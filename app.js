@@ -1,5 +1,29 @@
 "use strict";
 
+const appVersion = "2.0.0";
+const appChangelog = [
+  {
+    version: "2.0.0",
+    date: "2026-07-10",
+    notes: [
+      "Kopyala/kes/yapistir/cogalt: kademeli kaydirma offseti ve Ctrl+D ile anlik cogaltma eklendi",
+      "Canvasta sag tik menusu (kopyala/kes/yapistir/sil/RSE) ve kutu ile (marquee) coklu secim eklendi",
+      "Sol toolbox kaldirildi; Dosya/Duzen/Sahne/Ayarlar/Gorunum baslikli ust menu cubugu eklendi",
+      "Metin kutulari resimlerle ayni listede bagimsiz katman oldu, sirasi serbestce degistirilebiliyor",
+      "Katman yoneticisi paneli yeniden boyutlandirilabiliyor, deger kutularina ikon ve yazilabilir sayi alani eklendi",
+      "Gecis ayarlari artik tum katmanlara otomatik uygulaniyor, Imgur entegrasyonu ve eski kod kalintilari kaldirildi",
+    ],
+  },
+  {
+    version: "1.0.0",
+    date: "2026-07-09",
+    notes: [
+      "Sahne editoru temeli: tek canvas uzerinde katmanli resim/rol yazisi duzenleme",
+      "Akilli hizalama, pencere yonetimi (dock/float), RSE proje disa/ice aktarma",
+    ],
+  },
+];
+
 const appShell = document.querySelector(".app-shell");
 const downloadBtn = document.querySelector("#downloadBtn");
 const sceneImageInput = document.querySelector("#sceneImageInput");
@@ -10,7 +34,6 @@ const scenePadding = document.querySelector("#scenePadding");
 const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
-const applyGlobalTransitionBtn = document.querySelector("#applyGlobalTransitionBtn");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
@@ -707,6 +730,29 @@ function refreshEditMenuState() {
   document.querySelectorAll("#pasteMenuBtn, .scene-context-menu [data-action='paste']").forEach((el) => { el.disabled = !hasClipboard; });
   const deleteTargets = getSceneDeleteTargets().length > 0;
   document.querySelectorAll(".scene-context-menu [data-action='delete']").forEach((el) => { el.disabled = !deleteTargets; });
+}
+
+function renderAboutPanel() {
+  const versionEl = document.querySelector("#aboutVersion");
+  if (versionEl) versionEl.textContent = `Surum ${appVersion}`;
+  const listEl = document.querySelector("#aboutChangelog");
+  if (!listEl) return;
+  listEl.replaceChildren();
+  appChangelog.forEach((entry) => {
+    const block = document.createElement("div");
+    block.className = "about-changelog-entry";
+    const heading = document.createElement("div");
+    heading.className = "about-changelog-heading";
+    heading.innerHTML = `<strong>v${entry.version}</strong><span>${entry.date}</span>`;
+    const list = document.createElement("ul");
+    entry.notes.forEach((note) => {
+      const li = document.createElement("li");
+      li.textContent = note;
+      list.append(li);
+    });
+    block.append(heading, list);
+    listEl.append(block);
+  });
 }
 
 function initMenuBar() {
@@ -3162,6 +3208,18 @@ function setSceneStatus(message) {
   sceneStatus.textContent = message;
 }
 
+function applyGlobalTransitionToAllScenes() {
+  const style = sceneTransitionStyle.value;
+  const size = Number(sceneTransitionSize.value) || 150;
+  const sides = sceneTransitionSides.value;
+  scenes.forEach((scene) => {
+    if (scene.type === "text") return;
+    scene.transitionStyle = style;
+    scene.transitionSize = size;
+    scene.transitionSides = sides;
+  });
+}
+
 function setDateDefaults() {
   const today = new Date().toISOString().slice(0, 10);
   controls.startDate.value = today;
@@ -3191,27 +3249,18 @@ prepareSceneHistoryControl(sceneTransitionSize);
 prepareSceneHistoryControl(sceneTransitionStyle);
 prepareSceneHistoryControl(sceneTransitionSides);
 sceneTransitionSize.addEventListener("input", () => {
+  applyGlobalTransitionToAllScenes();
   saveState();
   renderScenes();
 });
 sceneTransitionStyle.addEventListener("change", () => {
+  applyGlobalTransitionToAllScenes();
   saveState();
   renderScenes();
+  setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
 });
 sceneTransitionSides.addEventListener("change", () => {
-  saveState();
-  renderScenes();
-});
-applyGlobalTransitionBtn.addEventListener("click", () => {
-  pushSceneHistory();
-  const style = sceneTransitionStyle.value;
-  const size = Number(sceneTransitionSize.value) || 150;
-  const sides = sceneTransitionSides.value;
-  scenes.forEach((scene) => {
-    scene.transitionStyle = style;
-    scene.transitionSize = size;
-    scene.transitionSides = sides;
-  });
+  applyGlobalTransitionToAllScenes();
   saveState();
   renderScenes();
   setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
@@ -3235,6 +3284,7 @@ hideShortcutsBtn.addEventListener("click", hideShortcuts);
 showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
 initMenuBar();
+renderAboutPanel();
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
 window.addEventListener("keydown", handleSceneKeyDown);

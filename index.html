@@ -94,11 +94,7 @@
                     <option value="bottom">Sadece Alt (Bitis)</option>
                   </select>
                 </label>
-                <div class="wide-field apply-row">
-                  <button id="applyGlobalTransitionBtn" type="button">
-                    <i data-lucide="layers"></i><span>Secilenleri tum katmanlara uygula</span>
-                  </button>
-                </div>
+                <p class="wide-field settings-hint">Gecis ayarlari degistikce tum katmanlara otomatik uygulanir.</p>
               </div>
             </div>
           </div>
@@ -111,6 +107,21 @@
               <button id="zoomFitMenuBtn" type="button" class="menu-dropdown-item"><span>Sigdir</span><kbd>Ctrl+0</kbd></button>
               <button id="zoomInMenuBtn" type="button" class="menu-dropdown-item"><span>Yakinlastir</span><kbd>Ctrl++</kbd></button>
               <button id="zoomOutMenuBtn" type="button" class="menu-dropdown-item"><span>Uzaklastir</span><kbd>Ctrl+-</kbd></button>
+            </div>
+          </div>
+
+          <div class="menu-item" data-menu="hakkinda">
+            <button type="button" class="menu-trigger">Hakkinda</button>
+            <div class="menu-dropdown menu-dropdown-panel about-panel">
+              <div class="about-header">
+                <span class="brand-mark" aria-hidden="true"><i data-lucide="image"></i></span>
+                <div class="about-header-text">
+                  <strong>Sahne Olusturucu</strong>
+                  <div id="aboutVersion" class="about-version"></div>
+                </div>
+              </div>
+              <div class="about-section-title">Son guncellemeler</div>
+              <div id="aboutChangelog" class="about-changelog"></div>
             </div>
           </div>
         </nav>

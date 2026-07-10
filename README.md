@@ -27,6 +27,11 @@ Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side c
 - Sahne gorselinin boyutunu, genisligini, yuksekligini ve X/Y konumunu katman kontrollerinden ayarlayabilirsin.
 - `Tek PNG indir` dugmesi tum sahneleri tek resim olarak indirir.
 
+## Sistem sozlugu
+
+Uygulamadaki her ozelligin resmi/ortak adi icin [SISTEMLER.md](SISTEMLER.md)
+dosyasina bak — yeni bir ozellik eklerken oraya da bir madde ekle.
+
 ## Notlar
 
 - `*` ile baslayan emote satirlari mor RP rengiyle, normal chat satirlari beyaz gosterilir.
