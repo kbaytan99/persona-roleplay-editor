@@ -1,6 +1,6 @@
 # Sistem Sozlugu
 
-Bu dosya, Sahne Olusturucu icindeki her ozelligin **resmi/ortak adini** tutar.
+Bu dosya, Persona icindeki her ozelligin **resmi/ortak adini** tutar.
 Amac: "su ustteki mavi buton", "o kayan kutu" gibi ornek-bazli tarifler yerine,
 hem sen hem ben ayni ismi kullanalim ki bir ozellik unutulmasin veya yanlis
 anlasilmasin. Yeni bir ozellik eklendiginde buraya da bir satir eklenir.

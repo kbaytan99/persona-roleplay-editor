@@ -1,6 +1,9 @@
-# Sahne Olusturucu
+# Persona
 
-Text based roleplay sahnelerini tek canvas uzerinde duzenleyip tek PNG olarak disari aktaran client-side web uygulamasi.
+Text based roleplay sahnelerini tek canvas uzerinde duzenleyip tek PNG olarak
+disari aktaran client-side web uygulamasi. Latince "persona", Roma tiyatrosunda
+oyuncunun sesini sahneye tasidigi maskenin adiydi — bu uygulama da bir gorsel
+ile bir replik/karakteri tek sahnede birlestiriyor.
 
 Canli web adresi: https://kbaytan99.github.io/SS-EDITOR/
 

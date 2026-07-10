@@ -58,5 +58,5 @@ function sendJson(res, status, payload) {
 }
 
 server.listen(port, "127.0.0.1", () => {
-  console.log(`Roll SS Editor listening on http://127.0.0.1:${port}`);
+  console.log(`Persona listening on http://127.0.0.1:${port}`);
 });

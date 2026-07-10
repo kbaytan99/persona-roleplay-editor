@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.0.0";
+const appVersion = "2.1.0";
 const appChangelog = [
+  {
+    version: "2.1.0",
+    date: "2026-07-10",
+    title: "Persona adi ve katman paneli duzeltmesi",
+    notes: [
+      "Uygulama artik 'Persona' adiyla aniliyor (Latince 'persona': tiyatroda oyuncunun sesini sahneye tasidigi maske - gorsel + replik birlestiren bu uygulamaya tam oturan bir isim).",
+      "Kritik bir hata duzeltildi: ekran 1180px'den dar oldugunda katman yoneticisi tamamen erisilemez hale geliyordu (eski kayan goster butonu kaldirildiktan sonra ortaya cikan bir regresyon). Artik dar ekranlarda panel bir tasan pencere olarak gorunmeye devam ediyor.",
+      "Katman kontrollerindeki (Yukseklik, Parlaklik, Kontrast, Doygunluk gibi) etiketler dar bir sutunda kirpiliyordu; sutun genisligi duzeltildi.",
+    ],
+  },
   {
     version: "2.0.0",
     date: "2026-07-10",
@@ -622,9 +632,9 @@ function switchMode() {
   appShell.classList.add("scene-mode");
   scenePreviewPane.classList.add("active");
   setIconButtonContent(downloadBtn, "download", "Tek PNG indir");
-  appTitle.textContent = "Sahne Olusturucu";
+  appTitle.textContent = "Persona";
   appSubtitle.textContent = "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici";
-  document.title = "Sahne Olusturucu";
+  document.title = "Persona";
   renderScenes();
 }
 
@@ -1939,7 +1949,7 @@ function createSceneProjectPayload() {
     magic: rseProjectMagic,
     format: "rse",
     version: rseProjectVersion,
-    app: "Sahne Olusturucu",
+    app: "Persona",
     exportedAt: new Date().toISOString(),
     settings: {
       sceneOutputWidth: getSceneOutputWidth(),

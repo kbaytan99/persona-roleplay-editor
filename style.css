@@ -1566,7 +1566,7 @@ body.resizing-layers {
 /* ── Range sliders ── */
 .range-control {
   display: grid;
-  grid-template-columns: 15px 54px minmax(60px, 1fr) 50px;
+  grid-template-columns: 15px 68px minmax(50px, 1fr) 50px;
   gap: 4px;
   align-items: center;
 }
@@ -2454,7 +2454,10 @@ body.shortcuts-hidden .scene-mode.toolbox-hidden .shortcut-toggle-button {
   }
 
   .scene-layers-panel {
-    display: none;
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(85vw, 380px);
+    z-index: 50;
   }
 
   .scene-mode .shortcut-hud {
