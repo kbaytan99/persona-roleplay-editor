@@ -153,6 +153,19 @@ textarea {
   display: flex;
 }
 
+.scene-context-menu {
+  z-index: 200;
+  min-width: 180px;
+}
+
+.scene-marquee-select {
+  position: fixed;
+  z-index: 150;
+  border: 1px solid rgba(111, 152, 255, 0.85);
+  background: rgba(111, 152, 255, 0.16);
+  pointer-events: none;
+}
+
 .menu-dropdown-item {
   display: flex;
   align-items: center;
@@ -1865,16 +1878,18 @@ button:hover,
 
 .scene-mode .shortcut-hud {
   position: fixed;
-  right: 18px;
+  right: calc(var(--layers-width, 380px) + 18px);
   bottom: 18px;
   z-index: 18;
   display: grid;
   gap: 5px;
-  width: min(270px, calc(100vw - 36px));
+  width: min(240px, calc(100vw - 36px));
+  max-height: calc(100vh - 80px);
+  overflow-y: auto;
   padding: 10px;
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 8px;
-  background: rgba(13, 16, 22, 0.78);
+  background: rgba(13, 16, 22, 0.9);
   color: #cbd5e1;
   font-size: 11px;
   font-weight: 700;
@@ -1885,6 +1900,10 @@ button:hover,
   pointer-events: auto;
 }
 
+body.layers-hidden .scene-mode .shortcut-hud {
+  right: 18px;
+}
+
 .shortcut-hud div {
   display: flex;
   gap: 5px;
@@ -1892,6 +1911,8 @@ button:hover,
 }
 
 .shortcut-hud-header {
+  display: flex;
+  align-items: center;
   margin: -2px 0 4px;
   padding-bottom: 6px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
@@ -1904,15 +1925,28 @@ button:hover,
 }
 
 .shortcut-hide-button {
-  min-height: 24px;
-  padding: 0 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
   border-radius: 6px;
-  font-size: 10px;
   line-height: 1;
+}
+
+.shortcut-hide-button .lucide {
+  width: 12px;
+  height: 12px;
 }
 
 .shortcut-toggle-button {
   display: none;
+}
+
+.shortcut-toggle-button .lucide {
+  width: 16px;
+  height: 16px;
 }
 
 body.shortcuts-hidden .scene-mode .shortcut-hud {
@@ -1922,11 +1956,14 @@ body.shortcuts-hidden .scene-mode .shortcut-hud {
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex;
   position: fixed;
-  right: 398px;
+  right: calc(var(--layers-width, 380px) + 18px);
   bottom: 18px;
   z-index: 19;
-  min-height: 34px;
+  width: 34px;
+  height: 34px;
+  padding: 0;
   align-items: center;
+  justify-content: center;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
     #202530;
@@ -2156,6 +2193,9 @@ body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
 }
 
 .layer-window-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   min-height: 24px;
   padding: 0 8px;
   border-radius: 6px;
@@ -2164,8 +2204,20 @@ body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
   pointer-events: auto;
 }
 
-.layers-show-button {
-  display: none;
+.layer-window-button .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.layer-window-button.accent {
+  border-color: rgba(111, 152, 255, 0.4);
+  color: #d7e2ff;
+  background: rgba(111, 152, 255, 0.12);
+}
+
+.layer-window-button.accent:hover {
+  border-color: rgba(111, 152, 255, 0.7);
+  background: rgba(111, 152, 255, 0.2);
 }
 
 body.layers-hidden .scene-mode #scenePreviewPane.active {
@@ -2182,22 +2234,6 @@ body.layers-hidden .scene-mode .shortcut-hud {
 
 body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   right: 18px;
-}
-
-body.layers-hidden .layers-show-button {
-  display: inline-flex;
-  position: fixed;
-  right: 14px;
-  top: 14px;
-  z-index: 24;
-  min-height: 34px;
-  align-items: center;
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
-    #2f6fed;
-  border-color: rgba(112, 158, 255, 0.78);
-  color: #fff;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
 }
 
 .panel-resize-handle {
@@ -2466,8 +2502,7 @@ button:active,
   transform: translateY(1px);
 }
 
-.primary-action,
-body.layers-hidden .layers-show-button {
+.primary-action {
   border-color: rgba(72, 199, 184, 0.58);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.16), transparent),
@@ -2478,8 +2513,7 @@ body.layers-hidden .layers-show-button {
     0 12px 26px rgba(45, 109, 240, 0.2);
 }
 
-.primary-action:hover,
-body.layers-hidden .layers-show-button:hover {
+.primary-action:hover {
   border-color: rgba(132, 225, 211, 0.72);
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.18), transparent),
@@ -2846,12 +2880,10 @@ input[type="range"] {
   font-size: clamp(13px, 3.6cqi, 18px);
 }
 
-.scene-mode .layers-show-button,
 .scene-mode .shortcut-toggle-button {
   display: none;
 }
 
-body.layers-hidden .scene-mode .layers-show-button,
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex;
 }
@@ -3058,12 +3090,10 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   min-height: 56px;
 }
 
-.scene-mode .layers-show-button,
 .scene-mode .shortcut-toggle-button {
   display: none !important;
 }
 
-body.layers-hidden .scene-mode .layers-show-button,
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex !important;
 }

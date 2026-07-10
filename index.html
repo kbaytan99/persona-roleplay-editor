@@ -105,7 +105,7 @@
           <div class="menu-item" data-menu="gorunum">
             <button type="button" class="menu-trigger">Gorunum</button>
             <div class="menu-dropdown">
-              <button id="toggleLayersMenuBtn" type="button" class="menu-dropdown-item"><span>Katman panelini goster/gizle</span></button>
+              <button id="toggleLayersMenuBtn" type="button" class="menu-dropdown-item"><span>Katman panelini goster/gizle</span><kbd>L</kbd></button>
               <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span>Kisayollari goster/gizle</span></button>
               <button id="zoomFitMenuBtn" type="button" class="menu-dropdown-item"><span>Sigdir</span><kbd>Ctrl+0</kbd></button>
               <button id="zoomInMenuBtn" type="button" class="menu-dropdown-item"><span>Yakinlastir</span><kbd>Ctrl++</kbd></button>
@@ -124,7 +124,7 @@
           <aside class="shortcut-hud" aria-label="Sahne kisayollari">
             <div class="shortcut-hud-header">
               <strong>Kisayollar</strong>
-              <button id="hideShortcutsBtn" class="shortcut-hide-button" type="button">Kapat</button>
+              <button id="hideShortcutsBtn" class="shortcut-hide-button" type="button" title="Kapat"><i data-lucide="x"></i></button>
             </div>
             <div><kbd>Ctrl</kbd><kbd>V</kbd><span>Yapistir</span></div>
             <div><kbd>Ctrl</kbd><kbd>C</kbd><span>Kopyala</span></div>
@@ -139,11 +139,11 @@
             <div><kbd>Alt</kbd><kbd>Surukle</kbd><span>Snap kapat</span></div>
             <div><kbd>Alt</kbd><kbd>Yukari/Asagi</kbd><span>Sira</span></div>
             <div><kbd>Ctrl</kbd><kbd>0</kbd><span>Sigdir</span></div>
+            <div><kbd>L</kbd><span>Katman paneli</span></div>
           </aside>
         </section>
       </section>
-      <button id="showLayersBtn" class="layers-show-button" type="button">Katmanlar</button>
-      <button id="showShortcutsBtn" class="shortcut-toggle-button" type="button">Kisayollar</button>
+      <button id="showShortcutsBtn" class="shortcut-toggle-button" type="button"><i data-lucide="keyboard"></i></button>
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>

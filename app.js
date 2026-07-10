@@ -15,7 +15,6 @@ const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
 const clearScenesBtn = document.querySelector("#clearScenesBtn");
-const showLayersBtn = document.querySelector("#showLayersBtn");
 const hideShortcutsBtn = document.querySelector("#hideShortcutsBtn");
 const showShortcutsBtn = document.querySelector("#showShortcutsBtn");
 const sceneStatus = document.querySelector("#sceneStatus");
@@ -575,6 +574,126 @@ function showShortcuts() {
   localStorage.setItem(clientStorageKey(storageKeys.shortcutsHidden), "false");
 }
 
+function closeSceneContextMenu() {
+  document.querySelector(".scene-context-menu")?.remove();
+  document.removeEventListener("pointerdown", handleSceneContextMenuOutsideClick);
+  document.removeEventListener("keydown", handleSceneContextMenuEscape);
+}
+
+function handleSceneContextMenuOutsideClick(event) {
+  if (!event.target.closest(".scene-context-menu")) closeSceneContextMenu();
+}
+
+function handleSceneContextMenuEscape(event) {
+  if (event.key === "Escape") closeSceneContextMenu();
+}
+
+function showSceneContextMenu(clientX, clientY) {
+  closeSceneContextMenu();
+
+  const menu = document.createElement("div");
+  menu.className = "menu-dropdown scene-context-menu";
+
+  const addItem = (label, handler, kbd) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "menu-dropdown-item";
+    button.innerHTML = `<span>${label}</span>${kbd ? `<kbd>${kbd}</kbd>` : ""}`;
+    button.addEventListener("click", () => {
+      closeSceneContextMenu();
+      handler();
+    });
+    menu.append(button);
+  };
+
+  addItem("Kopyala", copySelectedScenes, "Ctrl+C");
+  addItem("Kes", cutSelectedScenes, "Ctrl+X");
+  addItem("Yapistir", pasteSceneClipboard, "Ctrl+V");
+  addItem("Sil", () => {
+    const ids = getSceneDeleteTargets();
+    if (!ids.length) return;
+    if (ids.length === 1) removeScene(ids[0]);
+    else removeScenes(ids);
+  }, "Del");
+  addItem("RSE indir", exportSceneProject);
+  addItem("RSE yukle", () => sceneProjectInput.click());
+
+  document.body.append(menu);
+  menu.style.display = "flex";
+  menu.style.position = "fixed";
+  menu.style.left = `${clientX}px`;
+  menu.style.top = `${clientY}px`;
+
+  const rect = menu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 8)}px`;
+  if (rect.bottom > window.innerHeight) menu.style.top = `${Math.max(4, window.innerHeight - rect.height - 8)}px`;
+
+  document.addEventListener("pointerdown", handleSceneContextMenuOutsideClick);
+  document.addEventListener("keydown", handleSceneContextMenuEscape);
+}
+
+function startSceneMarqueeSelect(event, stage) {
+  const startX = event.clientX;
+  const startY = event.clientY;
+  let moved = false;
+  let marqueeEl = null;
+
+  const onMove = (moveEvent) => {
+    const dx = moveEvent.clientX - startX;
+    const dy = moveEvent.clientY - startY;
+    if (!moved && Math.hypot(dx, dy) < 4) return;
+    moved = true;
+    if (!marqueeEl) {
+      marqueeEl = document.createElement("div");
+      marqueeEl.className = "scene-marquee-select";
+      document.body.append(marqueeEl);
+    }
+    const left = Math.min(startX, moveEvent.clientX);
+    const top = Math.min(startY, moveEvent.clientY);
+    marqueeEl.style.left = `${left}px`;
+    marqueeEl.style.top = `${top}px`;
+    marqueeEl.style.width = `${Math.abs(dx)}px`;
+    marqueeEl.style.height = `${Math.abs(dy)}px`;
+  };
+
+  const onUp = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+
+    if (!moved) {
+      clearSceneSelection();
+      return;
+    }
+
+    const marqueeRect = marqueeEl.getBoundingClientRect();
+    marqueeEl.remove();
+
+    const hitIds = scenes
+      .filter((scene) => scene.type !== "text" && scene.dataUrl)
+      .filter((scene) => {
+        const wrap = stage.querySelector(`.scene-image-wrap[data-scene-id="${CSS.escape(scene.id)}"]`);
+        if (!wrap) return false;
+        const wrapRect = wrap.getBoundingClientRect();
+        return !(
+          wrapRect.right < marqueeRect.left ||
+          wrapRect.left > marqueeRect.right ||
+          wrapRect.bottom < marqueeRect.top ||
+          wrapRect.top > marqueeRect.bottom
+        );
+      })
+      .map((scene) => scene.id);
+
+    hoveredSceneId = "";
+    selectedSceneIds = hitIds;
+    selectedSceneId = hitIds[0] || "";
+    refreshSceneSelection();
+    if (hitIds.length) setSceneStatus(`${hitIds.length} katman secildi.`);
+  };
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+}
+
 function initMenuBar() {
   const menuItems = [...document.querySelectorAll(".menu-item")];
 
@@ -864,6 +983,13 @@ function handleSceneKeyDown(event) {
     return;
   }
 
+  if (!event.ctrlKey && !event.metaKey && !event.altKey && event.key.toLowerCase() === "l") {
+    event.preventDefault();
+    if (document.body.classList.contains("layers-hidden")) showLayersPanel();
+    else closeLayersPanel();
+    return;
+  }
+
   if (!(event.ctrlKey || event.metaKey)) return;
 
   if (event.key === "0") {
@@ -1038,12 +1164,7 @@ function renderScenes() {
   zoomReadout.className = "zoom-readout";
   zoomReadout.textContent = `${Math.round(sceneViewportZoom * 100)}%`;
 
-  const downloadButton = document.createElement("button");
-  downloadButton.type = "button";
-  downloadButton.textContent = "Tek PNG indir";
-  downloadButton.addEventListener("click", downloadCompositeScene);
-
-  toolbar.append(title, zoomReadout, downloadButton);
+  toolbar.append(title, zoomReadout);
 
   const stage = document.createElement("div");
   stage.className = "composite-stage";
@@ -1051,10 +1172,10 @@ function renderScenes() {
   stage.style.height = `${getScenePreviewHeight()}px`;
   stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
   stage.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0 || isSpacePanning) return;
+    if (event.target !== stage && !event.target.classList.contains("stage-render-clip") && !event.target.classList.contains("stage-resize-frame")) return;
     hoveredSceneId = "";
-    if (event.target === stage || event.target.classList.contains("stage-render-clip") || event.target.classList.contains("stage-resize-frame")) {
-      clearSceneSelection();
-    }
+    startSceneMarqueeSelect(event, stage);
   });
 
   const renderClip = document.createElement("div");
@@ -1191,6 +1312,15 @@ function renderScenes() {
       clearSceneSelection();
     }
   });
+  canvasViewport.addEventListener("contextmenu", (event) => {
+    if (!event.target.closest(".composite-stage")) return;
+    event.preventDefault();
+    const sceneEl = event.target.closest("[data-scene-id]");
+    if (sceneEl && !isSceneSelected(sceneEl.dataset.sceneId)) {
+      setSelectedScene(sceneEl.dataset.sceneId);
+    }
+    showSceneContextMenu(event.clientX, event.clientY);
+  });
   const zoomShell = document.createElement("div");
   zoomShell.className = "scene-zoom-shell";
   zoomShell.append(stage);
@@ -1205,9 +1335,9 @@ function renderScenes() {
   const layersTitleText = document.createElement("span");
   layersTitleText.textContent = "Katman Yoneticisi";
   const addTextLayerButton = document.createElement("button");
-  addTextLayerButton.className = "layer-window-button";
+  addTextLayerButton.className = "layer-window-button accent";
   addTextLayerButton.type = "button";
-  addTextLayerButton.textContent = "Yazi ekle";
+  addTextLayerButton.innerHTML = `<i data-lucide="type"></i><span>Yazi ekle</span>`;
   addTextLayerButton.title = "Yeni yazi katmani ekle";
   addTextLayerButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   addTextLayerButton.addEventListener("click", (event) => {
@@ -1217,7 +1347,7 @@ function renderScenes() {
   const layersCloseButton = document.createElement("button");
   layersCloseButton.className = "layer-window-button";
   layersCloseButton.type = "button";
-  layersCloseButton.textContent = "Kapat";
+  layersCloseButton.innerHTML = `<i data-lucide="x"></i>`;
   layersCloseButton.title = "Katman yoneticisini kapat";
   layersCloseButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   layersCloseButton.addEventListener("click", (event) => {
@@ -3037,7 +3167,6 @@ blankSceneBtn.addEventListener("click", addBlankScene);
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);
 sceneProjectInput.addEventListener("change", importSceneProject);
 clearScenesBtn.addEventListener("click", clearScenes);
-showLayersBtn.addEventListener("click", showLayersPanel);
 hideShortcutsBtn.addEventListener("click", hideShortcuts);
 showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
