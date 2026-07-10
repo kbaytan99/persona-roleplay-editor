@@ -1194,45 +1194,47 @@ body.layers-dock-bottom .scene-layers-panel {
     inset 0 1px 0 rgba(255, 255, 255, 0.04);
 }
 
+/* Positioned fully inside the panel box (not straddling the edge with a
+   negative offset) so it isn't clipped by the panel's overflow:hidden. */
 .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   content: "";
   position: absolute;
-  left: -5px;
+  left: 0;
   top: 0;
-  width: 10px;
+  width: 6px;
   height: 100%;
   cursor: col-resize;
   z-index: 8;
   background:
-    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 3px, #4f74d8 3px 5px, transparent 5px 10px);
+    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 1px, #4f74d8 1px 3px, transparent 3px 6px);
   opacity: 0.65;
 }
 
 body.layers-dock-left .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   left: auto;
-  right: -5px;
+  right: 0;
 }
 
 body.layers-dock-top .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before,
 body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   left: 0;
   top: auto;
-  bottom: -5px;
+  bottom: 0;
   width: 100%;
-  height: 10px;
+  height: 6px;
   cursor: row-resize;
 }
 
 body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   bottom: auto;
-  top: -5px;
+  top: 0;
 }
 
 .scene-mode .scene-layers-panel:not(.dockable-panel.floating):hover::before,
 body.resizing-layers .scene-mode .scene-layers-panel::before {
   opacity: 1;
   background:
-    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 4px, #6f98ff 4px 8px, transparent 8px 10px);
+    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 1px, #6f98ff 1px 4px, transparent 4px 6px);
 }
 
 body.resizing-layers {
@@ -1553,6 +1555,10 @@ body.resizing-layers.layers-dock-bottom {
   border-color: #52d1c5;
   color: #fff;
 }
+
+.layer-icon-btn .lucide {
+  width: 13px;
+  height: 13px;
 }
 
 /* ── Order row ── */
@@ -1737,7 +1743,7 @@ input[type="range"] {
 
 .block-editor-header {
   display: grid;
-  grid-template-columns: 1fr 50px minmax(80px, 100px) auto;
+  grid-template-columns: 64px 1fr;
   gap: 5px;
   align-items: center;
   padding: 5px 6px;

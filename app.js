@@ -1,7 +1,18 @@
 "use strict";
 
-const appVersion = "2.4.1";
+const appVersion = "2.4.2";
 const appChangelog = [
+  {
+    version: "2.4.2",
+    date: "2026-07-10",
+    title: "Katman yoneticisi ince ayarlar",
+    notes: [
+      "Katman kartlarindaki kilit/sil/ac-kapa butonlari artik emoji yerine uygulamanin geri kalaniyla tutarli, temiz ikonlar kullaniyor (bazi sistemlerde kilit emojisi cirkin bir renkli kutu olarak gorunuyordu).",
+      "Yazi katmani kartindaki stil secme kutusu ('Siyah kutu' vb.) cok dar bir alana sikismisti ve metni kirpiyordu; duzeltildi.",
+      "Panel kenarindaki boyutlandirma cubugu, panelin kendi tasma (overflow) ayari yuzunden gorunmuyordu (islev calisiyordu ama gorunmuyordu); artik uzerine gelince net goruluyor.",
+      "Sag/sol kenara yasli tam yukseklikte/genislikte bir paneli surukleyip serbest pencereye cevirince, pencere devasa ve bos gorunuyordu; artik makul bir boyutla aciliyor.",
+    ],
+  },
   {
     version: "2.4.1",
     date: "2026-07-10",
@@ -1745,7 +1756,7 @@ function renderScenes() {
     const expandButton = document.createElement("button");
     expandButton.type = "button";
     expandButton.className = "layer-icon-btn layer-expand-btn" + (isExpanded ? " active" : "");
-    expandButton.innerHTML = isExpanded ? "▾" : "▸";
+    expandButton.innerHTML = isExpanded ? `<i data-lucide="chevron-down"></i>` : `<i data-lucide="chevron-right"></i>`;
     expandButton.title = isExpanded ? "Daralt" : "Genislet";
     expandButton.addEventListener("click", () => {
       if (expandedLayerIds.has(scene.id)) expandedLayerIds.delete(scene.id);
@@ -1756,7 +1767,7 @@ function renderScenes() {
     const lockButton = document.createElement("button");
     lockButton.type = "button";
     lockButton.className = "layer-icon-btn" + (scene.isLocked ? " active" : "");
-    lockButton.innerHTML = scene.isLocked ? "🔒" : "🔓";
+    lockButton.innerHTML = scene.isLocked ? `<i data-lucide="lock"></i>` : `<i data-lucide="lock-open"></i>`;
     lockButton.title = scene.isLocked ? "Kilidi ac" : "Kilitle";
     lockButton.addEventListener("click", () => {
       pushSceneHistory();
@@ -1767,7 +1778,7 @@ function renderScenes() {
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "layer-icon-btn danger";
-    removeButton.innerHTML = "✕";
+    removeButton.innerHTML = `<i data-lucide="trash-2"></i>`;
     removeButton.title = "Katmani sil";
     removeButton.addEventListener("click", () => removeScene(scene.id));
 
@@ -3667,8 +3678,19 @@ document.addEventListener("pointerdown", (e) => {
     document.body.classList.remove("layers-hidden");
   }
 
-  panel.style.width = Math.min(rect.width, window.innerWidth - 24) + "px";
-  panel.style.height = Math.min(rect.height, window.innerHeight - 24) + "px";
+  // A left/right-docked panel is full-height and a top/bottom-docked one is
+  // full-width; carrying that dimension over verbatim makes the detached
+  // floating window mostly empty space. Fall back to the other dock type's
+  // saved size instead, which is already a sensible panel size.
+  const dockBeforeFloat = isLayersPanel ? getCurrentLayersDock() : null;
+  const startWidth = dockBeforeFloat === "top" || dockBeforeFloat === "bottom"
+    ? getSavedLayersWidth()
+    : Math.min(rect.width, window.innerWidth - 24);
+  const startHeight = dockBeforeFloat === "left" || dockBeforeFloat === "right"
+    ? getSavedLayersHeight()
+    : Math.min(rect.height, window.innerHeight - 24);
+  panel.style.width = `${Math.min(startWidth, window.innerWidth - 24)}px`;
+  panel.style.height = `${Math.min(startHeight, window.innerHeight - 24)}px`;
   panel.style.left = rect.left + "px";
   panel.style.top = rect.top + "px";
   
