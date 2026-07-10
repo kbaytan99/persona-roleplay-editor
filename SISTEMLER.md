@@ -38,10 +38,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Katman Paneli Genisletme** — Katman Yoneticisi'nin sol kenarindan
   surukleyerek genislik ayarlama. *(`startLayersPanelResize`)*
 - **Katman Karti Genislet/Daralt** — her katman karti varsayilan daraltilmis
-  gelir (kucuk resim onizlemesi/yazi rozeti + tek satir ozet); basliktaki ok
-  ile detaylar (Pozisyon/Filtreler/Gecis ya da font/stil/yazi) acilip
-  kapanir. Yeni eklenen katmanlar otomatik genisletilmis gelir.
-  *(`expandedLayerIds`, `renderScenes`)*
+  gelir (kucuk resim onizlemesi/yazi rozeti + tek satir ozet); basliktaki
+  camgobegi renkli ok (kilit/sil butonlarindan ayirt edilsin diye) ile
+  detaylar (Pozisyon/Filtreler/Gecis ya da font/stil/yazi) acilip kapanir.
+  Yeni eklenen katmanlar otomatik genisletilmis gelir.
+  *(`expandedLayerIds`, `renderScenes`, `.layer-expand-btn`)*
 - **Katman Listesinde Surukleyerek Secim** — Katman Yoneticisi'nde bos
   alanda surukleyerek dosya gezgini gibi coklu katman secme; liste kenara
   yaklasinca otomatik kayar. *(`startLayerListMarqueeSelect`)*
@@ -89,9 +90,12 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   `fitSceneToViewport`)*
 - **Canvas Kaydirma** (Panning) — `Space` basiliyken suruklayerek gezinme.
   *(`startSceneViewportPan`)*
-- **Pencere Yonetimi** — Katman Yoneticisi'nin sabit (docked) ya da serbest
-  (floating) pencere olarak tasinabilmesi. *(`.dockable-panel`, "Window
-  Manager" bolumu)*
+- **Pencere Yonetimi** — Katman Yoneticisi'nin baslik cubugundan
+  surukleyerek sag/sol/ust/alt kenara yaslanmasi (dock) ya da ekranda
+  serbest (floating) bir pencere olarak birakilmasi; hangi kenara
+  yaklastigini gosteren mavi vurgu ve son secilen kenar/boyutun
+  hatirlanmasi. *(`applyLayersDock`, `getSavedLayersDock`, "Window Manager"
+  bolumu)*
 
 ## 7. Dosya Sistemi
 

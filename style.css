@@ -1145,11 +1145,10 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   border-top: 0;
 }
 
-/* ── Right-Side Layer Manager Panel ── */
+/* ── Layer Manager Panel (dockable: right/left/top/bottom/floating) ── */
 .scene-layers-panel {
   position: relative;
-  grid-column: 2;
-  grid-row: 1;
+  --resize-gradient-dir: to right;
   border-left: 2px solid rgba(100, 180, 255, 0.15);
   background:
     linear-gradient(90deg, rgba(16, 20, 30, 0.98), rgba(10, 12, 18, 0.99));
@@ -1165,6 +1164,36 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   overflow: hidden;
 }
 
+body.layers-dock-left .scene-layers-panel {
+  border-left: none;
+  border-right: 2px solid rgba(100, 180, 255, 0.15);
+  box-shadow:
+    4px 0 20px rgba(0, 0, 0, 0.45),
+    inset -1px 0 0 rgba(255, 255, 255, 0.04);
+}
+
+body.layers-dock-top .scene-layers-panel,
+body.layers-dock-bottom .scene-layers-panel {
+  --resize-gradient-dir: to bottom;
+  border-left: none;
+  background:
+    linear-gradient(180deg, rgba(16, 20, 30, 0.98), rgba(10, 12, 18, 0.99));
+}
+
+body.layers-dock-top .scene-layers-panel {
+  border-bottom: 2px solid rgba(100, 180, 255, 0.15);
+  box-shadow:
+    0 4px 20px rgba(0, 0, 0, 0.45),
+    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
+}
+
+body.layers-dock-bottom .scene-layers-panel {
+  border-top: 2px solid rgba(100, 180, 255, 0.15);
+  box-shadow:
+    0 -4px 20px rgba(0, 0, 0, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.04);
+}
+
 .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   content: "";
   position: absolute;
@@ -1175,20 +1204,45 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   cursor: col-resize;
   z-index: 8;
   background:
-    linear-gradient(to right, transparent 0 3px, #4f74d8 3px 5px, transparent 5px 10px);
+    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 3px, #4f74d8 3px 5px, transparent 5px 10px);
   opacity: 0.65;
+}
+
+body.layers-dock-left .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
+  left: auto;
+  right: -5px;
+}
+
+body.layers-dock-top .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before,
+body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
+  left: 0;
+  top: auto;
+  bottom: -5px;
+  width: 100%;
+  height: 10px;
+  cursor: row-resize;
+}
+
+body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
+  bottom: auto;
+  top: -5px;
 }
 
 .scene-mode .scene-layers-panel:not(.dockable-panel.floating):hover::before,
 body.resizing-layers .scene-mode .scene-layers-panel::before {
   opacity: 1;
   background:
-    linear-gradient(to right, transparent 0 4px, #6f98ff 4px 8px, transparent 8px 10px);
+    linear-gradient(var(--resize-gradient-dir, to right), transparent 0 4px, #6f98ff 4px 8px, transparent 8px 10px);
 }
 
 body.resizing-layers {
   cursor: col-resize;
   user-select: none;
+}
+
+body.resizing-layers.layers-dock-top,
+body.resizing-layers.layers-dock-bottom {
+  cursor: row-resize;
 }
 
 .layers-title {
@@ -1483,6 +1537,22 @@ body.resizing-layers {
 .layer-expand-btn {
   font-size: 13px;
   line-height: 1;
+  border-color: rgba(82, 209, 197, 0.35);
+  color: #7fe0d4;
+  background: rgba(82, 209, 197, 0.1);
+}
+
+.layer-expand-btn:hover {
+  border-color: rgba(82, 209, 197, 0.6);
+  background: rgba(82, 209, 197, 0.2);
+  color: #b5f2ea;
+}
+
+.layer-expand-btn.active {
+  background: linear-gradient(180deg, #17a695, #0d6b60);
+  border-color: #52d1c5;
+  color: #fff;
+}
 }
 
 /* ── Order row ── */
@@ -2328,6 +2398,36 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button:hover {
   grid-template-columns: minmax(0, 1fr) var(--layers-width, 380px);
 }
 
+body.layers-dock-left .scene-mode #scenePreviewPane.active {
+  grid-template-columns: var(--layers-width, 380px) minmax(0, 1fr);
+}
+
+body.layers-dock-top .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--layers-height, 320px) minmax(0, 1fr);
+}
+
+body.layers-dock-bottom .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--layers-height, 320px);
+}
+
+body.layers-dock-left .scene-layers-panel,
+body.layers-dock-top .scene-layers-panel {
+  order: -1;
+}
+
+body.layers-dock-top .scene-layers-panel,
+body.layers-dock-bottom .scene-layers-panel {
+  width: 100%;
+}
+
+/* Floating overrides any dock axis (rows/columns) reserved above */
+body.layers-floating .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
 .scene-layers-panel {
   max-height: 100%;
 }
@@ -2486,7 +2586,8 @@ body.resizing-floating-panel {
   .scene-layers-panel {
     position: fixed;
     inset: 0 0 0 auto;
-    width: min(85vw, 380px);
+    width: min(85vw, 380px) !important;
+    height: auto !important;
     z-index: 50;
   }
 }

@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.3.2";
+const appVersion = "2.4.0";
 const appChangelog = [
+  {
+    version: "2.4.0",
+    date: "2026-07-10",
+    title: "Katman yoneticisi 4 kenara yaslanabiliyor",
+    notes: [
+      "Katman Yoneticisi'ni baslik cubugundan surukleyerek artik sag, sol, ust veya alt kenara yaslayabilir ya da ekranin herhangi bir yerinde serbest pencere olarak birakabilirsin; hangi kenara yaklastigin bir mavi vurgu ile gosteriliyor.",
+      "Hangi kenara yaslandigi ve boyutu (genislik/yukseklik) tarayicida hatirlaniyor, bir sonraki acilista ayni yerde geliyor.",
+      "Her katman kartinin ac/kapa (genislet/daralt) oku artik kilit ve sil butonlarindan ayirt edilsin diye camgobegi renginde.",
+    ],
+  },
   {
     version: "2.3.2",
     date: "2026-07-10",
@@ -169,6 +179,8 @@ const storageKeys = {
   sceneTransitionStyle: "rollSs.sceneTransitionStyle",
   sceneTransitionSides: "rollSs.sceneTransitionSides",
   layersWidth: "rollSs.layersWidth",
+  layersHeight: "rollSs.layersHeight",
+  layersDock: "rollSs.layersDock",
   shortcutsHidden: "rollSs.shortcutsHidden",
 };
 const localClientId = "local-client";
@@ -444,6 +456,8 @@ function restoreState() {
   sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
   sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
   appShell.style.setProperty("--layers-width", `${getSavedLayersWidth()}px`);
+  appShell.style.setProperty("--layers-height", `${getSavedLayersHeight()}px`);
+  applyLayersDock(getSavedLayersDock());
   document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
 }
 
@@ -3338,20 +3352,61 @@ function getSavedLayersWidth() {
   return clampNumber(savedWidth, 320, 640, 380);
 }
 
+function getSavedLayersHeight() {
+  const savedHeight = Number(getClientStoredValue(storageKeys.layersHeight));
+  if (!Number.isFinite(savedHeight)) return 320;
+  return clampNumber(savedHeight, 220, 640, 320);
+}
+
+function getSavedLayersDock() {
+  const saved = getClientStoredValue(storageKeys.layersDock);
+  return ["left", "top", "bottom", "right"].includes(saved) ? saved : "right";
+}
+
+function applyLayersDock(dock) {
+  document.body.classList.remove("layers-dock-left", "layers-dock-top", "layers-dock-bottom");
+  if (dock === "left") document.body.classList.add("layers-dock-left");
+  else if (dock === "top") document.body.classList.add("layers-dock-top");
+  else if (dock === "bottom") document.body.classList.add("layers-dock-bottom");
+  localStorage.setItem(clientStorageKey(storageKeys.layersDock), dock);
+}
+
+function getCurrentLayersDock() {
+  if (document.body.classList.contains("layers-dock-left")) return "left";
+  if (document.body.classList.contains("layers-dock-top")) return "top";
+  if (document.body.classList.contains("layers-dock-bottom")) return "bottom";
+  return "right";
+}
+
 function startLayersPanelResize(event) {
   const panel = document.querySelector(".scene-layers-panel");
   if (!panel || panel.closest(".dockable-panel.floating")) return;
   const panelRect = panel.getBoundingClientRect();
-  if (Math.abs(event.clientX - panelRect.left) > 14) return;
+  const dock = getCurrentLayersDock();
+  const isVertical = dock === "top" || dock === "bottom";
+  const edge = dock === "left" ? panelRect.right
+    : dock === "top" ? panelRect.bottom
+    : dock === "bottom" ? panelRect.top
+    : panelRect.left;
+  const pointerCoord = isVertical ? event.clientY : event.clientX;
+  if (Math.abs(pointerCoord - edge) > 14) return;
 
   event.preventDefault();
-  const startX = event.clientX;
-  const startWidth = panelRect.width;
+  const startCoord = pointerCoord;
+  const startSize = isVertical ? panelRect.height : panelRect.width;
 
   const onMove = (moveEvent) => {
-    const width = clampNumber(startWidth - (moveEvent.clientX - startX), 320, 640, startWidth);
-    appShell.style.setProperty("--layers-width", `${width}px`);
-    localStorage.setItem(clientStorageKey(storageKeys.layersWidth), String(Math.round(width)));
+    const moveCoord = isVertical ? moveEvent.clientY : moveEvent.clientX;
+    const delta = moveCoord - startCoord;
+    if (isVertical) {
+      const height = clampNumber(dock === "top" ? startSize + delta : startSize - delta, 220, 640, startSize);
+      appShell.style.setProperty("--layers-height", `${height}px`);
+      localStorage.setItem(clientStorageKey(storageKeys.layersHeight), String(Math.round(height)));
+    } else {
+      const width = clampNumber(dock === "left" ? startSize + delta : startSize - delta, 320, 640, startSize);
+      appShell.style.setProperty("--layers-width", `${width}px`);
+      localStorage.setItem(clientStorageKey(storageKeys.layersWidth), String(Math.round(width)));
+    }
   };
 
   const onUp = () => {
@@ -3592,6 +3647,7 @@ document.addEventListener("pointerdown", (e) => {
   panel.style.top = rect.top + "px";
   
   let currentDock = null;
+  const dockZone = 130;
 
   const onPointerMove = (moveEvent) => {
     moveEvent.preventDefault();
@@ -3602,36 +3658,72 @@ document.addEventListener("pointerdown", (e) => {
     panel.style.left = newLeft + "px";
     panel.style.top = newTop + "px";
 
-    // Determine drop zones
-    if (moveEvent.clientX > window.innerWidth - 150) {
-      currentDock = "right";
-      indicator.style.display = "block";
-      indicator.style.left = (window.innerWidth - 380) + "px";
-      indicator.style.top = "0";
-      indicator.style.width = "380px";
-      indicator.style.height = "100vh";
-    } else {
+    if (!isLayersPanel) {
       currentDock = null;
       indicator.style.display = "none";
+      return;
     }
+
+    // Determine nearest edge drop zone
+    const distLeft = moveEvent.clientX;
+    const distRight = window.innerWidth - moveEvent.clientX;
+    const distTop = moveEvent.clientY;
+    const distBottom = window.innerHeight - moveEvent.clientY;
+    const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+
+    if (minDist > dockZone) {
+      currentDock = null;
+      indicator.style.display = "none";
+      return;
+    }
+
+    const dockWidth = getSavedLayersWidth();
+    const dockHeight = getSavedLayersHeight();
+    if (minDist === distLeft) {
+      currentDock = "left";
+      indicator.style.left = "0";
+      indicator.style.top = "0";
+      indicator.style.width = `${dockWidth}px`;
+      indicator.style.height = "100vh";
+    } else if (minDist === distRight) {
+      currentDock = "right";
+      indicator.style.left = `${window.innerWidth - dockWidth}px`;
+      indicator.style.top = "0";
+      indicator.style.width = `${dockWidth}px`;
+      indicator.style.height = "100vh";
+    } else if (minDist === distTop) {
+      currentDock = "top";
+      indicator.style.left = "0";
+      indicator.style.top = "0";
+      indicator.style.width = "100vw";
+      indicator.style.height = `${dockHeight}px`;
+    } else {
+      currentDock = "bottom";
+      indicator.style.left = "0";
+      indicator.style.top = `${window.innerHeight - dockHeight}px`;
+      indicator.style.width = "100vw";
+      indicator.style.height = `${dockHeight}px`;
+    }
+    indicator.style.display = "block";
   };
 
   const onPointerUp = (upEvent) => {
     document.removeEventListener("pointermove", onPointerMove);
     document.removeEventListener("pointerup", onPointerUp);
     document.removeEventListener("pointercancel", onPointerUp);
-    
+
     panel.classList.remove("dragging");
     indicator.style.display = "none";
 
     // Docking logic
-    if (currentDock === "right" && isLayersPanel) {
+    if (currentDock && isLayersPanel) {
       panel.classList.remove("floating", "dockable-panel");
       document.body.classList.remove("layers-floating");
       panel.style.width = "";
       panel.style.height = "";
       panel.style.left = "";
       panel.style.top = "";
+      applyLayersDock(currentDock);
     }
   };
 
