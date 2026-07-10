@@ -37,6 +37,14 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   ikonu. *(`scene.isLocked`)*
 - **Katman Paneli Genisletme** — Katman Yoneticisi'nin sol kenarindan
   surukleyerek genislik ayarlama. *(`startLayersPanelResize`)*
+- **Katman Karti Genislet/Daralt** — her katman karti varsayilan daraltilmis
+  gelir (kucuk resim onizlemesi/yazi rozeti + tek satir ozet); basliktaki ok
+  ile detaylar (Pozisyon/Filtreler/Gecis ya da font/stil/yazi) acilip
+  kapanir. Yeni eklenen katmanlar otomatik genisletilmis gelir.
+  *(`expandedLayerIds`, `renderScenes`)*
+- **Katman Listesinde Surukleyerek Secim** — Katman Yoneticisi'nde bos
+  alanda surukleyerek dosya gezgini gibi coklu katman secme; liste kenara
+  yaklasinca otomatik kayar. *(`startLayerListMarqueeSelect`)*
 
 ## 3. Duzenleme Kontrolleri
 

@@ -1215,17 +1215,16 @@ body.resizing-layers {
   box-shadow: 0 0 6px var(--cyan);
 }
 
-/* Layer manager grid */
+/* Layer manager list */
 .scene-editor-list-container {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 12px;
   overflow-y: auto;
   overflow-x: hidden;
   flex: 1;
   padding-bottom: 6px;
   scroll-behavior: smooth;
-  align-content: start;
 }
 
 .scene-editor-list-container::-webkit-scrollbar {
@@ -1259,8 +1258,8 @@ body.resizing-layers {
 .scene-editor-item {
   display: flex;
   flex-direction: row;
-  min-height: 280px;
-  max-height: min(76vh, 640px);
+  flex-shrink: 0;
+  min-height: auto;
 }
 
 .scene-editor-item.text-layer {
@@ -1334,6 +1333,7 @@ body.resizing-layers {
 .scene-editor-item-scrollable {
   flex: 1;
   overflow-y: auto;
+  max-height: min(70vh, 560px);
   padding: 6px 8px;
   display: flex;
   flex-direction: column;
@@ -1400,6 +1400,45 @@ body.resizing-layers {
   min-width: 0;
 }
 
+.layer-thumb {
+  flex: 0 0 auto;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.layer-type-badge {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #a6b0c3;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.layer-preview-line {
+  padding: 4px 10px 8px;
+  font-size: 11px;
+  color: #8a95a8;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.layer-preview-line.empty {
+  font-style: italic;
+  opacity: 0.6;
+}
+
 .layer-header-actions {
   display: flex;
   align-items: center;
@@ -1439,6 +1478,11 @@ body.resizing-layers {
   background: rgba(239, 68, 68, 0.2);
   border-color: rgba(239, 68, 68, 0.4);
   color: #f87171;
+}
+
+.layer-expand-btn {
+  font-size: 13px;
+  line-height: 1;
 }
 
 /* ── Order row ── */
