@@ -186,6 +186,15 @@ textarea {
   background: rgba(255, 255, 255, 0.07);
 }
 
+.menu-dropdown-item:disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+}
+
+.menu-dropdown-item:disabled:hover {
+  background: transparent;
+}
+
 .menu-dropdown-item .lucide {
   width: 14px;
   height: 14px;

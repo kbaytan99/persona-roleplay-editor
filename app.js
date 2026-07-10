@@ -67,6 +67,7 @@ const sceneHistoryLimit = 20;
 const sceneUndoStack = [];
 const sceneRedoStack = [];
 let sceneClipboardScenes = [];
+let sceneClipboardPasteCount = 0;
 let sceneViewportZoom = 1;
 let isSpacePanning = false;
 let selectedSceneId = "";
@@ -594,10 +595,11 @@ function showSceneContextMenu(clientX, clientY) {
   const menu = document.createElement("div");
   menu.className = "menu-dropdown scene-context-menu";
 
-  const addItem = (label, handler, kbd) => {
+  const addItem = (label, handler, kbd, action) => {
     const button = document.createElement("button");
     button.type = "button";
     button.className = "menu-dropdown-item";
+    if (action) button.dataset.action = action;
     button.innerHTML = `<span>${label}</span>${kbd ? `<kbd>${kbd}</kbd>` : ""}`;
     button.addEventListener("click", () => {
       closeSceneContextMenu();
@@ -606,15 +608,16 @@ function showSceneContextMenu(clientX, clientY) {
     menu.append(button);
   };
 
-  addItem("Kopyala", copySelectedScenes, "Ctrl+C");
-  addItem("Kes", cutSelectedScenes, "Ctrl+X");
-  addItem("Yapistir", pasteSceneClipboard, "Ctrl+V");
+  addItem("Kopyala", copySelectedScenes, "Ctrl+C", "copy");
+  addItem("Kes", cutSelectedScenes, "Ctrl+X", "cut");
+  addItem("Yapistir", pasteSceneClipboard, "Ctrl+V", "paste");
+  addItem("Cogalt", duplicateSelectedScenes, "Ctrl+D", "duplicate");
   addItem("Sil", () => {
     const ids = getSceneDeleteTargets();
     if (!ids.length) return;
     if (ids.length === 1) removeScene(ids[0]);
     else removeScenes(ids);
-  }, "Del");
+  }, "Del", "delete");
   addItem("RSE indir", exportSceneProject);
   addItem("RSE yukle", () => sceneProjectInput.click());
 
@@ -623,6 +626,7 @@ function showSceneContextMenu(clientX, clientY) {
   menu.style.position = "fixed";
   menu.style.left = `${clientX}px`;
   menu.style.top = `${clientY}px`;
+  refreshEditMenuState();
 
   const rect = menu.getBoundingClientRect();
   if (rect.right > window.innerWidth) menu.style.left = `${Math.max(4, window.innerWidth - rect.width - 8)}px`;
@@ -694,6 +698,17 @@ function startSceneMarqueeSelect(event, stage) {
   document.addEventListener("pointerup", onUp);
 }
 
+function refreshEditMenuState() {
+  const hasTargets = getSceneClipboardTargets().length > 0;
+  const hasClipboard = sceneClipboardScenes.length > 0;
+  document.querySelectorAll("#copyMenuBtn, .scene-context-menu [data-action='copy']").forEach((el) => { el.disabled = !hasTargets; });
+  document.querySelectorAll("#cutMenuBtn, .scene-context-menu [data-action='cut']").forEach((el) => { el.disabled = !hasTargets; });
+  document.querySelectorAll("#duplicateMenuBtn, .scene-context-menu [data-action='duplicate']").forEach((el) => { el.disabled = !hasTargets; });
+  document.querySelectorAll("#pasteMenuBtn, .scene-context-menu [data-action='paste']").forEach((el) => { el.disabled = !hasClipboard; });
+  const deleteTargets = getSceneDeleteTargets().length > 0;
+  document.querySelectorAll(".scene-context-menu [data-action='delete']").forEach((el) => { el.disabled = !deleteTargets; });
+}
+
 function initMenuBar() {
   const menuItems = [...document.querySelectorAll(".menu-item")];
 
@@ -707,7 +722,10 @@ function initMenuBar() {
       event.stopPropagation();
       const wasOpen = item.classList.contains("open");
       closeAllMenus();
-      if (!wasOpen) item.classList.add("open");
+      if (!wasOpen) {
+        item.classList.add("open");
+        if (item.dataset.menu === "duzen") refreshEditMenuState();
+      }
     });
     item.querySelector(".menu-dropdown").addEventListener("click", (event) => {
       if (event.target.closest(".menu-dropdown-panel")) return;
@@ -724,6 +742,7 @@ function initMenuBar() {
   document.querySelector("#copyMenuBtn").addEventListener("click", copySelectedScenes);
   document.querySelector("#cutMenuBtn").addEventListener("click", cutSelectedScenes);
   document.querySelector("#pasteMenuBtn").addEventListener("click", pasteSceneClipboard);
+  document.querySelector("#duplicateMenuBtn").addEventListener("click", duplicateSelectedScenes);
   document.querySelector("#selectAllMenuBtn").addEventListener("click", selectAllScenes);
   document.querySelector("#toggleLayersMenuBtn").addEventListener("click", () => {
     if (document.body.classList.contains("layers-hidden")) showLayersPanel();
@@ -937,6 +956,12 @@ function handleSceneKeyDown(event) {
   if (!isTextEntryTarget(event.target) && isSceneCutShortcut(event)) {
     event.preventDefault();
     cutSelectedScenes();
+    return;
+  }
+
+  if (!isTextEntryTarget(event.target) && isSceneDuplicateShortcut(event)) {
+    event.preventDefault();
+    duplicateSelectedScenes();
     return;
   }
 
@@ -1676,6 +1701,7 @@ function copySelectedScenes() {
 
   const targetSet = new Set(targetIds);
   sceneClipboardScenes = scenes.filter((scene) => targetSet.has(scene.id)).map(cloneSceneSnapshot);
+  sceneClipboardPasteCount = 0;
   setSceneStatus(`${targetIds.length} sahne kopyalandi. Ctrl+V ile yapistir.`);
 }
 
@@ -1688,6 +1714,7 @@ function cutSelectedScenes() {
 
   const targetSet = new Set(targetIds);
   sceneClipboardScenes = scenes.filter((scene) => targetSet.has(scene.id)).map(cloneSceneSnapshot);
+  sceneClipboardPasteCount = 0;
   pushSceneHistory();
   const firstIndex = scenes.findIndex((scene) => targetSet.has(scene.id));
   scenes.splice(0, scenes.length, ...scenes.filter((scene) => !targetSet.has(scene.id)));
@@ -1701,8 +1728,10 @@ function cutSelectedScenes() {
 function pasteSceneClipboard() {
   if (!sceneClipboardScenes.length) return;
 
+  sceneClipboardPasteCount += 1;
   pushSceneHistory();
-  const clones = sceneClipboardScenes.map(cloneSceneForPaste);
+  const offset = 3 * sceneClipboardPasteCount;
+  const clones = sceneClipboardScenes.map((scene) => cloneSceneForPaste(scene, offset));
   const selectedIds = getSelectedSceneIds();
   const anchorIds = selectedIds.length ? selectedIds : hoveredSceneId ? [hoveredSceneId] : [];
   const anchorIndex = anchorIds.length
@@ -1715,16 +1744,47 @@ function pasteSceneClipboard() {
   renderScenes();
   switchMode();
   setSceneStatus(`${clones.length} sahne yapistirildi.`);
+  clones.forEach((clone) => flashSceneEditorItem(clone.id));
+}
+
+function duplicateSelectedScenes() {
+  const targetIds = getSceneClipboardTargets();
+  if (!targetIds.length) {
+    setSceneStatus("Cogaltilacak katman yok.");
+    return;
+  }
+
+  const targetSet = new Set(targetIds);
+  const originals = scenes.filter((scene) => targetSet.has(scene.id));
+  pushSceneHistory();
+  const clones = originals.map((scene) => cloneSceneForPaste(scene, 3));
+  const anchorIndex = Math.max(...targetIds.map((id) => scenes.findIndex((scene) => scene.id === id)));
+  scenes.splice(anchorIndex + 1, 0, ...clones);
+  selectedSceneIds = clones.map((scene) => scene.id);
+  selectedSceneId = selectedSceneIds[0] || "";
+  hoveredSceneId = "";
+  renderScenes();
+  setSceneStatus(`${clones.length} katman cogaltildi.`);
+  clones.forEach((clone) => flashSceneEditorItem(clone.id));
 }
 
 function cloneSceneSnapshot(scene) {
   return JSON.parse(JSON.stringify(scene));
 }
 
-function cloneSceneForPaste(scene) {
+function cloneSceneForPaste(scene, offsetPercent = 0) {
   const clone = cloneSceneSnapshot(scene);
   clone.id = createId();
   clone.name = `${clone.name || "sahne"} kopya`;
+  if (offsetPercent) {
+    if (clone.type === "text") {
+      clone.x = clampNumber((clone.x ?? 2) + offsetPercent, 0, 96, clone.x ?? 2);
+      clone.y = clampNumber((clone.y ?? 72) + offsetPercent, 0, 96, clone.y ?? 72);
+    } else {
+      clone.imageX = (clone.imageX || 0) + offsetPercent;
+      clone.imageY = (clone.imageY || 0) + offsetPercent;
+    }
+  }
   return clone;
 }
 
@@ -2037,6 +2097,10 @@ function isSceneCopyShortcut(event) {
 
 function isSceneCutShortcut(event) {
   return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "x";
+}
+
+function isSceneDuplicateShortcut(event) {
+  return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d";
 }
 
 function refreshSceneStyles() {
