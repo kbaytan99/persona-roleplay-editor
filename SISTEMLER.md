@@ -59,8 +59,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Akilli Hizalama** (Smart Guides) — bir katmani suruklerken kenara/merkeze
   yaklasinca beliren mor hizalama cizgileri. *(`snapStageBox`,
   `drawSmartGuides`)*
-- **Yazi Kutusu Stilleri** — bir yazi katmaninin arka plan efekti (Siyah
-  kutu/Kontur/Soft golge/Efektsiz). *(`textBlock.textStyle`)*
+- **Yazi Kutusu Stilleri** — bir yazi katmaninin arka plan efekti: Siyah
+  kutu, Kontur, Soft golge, Efektsiz, Yari saydam kutu, Kalin kontur, Neon
+  parlama. Listede en cok onerilen iki stil (Siyah kutu, Soft golge) yildiz
+  (★) ile isaretli. *(`textBlock.textStyle`, `drawStyledText`)*
 
 ## 4. Secim Sistemi
 

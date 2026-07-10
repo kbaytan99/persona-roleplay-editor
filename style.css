@@ -1102,6 +1102,29 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   text-shadow: none;
 }
 
+.scene-text-block[data-text-style="boxSoft"] {
+  background: rgba(0, 0, 0, 0.6);
+  text-shadow: none;
+}
+
+.scene-text-block[data-text-style="outlineThick"] {
+  background: transparent;
+  text-shadow:
+    2px 2px 0 #000,
+    -2px 2px 0 #000,
+    2px -2px 0 #000,
+    -2px -2px 0 #000,
+    0 0 3px #000;
+}
+
+.scene-text-block[data-text-style="neon"] {
+  background: transparent;
+  text-shadow:
+    0 0 6px #52d1c5,
+    0 0 12px #52d1c5,
+    0 0 2px #000;
+}
+
 .scene-text-block.dragging {
   cursor: grabbing;
   outline: 2px solid rgba(198, 154, 255, 0.85);
@@ -1743,7 +1766,7 @@ input[type="range"] {
 
 .block-editor-header {
   display: grid;
-  grid-template-columns: 64px 1fr;
+  grid-template-columns: 56px 1fr;
   gap: 5px;
   align-items: center;
   padding: 5px 6px;
@@ -1754,6 +1777,11 @@ input[type="range"] {
 .block-editor-header input {
   height: 26px;
   font-size: 11px;
+}
+
+.block-font-input {
+  padding: 0 4px;
+  text-align: center;
 }
 
 .scene-text {
@@ -2059,7 +2087,9 @@ body.space-panning .scene-canvas-viewport {
 
 .scene-text-block[data-text-style="outline"],
 .scene-text-block[data-text-style="soft"],
-.scene-text-block[data-text-style="plain"] {
+.scene-text-block[data-text-style="plain"],
+.scene-text-block[data-text-style="outlineThick"],
+.scene-text-block[data-text-style="neon"] {
   box-shadow: none;
 }
 

@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.4.2";
+const appVersion = "2.4.3";
 const appChangelog = [
+  {
+    version: "2.4.3",
+    date: "2026-07-11",
+    title: "Yazi kutusu stilinde yeni secenekler + yazi boyutu duzeltmesi",
+    notes: [
+      "Yazi katmani font boyutu kutusu dar alanda sayiyi net gostermiyordu; alan buyutuldu ve gereksiz artir/azalt oklari kaldirildi.",
+      "Yazi kutusu stiline 3 yeni secenek eklendi: Yari saydam kutu, Kalin kontur, Neon parlama.",
+      "Listede en cok onerilen iki stil (Siyah kutu, Soft golge) artik yildiz (★) ile isaretli ve listenin basinda.",
+    ],
+  },
   {
     version: "2.4.2",
     date: "2026-07-10",
@@ -677,17 +687,31 @@ function drawStyledText(context, text, x, y, fillStyle, options) {
     context.strokeStyle = "#000000";
     context.strokeText(text, x, y);
     context.restore();
+  } else if (options.textEffect === "outlineThick") {
+    context.save();
+    context.lineJoin = "round";
+    context.miterLimit = 2;
+    context.lineWidth = 6;
+    context.strokeStyle = "#000000";
+    context.strokeText(text, x, y);
+    context.restore();
   } else if (options.textEffect === "soft") {
     context.save();
     context.shadowColor = "#000000";
     context.shadowBlur = 4;
     context.shadowOffsetX = 1;
     context.shadowOffsetY = 1;
+  } else if (options.textEffect === "neon") {
+    context.save();
+    context.shadowColor = "#52d1c5";
+    context.shadowBlur = 10;
+    context.shadowOffsetX = 0;
+    context.shadowOffsetY = 0;
   }
 
   context.fillStyle = fillStyle;
   context.fillText(text, x, y);
-  if (options.textEffect === "soft") context.restore();
+  if (options.textEffect === "soft" || options.textEffect === "neon") context.restore();
 }
 
 function setIconButtonContent(button, icon, label) {
@@ -1827,10 +1851,8 @@ function renderScenes() {
 
         const fontInput = document.createElement("input");
         fontInput.className = "block-font-input";
-        fontInput.type = "number";
-        fontInput.min = "10";
-        fontInput.max = "48";
-        fontInput.step = "1";
+        fontInput.type = "text";
+        fontInput.inputMode = "numeric";
         fontInput.value = scene.fontSize || getSceneFontSize();
         fontInput.title = "Bu yazinin font boyutu";
         prepareSceneHistoryControl(fontInput);
@@ -1852,10 +1874,13 @@ function renderScenes() {
         const styleSelect = document.createElement("select");
         styleSelect.title = "Bu yazinin arka plan/efekt stili";
         styleSelect.innerHTML = `
-          <option value="box">Siyah kutu</option>
+          <option value="box">★ Siyah kutu</option>
+          <option value="soft">★ Soft golge</option>
           <option value="outline">Kontur</option>
-          <option value="soft">Soft golge</option>
           <option value="plain">Efektsiz</option>
+          <option value="boxSoft">Yari saydam kutu</option>
+          <option value="outlineThick">Kalin kontur</option>
+          <option value="neon">Neon parlama</option>
         `;
         styleSelect.value = scene.textStyle || "box";
         prepareSceneHistoryControl(styleSelect);
@@ -3313,12 +3338,12 @@ function drawSceneTextBlock(context, text, textBlock, width, height) {
 
   const boxHeight = padding * 2 + wrapped.length * lineHeight;
   const textStyle = textBlock.textStyle || "box";
-  if (textStyle === "box") {
-    context.fillStyle = "#000000";
+  if (textStyle === "box" || textStyle === "boxSoft") {
+    context.fillStyle = textStyle === "boxSoft" ? "rgba(0, 0, 0, 0.6)" : "#000000";
     context.fillRect(x, y, blockWidth, boxHeight);
   }
 
-  const textEffect = textStyle === "box" ? "plain" : textStyle;
+  const textEffect = (textStyle === "box" || textStyle === "boxSoft") ? "plain" : textStyle;
   wrapped.forEach((line, index) => {
     drawSegmentedText(context, line.segments, x + padding, y + padding + index * lineHeight, { ...sceneOptions, textEffect });
   });
