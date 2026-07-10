@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.4.0";
+const appVersion = "2.4.1";
 const appChangelog = [
+  {
+    version: "2.4.1",
+    date: "2026-07-10",
+    title: "Katman yoneticisinde bugfix'ler",
+    notes: [
+      "Katman panelini kenarindan (surukleyerek boyutlandirma) yakinindan surukleyerek katman secmeye calisinca ikisi de ayni anda tetikleniyordu (panel boyut degistirirken bir de rastgele bir katman seciliyordu); artik kenara yakinken sadece boyutlandirma calisiyor.",
+      "Katman Yoneticisi sol/ust/alt kenara yaslandiginda bazen Kisayollar Kutusu'nun ustune biniyordu; artik bu durumda Kisayollar Kutusu gizleniyor (panel serbest ya da kapaliyken tekrar gorunuyor).",
+      "'Bos sahne' menu ogesindeki eksik/gorunmeyen ikon duzeltildi.",
+    ],
+  },
   {
     version: "2.4.0",
     date: "2026-07-10",
@@ -1596,6 +1606,7 @@ function renderScenes() {
   canvasViewport.className = "scene-canvas-viewport";
   canvasViewport.addEventListener("pointerdown", (event) => {
     if (event.button !== 0 || isSpacePanning) return;
+    if (isNearLayersPanelResizeEdge(event)) return;
     if (event.target === canvasViewport || event.target === zoomShell) {
       hoveredSceneId = "";
       startSceneMarqueeSelect(event, stage);
@@ -1620,6 +1631,7 @@ function renderScenes() {
   listContainer.addEventListener("pointerdown", (event) => {
     if (isEditableTarget(event.target)) return;
     if (event.target.closest(".scene-editor-item")) return;
+    if (isNearLayersPanelResizeEdge(event)) return;
     startLayerListMarqueeSelect(event, listContainer);
   });
 
@@ -3378,9 +3390,9 @@ function getCurrentLayersDock() {
   return "right";
 }
 
-function startLayersPanelResize(event) {
+function getLayersPanelResizeEdgeInfo() {
   const panel = document.querySelector(".scene-layers-panel");
-  if (!panel || panel.closest(".dockable-panel.floating")) return;
+  if (!panel || panel.closest(".dockable-panel.floating")) return null;
   const panelRect = panel.getBoundingClientRect();
   const dock = getCurrentLayersDock();
   const isVertical = dock === "top" || dock === "bottom";
@@ -3388,6 +3400,20 @@ function startLayersPanelResize(event) {
     : dock === "top" ? panelRect.bottom
     : dock === "bottom" ? panelRect.top
     : panelRect.left;
+  return { panel, panelRect, dock, isVertical, edge };
+}
+
+function isNearLayersPanelResizeEdge(event) {
+  const info = getLayersPanelResizeEdgeInfo();
+  if (!info) return false;
+  const pointerCoord = info.isVertical ? event.clientY : event.clientX;
+  return Math.abs(pointerCoord - info.edge) <= 14;
+}
+
+function startLayersPanelResize(event) {
+  const info = getLayersPanelResizeEdgeInfo();
+  if (!info) return;
+  const { panelRect, dock, isVertical, edge } = info;
   const pointerCoord = isVertical ? event.clientY : event.clientX;
   if (Math.abs(pointerCoord - edge) > 14) return;
 

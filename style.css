@@ -2184,6 +2184,21 @@ body.shortcuts-hidden .scene-mode .shortcut-hud {
   display: none;
 }
 
+/* A non-right-docked layer manager can grow into the shortcut box's
+   top-left corner (not while floating or fully closed, since it isn't
+   onscreen in that region then) */
+body.layers-dock-left:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-top:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-bottom:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud {
+  display: none;
+}
+
+body.layers-dock-left.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-top.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-bottom.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button {
+  display: none;
+}
+
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex;
   position: fixed;
