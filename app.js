@@ -1,7 +1,16 @@
 "use strict";
 
-const appVersion = "2.3.1";
+const appVersion = "2.3.2";
 const appChangelog = [
+  {
+    version: "2.3.2",
+    date: "2026-07-10",
+    title: "Kisayollar kutusu yeniden tasarlandi",
+    notes: [
+      "Kisayollar kutusu artik sol ustte, arac cubugunun altinda goruniyor; varsayilan olarak yari saydam ve dikkat dagitmiyor, uzerine gelince tam netlesiyor.",
+      "Katman panelinin genisligine gore konum hesaplayan eski sag-alt yerlesimi kaldirildi; dar ekranlarda (katman paneli tam ekran kapladiginda) kisayollar kutusu ustune binmemek icin otomatik gizleniyor.",
+    ],
+  },
   {
     version: "2.3.1",
     date: "2026-07-10",

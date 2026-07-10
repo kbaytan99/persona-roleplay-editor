@@ -2034,30 +2034,35 @@ button:hover,
 
 .scene-mode .shortcut-hud {
   position: fixed;
-  right: calc(var(--layers-width, 380px) + 18px);
-  bottom: 18px;
+  top: 110px;
+  left: 12px;
   z-index: 18;
   display: grid;
   gap: 5px;
-  width: min(240px, calc(100vw - 36px));
-  max-height: calc(100vh - 80px);
+  width: min(200px, calc(100vw - 24px));
+  max-height: calc(100vh - 130px);
   overflow-y: auto;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: 8px;
-  background: rgba(13, 16, 22, 0.9);
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(11, 14, 19, 0.4);
   color: #cbd5e1;
   font-size: 11px;
   font-weight: 700;
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  opacity: 0.55;
+  pointer-events: auto;
+  transition: opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.scene-mode .shortcut-hud:hover,
+.scene-mode .shortcut-hud:focus-within {
+  opacity: 1;
+  background: rgba(13, 16, 22, 0.85);
   box-shadow:
     inset 0 1px 0 rgba(255, 255, 255, 0.035),
     0 14px 40px rgba(0, 0, 0, 0.28);
-  pointer-events: auto;
-}
-
-body.layers-hidden .scene-mode .shortcut-hud {
-  right: 18px;
 }
 
 .shortcut-hud div {
@@ -2112,26 +2117,31 @@ body.shortcuts-hidden .scene-mode .shortcut-hud {
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex;
   position: fixed;
-  right: calc(var(--layers-width, 380px) + 18px);
-  bottom: 18px;
+  top: 110px;
+  left: 12px;
   z-index: 19;
-  width: 34px;
-  height: 34px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   align-items: center;
   justify-content: center;
+  border-radius: 8px;
+  background: rgba(11, 14, 19, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  opacity: 0.6;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button:hover {
+  opacity: 1;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
     #202530;
-  border-color: rgba(255, 255, 255, 0.16);
   color: #fff;
   box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
-}
-
-body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button,
-body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
-.scene-mode.toolbox-hidden .shortcut-toggle-button {
-  right: 18px;
 }
 
 .shortcut-hud kbd {
@@ -2384,14 +2394,6 @@ body.layers-hidden .scene-layers-panel {
   display: none;
 }
 
-body.layers-hidden .scene-mode .shortcut-hud {
-  right: 18px;
-}
-
-body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button {
-  right: 18px;
-}
-
 .panel-resize-handle {
   display: none;
 }
@@ -2476,20 +2478,6 @@ body.resizing-floating-panel {
   user-select: none;
 }
 
-.scene-mode .shortcut-hud {
-  right: 398px;
-}
-
-body.layers-floating .scene-mode .shortcut-hud,
-.scene-mode.toolbox-hidden .shortcut-hud {
-  right: 18px;
-}
-
-body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button,
-body.shortcuts-hidden .scene-mode.toolbox-hidden .shortcut-toggle-button {
-  right: 18px;
-}
-
 @media (max-width: 1180px) {
   .scene-mode #scenePreviewPane.active {
     grid-template-columns: minmax(0, 1fr);
@@ -2500,14 +2488,6 @@ body.shortcuts-hidden .scene-mode.toolbox-hidden .shortcut-toggle-button {
     inset: 0 0 0 auto;
     width: min(85vw, 380px);
     z-index: 50;
-  }
-
-  .scene-mode .shortcut-hud {
-    right: 18px;
-  }
-
-  body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
-    right: 18px;
   }
 }
 
@@ -2534,7 +2514,11 @@ body.shortcuts-hidden .scene-mode.toolbox-hidden .shortcut-toggle-button {
     grid-template-columns: 1fr;
   }
 
-  .scene-mode:not(.toolbox-hidden) .shortcut-hud {
+  .scene-mode .shortcut-hud {
+    display: none;
+  }
+
+  body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
     display: none;
   }
 }
