@@ -1,7 +1,15 @@
 "use strict";
 
-const appVersion = "2.5.1";
+const appVersion = "2.5.2";
 const appChangelog = [
+  {
+    version: "2.5.2",
+    date: "2026-07-11",
+    title: "Yazi boyutu kutusuna ust limit geri geldi",
+    notes: [
+      "Onceki duzeltmede yazarken alt limitin (10) zorlanmasi kaldirilmisti ama ust limit (48) de yanlislikla tamamen kalkmisti; fazladan bir hane yazilinca (or. 480) onizleme siniri asabiliyordu. Artik yazarken sadece ust limit (48) canli uygulaniyor, alt limit hala sadece kutudan cikinca (10-48 araligina) sabitleniyor.",
+    ],
+  },
   {
     version: "2.5.1",
     date: "2026-07-11",
@@ -1877,13 +1885,16 @@ function renderScenes() {
         fontInput.addEventListener("input", () => {
           const val = parseInt(fontInput.value, 10);
           if (!isNaN(val) && val > 0) {
-            // Don't clamp to min/max mid-typing (e.g. typing "24" passes
+            // Don't clamp to the min mid-typing (e.g. typing "24" passes
             // through "2", which is below the min) - that causes a jarring
-            // jump to the clamped floor before the real value lands. Only
-            // the "change" handler below enforces the strict 10-48 range.
-            scene.fontSize = val;
+            // jump to the clamped floor before the real value lands. The max
+            // is still capped live so a stray extra digit can't blow up the
+            // preview to an absurd size; the "change" handler below enforces
+            // the full 10-48 range once typing is done.
+            const liveValue = Math.min(48, val);
+            scene.fontSize = liveValue;
             const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-            if (block) block.style.fontSize = `${val}px`;
+            if (block) block.style.fontSize = `${liveValue}px`;
           }
         });
         fontInput.addEventListener("change", () => {
