@@ -26,7 +26,6 @@ Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side c
 - Her yazi kutusunun font boyutu ve arka plan/efekt stili ayri ayarlanabilir.
 - Sahne gorselinin boyutunu, genisligini, yuksekligini ve X/Y konumunu katman kontrollerinden ayarlayabilirsin.
 - `Tek PNG indir` dugmesi tum sahneleri tek resim olarak indirir.
-- Imgur Client ID girerek secili sahneyi Imgur'a yukleyebilirsin.
 
 ## Notlar
 

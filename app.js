@@ -11,9 +11,6 @@ const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
 const applyGlobalTransitionBtn = document.querySelector("#applyGlobalTransitionBtn");
-const imgurClientId = document.querySelector("#imgurClientId");
-const uploadSceneBtn = document.querySelector("#uploadSceneBtn");
-const apiStatus = document.querySelector("#apiStatus");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
@@ -48,10 +45,10 @@ const storageKeys = {
   sceneTransitionSize: "rollSs.sceneTransitionSize",
   sceneTransitionStyle: "rollSs.sceneTransitionStyle",
   sceneTransitionSides: "rollSs.sceneTransitionSides",
-  imgurClientId: "rollSs.imgurClientId",
   toolboxWidth: "rollSs.toolboxWidth",
   toolboxLayoutVersion: "rollSs.toolboxLayoutVersion",
   toolboxHidden: "rollSs.toolboxHidden",
+  layersWidth: "rollSs.layersWidth",
   shortcutsHidden: "rollSs.shortcutsHidden",
 };
 const toolboxLayoutVersion = "scene-toolbox-20260710";
@@ -78,13 +75,11 @@ const sceneHistoryLimit = 20;
 const sceneUndoStack = [];
 const sceneRedoStack = [];
 let sceneClipboardScenes = [];
-let activeMode = "scene";
 let sceneViewportZoom = 1;
 let isSpacePanning = false;
 let selectedSceneId = "";
 let selectedSceneIds = [];
 let hoveredSceneId = "";
-let selectedTextBlockId = "";
 let shouldAutoFitSceneViewport = true;
 let draggingSceneId = "";
 let currentUserId = localClientId;
@@ -314,7 +309,6 @@ function saveState() {
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSize), sceneTransitionSize.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionStyle), sceneTransitionStyle.value);
   localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSides), sceneTransitionSides.value);
-  localStorage.setItem(clientStorageKey(storageKeys.imgurClientId), imgurClientId.value);
 }
 
 function restoreState() {
@@ -328,8 +322,8 @@ function restoreState() {
   sceneTransitionSize.value = getClientStoredValue(storageKeys.sceneTransitionSize) ?? sceneTransitionSize.value;
   sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
   sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
-  imgurClientId.value = getClientStoredValue(storageKeys.imgurClientId) ?? "";
   appShell.style.setProperty("--toolbox-width", `${getSavedToolboxWidth()}px`);
+  appShell.style.setProperty("--layers-width", `${getSavedLayersWidth()}px`);
   appShell.classList.toggle("toolbox-hidden", getClientStoredValue(storageKeys.toolboxHidden) === "true");
   document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
 }
@@ -424,7 +418,7 @@ async function loadLocalScenes() {
       normalizeSceneSelection();
       await saveLocalScenesNow();
       db.close();
-      if (activeMode === "scene") renderScenes();
+      renderScenes();
       return;
     }
   }
@@ -433,7 +427,7 @@ async function loadLocalScenes() {
   selectedSceneId = record?.selectedSceneId || scenes[0]?.id || "";
   selectedSceneIds = Array.isArray(record?.selectedSceneIds) ? record.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
   normalizeSceneSelection();
-  if (activeMode === "scene") renderScenes();
+  renderScenes();
 }
 
 function readSceneRecord(db, userId) {
@@ -552,8 +546,7 @@ function setIconButtonContent(button, icon, label) {
   if (window.lucide) window.lucide.createIcons();
 }
 
-function switchMode(mode) {
-  activeMode = "scene";
+function switchMode() {
   appShell.classList.add("scene-mode");
   sceneEditorPane.classList.add("active");
   scenePreviewPane.classList.add("active");
@@ -605,7 +598,7 @@ function showShortcuts() {
 }
 
 function startToolboxResize(event) {
-  if (activeMode !== "scene" || appShell.classList.contains("toolbox-hidden")) return;
+  if (appShell.classList.contains("toolbox-hidden")) return;
   const panelRect = document.querySelector(".editor-panel").getBoundingClientRect();
   if (Math.abs(event.clientX - panelRect.right) > 14) return;
 
@@ -634,7 +627,6 @@ function startToolboxResize(event) {
 }
 
 function handleSceneWheel(event) {
-  if (activeMode !== "scene") return;
   const viewport = event.target.closest?.(".scene-canvas-viewport") || (event.ctrlKey || event.altKey ? document.querySelector(".scene-canvas-viewport") : null);
   if (!viewport) return;
 
@@ -802,8 +794,6 @@ function getImageVisualBox(stageRect, scene, visualWidth, visualHeight) {
 }
 
 function handleSceneKeyDown(event) {
-  if (activeMode !== "scene") return;
-
   if (!isTextEntryTarget(event.target) && isSceneUndoShortcut(event)) {
     event.preventDefault();
     undoSceneHistory();
@@ -862,11 +852,6 @@ function handleSceneKeyDown(event) {
   }
 
   if (event.key === "Delete" || event.code === "Delete") {
-    if (selectedTextBlockId && findTextBlock(selectedTextBlockId)) {
-      event.preventDefault();
-      removeTextBlock(selectedSceneId, selectedTextBlockId);
-      return;
-    }
     const sceneIds = getSceneDeleteTargets();
     if (!sceneIds.length) return;
     event.preventDefault();
@@ -906,7 +891,7 @@ function handleSceneKeyUp(event) {
 }
 
 function startSceneViewportPan(event) {
-  if (activeMode !== "scene" || !isSpacePanning || event.button !== 0) return;
+  if (!isSpacePanning || event.button !== 0) return;
   const viewport = event.target.closest?.(".scene-canvas-viewport");
   if (!viewport) return;
 
@@ -981,7 +966,7 @@ async function addSceneImages(files) {
   renderScenes();
   setSceneStatus(`${imageFiles.length} katman eklendi. Hepsi ayni sahne canvasinda.`);
   sceneImageInput.value = "";
-  switchMode("scene");
+  switchMode();
 }
 
 function addBlankScene() {
@@ -1009,7 +994,7 @@ function addBlankScene() {
   hoveredSceneId = "";
   shouldAutoFitSceneViewport = true;
   renderScenes();
-  switchMode("scene");
+  switchMode();
   setSceneStatus("Bos sahne katmani eklendi. Yaziyi elle ekleyebilirsin.");
 }
 
@@ -1021,7 +1006,7 @@ function addSceneImageBlobs(blobs) {
 function handlePaste(event) {
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
   if (!imageItems.length) {
-    if (activeMode === "scene" && !isEditableTarget(event.target) && sceneClipboardScenes.length) {
+    if (!isEditableTarget(event.target) && sceneClipboardScenes.length) {
       event.preventDefault();
       pasteSceneClipboard();
     }
@@ -1084,6 +1069,31 @@ function renderScenes() {
   stage.append(renderClip, transformOverlay, textOverlay);
 
   scenes.forEach((scene, index) => {
+    if (scene.type === "text") {
+      const block = document.createElement("div");
+      block.className = "scene-text-block";
+      block.dataset.sceneId = scene.id;
+      block.dataset.textStyle = scene.textStyle || "box";
+      if (isSceneSelected(scene.id)) block.classList.add("selected");
+      block.style.zIndex = String(getSceneLayerZIndex(index, 5));
+      block.style.fontSize = `${scene.fontSize || getSceneFontSize()}px`;
+      block.style.left = `${scene.x}%`;
+      block.style.top = `${scene.y}%`;
+      block.style.width = `${scene.width}%`;
+      block.title = "Surukleyerek konumlandir";
+      const content = document.createElement("div");
+      content.className = "scene-text-content";
+      renderSceneTextBlock(content, scene.text);
+      block.append(content);
+      block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, scene));
+      const resizeHandle = document.createElement("span");
+      resizeHandle.className = "scene-resize-handle";
+      resizeHandle.title = "Genisligi ayarla";
+      resizeHandle.addEventListener("pointerdown", (event) => startSceneTextResize(event, scene));
+      block.append(resizeHandle);
+      textOverlay.append(block);
+      return;
+    }
     if (!scene.dataUrl) return;
     const wrap = document.createElement("div");
     wrap.className = "scene-image-wrap";
@@ -1174,39 +1184,16 @@ function renderScenes() {
     renderClip.append(wrap);
   });
 
-  scenes.forEach((scene) => {
-    const sceneIndex = scenes.findIndex((candidate) => candidate.id === scene.id);
-    scene.blocks.forEach((textBlock) => {
-      const block = document.createElement("div");
-      block.className = "scene-text-block";
-      block.dataset.sceneId = scene.id;
-      block.dataset.blockId = textBlock.id;
-      block.dataset.textStyle = textBlock.textStyle || "box";
-      if (isSceneSelected(scene.id)) block.classList.add("selected");
-      block.style.zIndex = String(getSceneLayerZIndex(sceneIndex, 5));
-      block.style.fontSize = `${textBlock.fontSize || getSceneFontSize()}px`;
-      block.style.left = `${textBlock.x}%`;
-      block.style.top = `${textBlock.y}%`;
-      block.style.width = `${textBlock.width}%`;
-      block.title = "Surukleyerek konumlandir";
-      const content = document.createElement("div");
-      content.className = "scene-text-content";
-      renderSceneTextBlock(content, textBlock.text);
-      block.append(content);
-      block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, textBlock));
-      const resizeHandle = document.createElement("span");
-      resizeHandle.className = "scene-resize-handle";
-      resizeHandle.title = "Genisligi ayarla";
-      resizeHandle.addEventListener("pointerdown", (event) => startSceneTextResize(event, textBlock));
-      block.append(resizeHandle);
-      textOverlay.append(block);
-    });
-  });
-
   stage.append(createStageResizeFrame());
 
   const canvasViewport = document.createElement("div");
   canvasViewport.className = "scene-canvas-viewport";
+  canvasViewport.addEventListener("pointerdown", (event) => {
+    if (event.target === canvasViewport || event.target === zoomShell) {
+      hoveredSceneId = "";
+      clearSceneSelection();
+    }
+  });
   const zoomShell = document.createElement("div");
   zoomShell.className = "scene-zoom-shell";
   zoomShell.append(stage);
@@ -1220,6 +1207,16 @@ function renderScenes() {
   layersTitle.title = "Surukleyerek tasi";
   const layersTitleText = document.createElement("span");
   layersTitleText.textContent = "Katman Yoneticisi";
+  const addTextLayerButton = document.createElement("button");
+  addTextLayerButton.className = "layer-window-button";
+  addTextLayerButton.type = "button";
+  addTextLayerButton.textContent = "Yazi ekle";
+  addTextLayerButton.title = "Yeni yazi katmani ekle";
+  addTextLayerButton.addEventListener("pointerdown", (event) => event.stopPropagation());
+  addTextLayerButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    addTextLayer();
+  });
   const layersCloseButton = document.createElement("button");
   layersCloseButton.className = "layer-window-button";
   layersCloseButton.type = "button";
@@ -1230,7 +1227,7 @@ function renderScenes() {
     event.stopPropagation();
     closeLayersPanel();
   });
-  layersTitle.append(layersTitleText, layersCloseButton);
+  layersTitle.append(layersTitleText, addTextLayerButton, layersCloseButton);
   sceneLayersPanel.append(layersTitle);
 
   if (!scenes.length) {
@@ -1242,7 +1239,7 @@ function renderScenes() {
 
   scenes.forEach((scene, index) => {
     const item = document.createElement("div");
-    item.className = "scene-editor-item";
+    item.className = "scene-editor-item" + (scene.type === "text" ? " text-layer" : "");
     item.dataset.sceneEditorId = scene.id;
     item.addEventListener("dragover", (event) => handleSceneDragOver(event, scene.id));
     item.addEventListener("drop", (event) => handleSceneDrop(event, scene.id));
@@ -1281,8 +1278,8 @@ function renderScenes() {
     nameInput.className = "scene-name-input";
     nameInput.type = "text";
     nameInput.value = scene.name || `Katman ${index + 1}`;
-    nameInput.placeholder = "Sahne adi";
-    nameInput.title = "Sahne ismi";
+    nameInput.placeholder = "Katman adi";
+    nameInput.title = "Katman ismi";
     prepareSceneHistoryControl(nameInput);
     nameInput.addEventListener("input", () => {
       scene.name = nameInput.value.trim() || `Katman ${index + 1}`;
@@ -1307,13 +1304,6 @@ function renderScenes() {
       renderScenes();
     });
 
-    const addTextButton = document.createElement("button");
-    addTextButton.type = "button";
-    addTextButton.className = "layer-icon-btn";
-    addTextButton.innerHTML = "T+";
-    addTextButton.title = "Yazi ekle";
-    addTextButton.addEventListener("click", () => addTextBlock(scene.id));
-
     const removeButton = document.createElement("button");
     removeButton.type = "button";
     removeButton.className = "layer-icon-btn danger";
@@ -1321,7 +1311,7 @@ function renderScenes() {
     removeButton.title = "Katmani sil";
     removeButton.addEventListener("click", () => removeScene(scene.id));
 
-    headerRight.append(lockButton, addTextButton, removeButton);
+    headerRight.append(lockButton, removeButton);
     itemHeader.append(headerLeft, headerRight);
 
     // ── Order buttons row ──
@@ -1338,6 +1328,74 @@ function renderScenes() {
     const scrollableBody = document.createElement("div");
     scrollableBody.className = "scene-editor-item-scrollable";
 
+    // ── Text layer controls ──
+    if (scene.type === "text") {
+      const textControls = document.createElement("div");
+      textControls.className = "block-editor-header";
+
+      const fontInput = document.createElement("input");
+      fontInput.className = "block-font-input";
+      fontInput.type = "number";
+      fontInput.min = "10";
+      fontInput.max = "48";
+      fontInput.step = "1";
+      fontInput.value = scene.fontSize || getSceneFontSize();
+      fontInput.title = "Bu yazinin font boyutu";
+      prepareSceneHistoryControl(fontInput);
+      fontInput.addEventListener("input", () => {
+        const val = parseInt(fontInput.value, 10);
+        if (!isNaN(val)) {
+          scene.fontSize = Math.max(10, Math.min(48, val));
+          const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+          if (block) block.style.fontSize = `${scene.fontSize}px`;
+        }
+      });
+      fontInput.addEventListener("change", () => {
+        scene.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
+        fontInput.value = scene.fontSize;
+        saveState();
+        renderScenes();
+      });
+
+      const styleSelect = document.createElement("select");
+      styleSelect.title = "Bu yazinin arka plan/efekt stili";
+      styleSelect.innerHTML = `
+        <option value="box">Siyah kutu</option>
+        <option value="outline">Kontur</option>
+        <option value="soft">Soft golge</option>
+        <option value="plain">Efektsiz</option>
+      `;
+      styleSelect.value = scene.textStyle || "box";
+      prepareSceneHistoryControl(styleSelect);
+      styleSelect.addEventListener("change", () => {
+        scene.textStyle = styleSelect.value;
+        const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+        if (block) block.dataset.textStyle = scene.textStyle;
+      });
+
+      textControls.append(fontInput, styleSelect);
+
+      const textarea = document.createElement("textarea");
+      textarea.className = "scene-text";
+      textarea.placeholder = "Bu yaziyi sahneye ekle...";
+      textarea.spellcheck = false;
+      textarea.value = scene.text;
+      prepareSceneHistoryControl(textarea);
+      textarea.addEventListener("input", () => {
+        scene.text = textarea.value;
+        const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+        const content = block?.querySelector(".scene-text-content");
+        if (content) renderSceneTextBlock(content, scene.text);
+      });
+
+      scrollableBody.append(textControls, textarea);
+
+      cardInner.append(itemHeader, orderRow, scrollableBody);
+      item.append(dragGrip, cardInner);
+      listContainer.append(item);
+      return;
+    }
+
     // ── Image controls (grouped sections) ──
     if (scene.dataUrl) {
       // Position section
@@ -1346,23 +1404,23 @@ function renderScenes() {
         createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
           scene.imageZoom = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "maximize-2"),
         createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
           scene.imageScaleX = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "unfold-horizontal"),
         createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
           scene.imageScaleY = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "unfold-vertical"),
         createRangeControl("X", scene.imageX || 0, -1000, 1000, 0.5, (value) => {
           scene.imageX = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "move-horizontal"),
         createRangeControl("Y", scene.imageY || 0, -1000, 1000, 0.5, (value) => {
           scene.imageY = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "move-vertical"),
       );
       scrollableBody.append(posSection.el);
 
@@ -1372,23 +1430,23 @@ function renderScenes() {
         createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
           scene.filterBrightness = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "sun"),
         createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
           scene.filterContrast = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "contrast"),
         createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
           scene.filterSaturate = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "droplets"),
         createRangeControl("Sicaklik", scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
           scene.filterSepia = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "thermometer"),
         createRangeControl("Blur", scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
           scene.filterBlur = value;
           updateSceneImageTransform(scene);
-        }),
+        }, "scan-eye"),
       );
       const resetFilterButton = document.createElement("button");
       resetFilterButton.type = "button";
@@ -1410,11 +1468,11 @@ function renderScenes() {
           pushSceneHistory();
           scene.transitionStyle = value;
           renderScenes();
-        }),
+        }, "palette"),
         createRangeControl("Boyut", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
           scene.transitionSize = value;
           renderScenes();
-        }),
+        }, "ruler"),
         createSelectControl("Yon", scene.transitionSides || "both", [
           { value: "both", text: "Ust & Alt" },
           { value: "top", text: "Sadece Ust" },
@@ -1423,107 +1481,15 @@ function renderScenes() {
           pushSceneHistory();
           scene.transitionSides = value;
           renderScenes();
-        }),
+        }, "compass"),
       );
       scrollableBody.append(transSection.el);
-
-      if (scene.uploadedUrl) {
-        const uploadedLink = document.createElement("a");
-        uploadedLink.className = "uploaded-scene-link";
-        uploadedLink.href = scene.uploadedUrl;
-        uploadedLink.target = "_blank";
-        uploadedLink.rel = "noreferrer";
-        uploadedLink.textContent = "Yuklenen link";
-        scrollableBody.append(uploadedLink);
-      }
     } else {
       const blankNote = document.createElement("div");
       blankNote.className = "blank-layer-note";
       blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
       scrollableBody.append(blankNote);
     }
-
-    // ── Text block editors ──
-    const blockEditors = document.createElement("div");
-    blockEditors.className = "block-editor-list";
-
-    scene.blocks.forEach((textBlock, blockIndex) => {
-      const blockEditor = document.createElement("div");
-      blockEditor.className = "block-editor";
-
-      const blockHeader = document.createElement("div");
-      blockHeader.className = "block-editor-header";
-
-      const blockTitle = document.createElement("div");
-      blockTitle.className = "scene-title";
-      blockTitle.textContent = `Yazi ${blockIndex + 1}`;
-
-      const fontInput = document.createElement("input");
-      fontInput.className = "block-font-input";
-      fontInput.type = "number";
-      fontInput.min = "10";
-      fontInput.max = "48";
-      fontInput.step = "1";
-      fontInput.value = textBlock.fontSize || getSceneFontSize();
-      fontInput.title = "Bu yazinin font boyutu";
-      fontInput.dataset.blockFontInputId = textBlock.id;
-      prepareSceneHistoryControl(fontInput);
-      fontInput.addEventListener("input", () => {
-        const val = parseInt(fontInput.value, 10);
-        if (!isNaN(val)) {
-          textBlock.fontSize = Math.max(10, Math.min(48, val));
-          const block = stage.querySelector(`[data-block-id="${CSS.escape(textBlock.id)}"]`);
-          if (block) block.style.fontSize = `${textBlock.fontSize}px`;
-        }
-      });
-      fontInput.addEventListener("change", () => {
-        textBlock.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
-        fontInput.value = textBlock.fontSize;
-        saveState();
-        renderScenes();
-      });
-
-      const styleSelect = document.createElement("select");
-      styleSelect.title = "Bu yazinin arka plan/efekt stili";
-      styleSelect.innerHTML = `
-        <option value="box">Siyah kutu</option>
-        <option value="outline">Kontur</option>
-        <option value="soft">Soft golge</option>
-        <option value="plain">Efektsiz</option>
-      `;
-      styleSelect.value = textBlock.textStyle || "box";
-      prepareSceneHistoryControl(styleSelect);
-      styleSelect.addEventListener("change", () => {
-        textBlock.textStyle = styleSelect.value;
-        const block = stage.querySelector(`[data-block-id="${CSS.escape(textBlock.id)}"]`);
-        if (block) block.dataset.textStyle = textBlock.textStyle;
-      });
-
-      const deleteBlockButton = document.createElement("button");
-      deleteBlockButton.type = "button";
-      deleteBlockButton.textContent = "Sil";
-      deleteBlockButton.addEventListener("click", () => removeTextBlock(scene.id, textBlock.id));
-
-      blockHeader.append(blockTitle, fontInput, styleSelect, deleteBlockButton);
-
-      const textarea = document.createElement("textarea");
-      textarea.className = "scene-text";
-      textarea.placeholder = "Bu yaziyi sahneye ekle...";
-      textarea.spellcheck = false;
-      textarea.value = textBlock.text;
-      prepareSceneHistoryControl(textarea);
-      textarea.addEventListener("input", () => {
-        textBlock.text = textarea.value;
-        const block = stage.querySelector(`[data-block-id="${CSS.escape(textBlock.id)}"]`);
-        const content = block?.querySelector(".scene-text-content");
-        if (content) renderSceneTextBlock(content, textBlock.text);
-      });
-
-      blockEditor.append(blockHeader, textarea);
-      blockEditors.append(blockEditor);
-    });
-
-    scrollableBody.append(blockEditors);
 
     cardInner.append(itemHeader, orderRow, scrollableBody);
     item.append(dragGrip, cardInner);
@@ -1536,6 +1502,7 @@ function renderScenes() {
   composer.append(toolbar, canvasViewport);
   sceneList.append(composer);
   scheduleSceneAutosave();
+  if (window.lucide) window.lucide.createIcons();
   requestAnimationFrame(() => {
     applySceneViewportZoom();
     if (shouldAutoFitSceneViewport) {
@@ -1619,7 +1586,7 @@ function pasteSceneClipboard() {
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
   renderScenes();
-  switchMode("scene");
+  switchMode();
   setSceneStatus(`${clones.length} sahne yapistirildi.`);
 }
 
@@ -1631,7 +1598,6 @@ function cloneSceneForPaste(scene) {
   const clone = cloneSceneSnapshot(scene);
   clone.id = createId();
   clone.name = `${clone.name || "sahne"} kopya`;
-  clone.blocks = (clone.blocks || []).map((block) => ({ ...block, id: createId() }));
   return clone;
 }
 
@@ -1718,7 +1684,7 @@ async function importSceneProject(event) {
     applySceneProjectPayload(project);
     saveState();
     scheduleSceneAutosave();
-    switchMode("scene");
+    switchMode();
     renderScenes();
     setSceneStatus(`RSE yuklendi: ${scenes.length} katman geri getirildi.`);
   } catch (error) {
@@ -1747,16 +1713,13 @@ function normalizeImportedScene(scene, index) {
   const clone = JSON.parse(JSON.stringify(scene));
   clone.id = typeof clone.id === "string" && clone.id ? clone.id : createId();
   clone.name = typeof clone.name === "string" && clone.name ? clone.name : `Katman ${index + 1}`;
-  clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
-  clone.isBlank = !clone.dataUrl;
-  clone.blocks = Array.isArray(clone.blocks) ? clone.blocks : [];
-  clone.blocks = clone.blocks
-    .filter((block) => block && typeof block === "object")
-    .map((block) => ({
-      ...block,
-      id: typeof block.id === "string" && block.id ? block.id : createId(),
-      text: typeof block.text === "string" ? block.text : "",
-    }));
+  clone.type = clone.type === "text" ? "text" : "image";
+  if (clone.type === "text") {
+    clone.text = typeof clone.text === "string" ? clone.text : "";
+  } else {
+    clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
+    clone.isBlank = !clone.dataUrl;
+  }
   return clone;
 }
 
@@ -1795,14 +1758,12 @@ function setSelectedScene(id) {
   if (!scenes.some((scene) => scene.id === id)) return;
   selectedSceneId = id;
   selectedSceneIds = [id];
-  selectedTextBlockId = "";
   refreshSceneSelection();
 }
 
 function clearSceneSelection() {
   selectedSceneId = "";
   selectedSceneIds = [];
-  selectedTextBlockId = "";
   refreshSceneSelection();
 }
 
@@ -1956,17 +1917,15 @@ function refreshSceneStyles() {
     stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
   });
   document.querySelectorAll(".scene-text-block").forEach((block) => {
-    const blockData = findTextBlock(block.dataset.blockId);
-    block.style.fontSize = `${blockData?.fontSize || getSceneFontSize()}px`;
+    const layer = scenes.find((scene) => scene.id === block.dataset.sceneId);
+    block.style.fontSize = `${layer?.fontSize || getSceneFontSize()}px`;
   });
 }
 
 function applyGlobalSceneFontSize() {
   const fontSize = getSceneFontSize();
   scenes.forEach((scene) => {
-    scene.blocks?.forEach((block) => {
-      block.fontSize = fontSize;
-    });
+    if (scene.type === "text") scene.fontSize = fontSize;
   });
   document.querySelectorAll(".scene-text-block").forEach((block) => {
     block.style.fontSize = `${fontSize}px`;
@@ -2099,6 +2058,17 @@ function createSceneBlock(text = "") {
 
 function ensureSceneModel() {
   scenes.forEach((scene) => {
+    scene.type ??= "image";
+    if (scene.type === "text") {
+      scene.x ??= 2;
+      scene.y ??= 72;
+      scene.width ??= 88;
+      scene.fontSize ??= getSceneFontSize();
+      scene.textStyle ??= "box";
+      scene.text ??= "";
+      scene.isLocked ??= false;
+      return;
+    }
     scene.isBlank = !scene.dataUrl;
     scene.imageZoom ??= 100;
     scene.imageScaleX ??= 100;
@@ -2114,37 +2084,7 @@ function ensureSceneModel() {
     scene.transitionStyle ??= (sceneTransitionStyle ? sceneTransitionStyle.value : "none") || "none";
     scene.transitionSize ??= Number(sceneTransitionSize ? sceneTransitionSize.value : 150) || 150;
     scene.transitionSides ??= (sceneTransitionSides ? sceneTransitionSides.value : "both") || "both";
-    if (!Array.isArray(scene.blocks)) {
-      scene.blocks = scene.text ? [{
-        id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
-        text: scene.text || "",
-        x: scene.x ?? 2,
-        y: scene.y ?? 72,
-        width: scene.width ?? 88,
-        fontSize: scene.fontSize || getSceneFontSize(),
-        textStyle: scene.textStyle || "box",
-      }] : [];
-    }
-    scene.blocks = scene.blocks.filter((block) => String(block.text || "").trim().length > 0 || block.userCreated);
-    scene.blocks.forEach((block, blockIndex) => {
-      block.id ??= crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-      block.x ??= 2;
-      block.width ??= 88;
-      block.fontSize ??= getSceneFontSize();
-      block.textStyle ??= "box";
-      if (block.y === null || block.y === undefined) {
-        block.y = Math.min(92, 72 + blockIndex * 6);
-      }
-    });
   });
-}
-
-function findTextBlock(id) {
-  for (const scene of scenes) {
-    const block = scene.blocks?.find((candidate) => candidate.id === id);
-    if (block) return block;
-  }
-  return null;
 }
 
 function createSceneOrderButton(label, sceneId, placement, disabled) {
@@ -2176,6 +2116,15 @@ function reorderScene(sceneId, placement) {
   hoveredSceneId = "";
   renderScenes();
   setSceneStatus(`Sahne ${placement === "top" ? "en uste" : placement === "bottom" ? "en alta" : placement === "up" ? "uste" : "alta"} tasindi.`);
+  flashSceneEditorItem(sceneId);
+}
+
+function flashSceneEditorItem(sceneId) {
+  const item = document.querySelector(`[data-scene-editor-id="${CSS.escape(sceneId)}"]`);
+  if (!item) return;
+  item.scrollIntoView({ block: "nearest" });
+  item.classList.add("reorder-flash");
+  setTimeout(() => item.classList.remove("reorder-flash"), 500);
 }
 
 function startSceneOrderDrag(event, sceneId) {
@@ -2246,18 +2195,19 @@ function resetSceneFilter(scene) {
   setSceneStatus("Sahne filtresi sifirlandi.");
 }
 
-function addTextBlock(sceneId) {
-  ensureSceneModel();
-  const sceneIndex = scenes.findIndex((scene) => scene.id === sceneId);
-  if (sceneIndex === -1) return;
-  const scene = scenes[sceneIndex];
+function addTextLayer() {
   pushSceneHistory();
-  const block = createSceneBlock("");
-  block.userCreated = true;
-  block.y = Math.min(94, 72 + scene.blocks.length * 6);
-  scene.blocks.push(block);
+  const layer = createSceneBlock("");
+  layer.type = "text";
+  layer.isLocked = false;
+  layer.name = `Yazi katmani ${scenes.length + 1}`;
+  scenes.unshift(layer);
+  selectedSceneId = layer.id;
+  selectedSceneIds = [layer.id];
+  hoveredSceneId = "";
   renderScenes();
-  setSceneStatus("Yeni yazi kutusu eklendi.");
+  switchMode();
+  setSceneStatus("Yeni yazi katmani eklendi.");
 }
 
 function createLayerSection(title, openByDefault) {
@@ -2273,25 +2223,23 @@ function createLayerSection(title, openByDefault) {
   return { el: section, body };
 }
 
-function removeTextBlock(sceneId, blockId) {
-  const scene = scenes.find((candidate) => candidate.id === sceneId);
-  if (!scene || !Array.isArray(scene.blocks)) return;
-  if (!confirm("Bu yazi kutusu silinsin mi? Resim/sahne kalacak.")) return;
-  pushSceneHistory();
-  scene.blocks = scene.blocks.filter((block) => block.id !== blockId);
-  if (selectedTextBlockId === blockId) selectedTextBlockId = "";
-  renderScenes();
-  setSceneStatus("Yazi kutusu silindi.");
-}
-
 function getSceneAccent(index) {
   const accents = ["#6f98ff", "#c69aff", "#5dde72", "#ff9f2e", "#ff6b7d", "#ffd447"];
   return accents[index % accents.length];
 }
 
-function createRangeControl(labelText, value, min, max, step, onInput) {
+function createControlIcon(icon) {
+  if (!icon) return null;
+  const iconEl = document.createElement("i");
+  iconEl.setAttribute("data-lucide", icon);
+  iconEl.className = "range-control-icon";
+  return iconEl;
+}
+
+function createRangeControl(labelText, value, min, max, step, onInput, icon) {
   const label = document.createElement("label");
   label.className = "range-control";
+  const iconEl = createControlIcon(icon);
   const title = document.createElement("span");
   title.textContent = labelText;
   const input = document.createElement("input");
@@ -2300,21 +2248,43 @@ function createRangeControl(labelText, value, min, max, step, onInput) {
   input.max = String(max);
   input.step = String(step);
   input.value = String(value);
-  const valueText = document.createElement("b");
-  valueText.textContent = formatControlValue(value);
+  const valueInput = document.createElement("input");
+  valueInput.type = "number";
+  valueInput.className = "range-control-value";
+  valueInput.min = String(min);
+  valueInput.max = String(max);
+  valueInput.step = String(step);
+  valueInput.value = formatControlValue(value);
   prepareSceneHistoryControl(input);
-  input.addEventListener("input", () => {
-    const parsed = clampNumber(input.value, min, max, value);
-    valueText.textContent = formatControlValue(parsed);
+  prepareSceneHistoryControl(valueInput);
+
+  const applyValue = (rawValue, current) => {
+    const parsed = clampNumber(rawValue, min, max, current);
+    input.value = String(parsed);
+    valueInput.value = formatControlValue(parsed);
     onInput(parsed);
-  });
-  label.append(title, input, valueText);
+    return parsed;
+  };
+
+  input.addEventListener("input", () => applyValue(input.value, value));
+  valueInput.addEventListener("change", () => applyValue(valueInput.value, Number(input.value)));
+  valueInput.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    applyValue(Number(input.value) + (event.deltaY < 0 ? step : -step), Number(input.value));
+  }, { passive: false });
+  input.addEventListener("wheel", (event) => {
+    event.preventDefault();
+    applyValue(Number(input.value) + (event.deltaY < 0 ? step : -step), Number(input.value));
+  }, { passive: false });
+
+  label.append(...(iconEl ? [iconEl] : []), title, input, valueInput);
   return label;
 }
 
-function createSelectControl(labelText, value, options, onChange) {
+function createSelectControl(labelText, value, options, onChange, icon) {
   const label = document.createElement("label");
   label.className = "range-control";
+  const iconEl = createControlIcon(icon);
   const title = document.createElement("span");
   title.textContent = labelText;
   const select = document.createElement("select");
@@ -2329,7 +2299,7 @@ function createSelectControl(labelText, value, options, onChange) {
     select.append(o);
   });
   select.addEventListener("change", () => onChange(select.value));
-  label.append(title, select);
+  label.append(...(iconEl ? [iconEl] : []), title, select);
   return label;
 }
 
@@ -2554,7 +2524,6 @@ function startSceneTextDrag(event, textBlock) {
   event.preventDefault();
   event.stopPropagation();
   setSelectedScene(block.dataset.sceneId);
-  selectedTextBlockId = textBlock.id;
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
   const blockRect = block.getBoundingClientRect();
@@ -2648,10 +2617,11 @@ function startSceneTextResize(event, textBlock) {
 
 async function downloadCompositeScene() {
   ensureSceneModel();
-  const imageEntries = await Promise.all(scenes.map(async (scene) => {
-    if (!scene.dataUrl) return { scene, image: null };
-    return { scene, image: await loadImage(scene.dataUrl) };
-  }));
+  const images = new Map(await Promise.all(
+    scenes
+      .filter((scene) => scene.type !== "text" && scene.dataUrl)
+      .map(async (scene) => [scene.id, await loadImage(scene.dataUrl)]),
+  ));
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
   const outputWidth = getSceneOutputWidth();
@@ -2662,15 +2632,13 @@ async function downloadCompositeScene() {
   context.fillStyle = sceneCanvasBackground;
   context.fillRect(0, 0, outputWidth, outputHeight);
 
-  [...imageEntries].reverse().forEach(({ scene, image }) => {
-    if (!image) return;
-    drawSceneLayerImage(context, image, scene, outputWidth, outputHeight);
-  });
-
   [...scenes].reverse().forEach((scene) => {
-    scene.blocks.forEach((block) => {
-      drawSceneTextBlock(context, block.text, block, outputWidth, outputHeight);
-    });
+    if (scene.type === "text") {
+      drawSceneTextBlock(context, scene.text, scene, outputWidth, outputHeight);
+      return;
+    }
+    const image = images.get(scene.id);
+    if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight);
   });
 
   const link = document.createElement("a");
@@ -2883,6 +2851,41 @@ function getSavedToolboxWidth() {
   return clampNumber(savedWidth, 380, 640, 520);
 }
 
+function getSavedLayersWidth() {
+  const savedWidth = Number(getClientStoredValue(storageKeys.layersWidth));
+  if (!Number.isFinite(savedWidth)) return 380;
+  return clampNumber(savedWidth, 320, 640, 380);
+}
+
+function startLayersPanelResize(event) {
+  const panel = document.querySelector(".scene-layers-panel");
+  if (!panel || panel.closest(".dockable-panel.floating")) return;
+  const panelRect = panel.getBoundingClientRect();
+  if (Math.abs(event.clientX - panelRect.left) > 14) return;
+
+  event.preventDefault();
+  const startX = event.clientX;
+  const startWidth = panelRect.width;
+
+  const onMove = (moveEvent) => {
+    const width = clampNumber(startWidth - (moveEvent.clientX - startX), 320, 640, startWidth);
+    appShell.style.setProperty("--layers-width", `${width}px`);
+    localStorage.setItem(clientStorageKey(storageKeys.layersWidth), String(Math.round(width)));
+  };
+
+  const onUp = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    document.body.classList.remove("resizing-layers");
+  };
+
+  document.body.classList.add("resizing-layers");
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
+}
+
 function createPanelResizeHandles() {
   return ["n", "e", "s", "w", "ne", "nw", "se", "sw"].map((direction) => {
     const handle = document.createElement("span");
@@ -2979,69 +2982,6 @@ function setSceneStatus(message) {
   sceneStatus.textContent = message;
 }
 
-function setApiStatus(message) {
-  apiStatus.textContent = message;
-}
-
-async function uploadSelectedSceneToImgur() {
-  const clientId = imgurClientId.value.trim();
-  if (!clientId) {
-    setApiStatus("Imgur Client ID girilmedi.");
-    return;
-  }
-
-  const sceneId = selectedSceneId || scenes[0]?.id;
-  const scene = scenes.find((candidate) => candidate.id === sceneId);
-  if (!scene) {
-    setApiStatus("Yuklenecek sahne yok.");
-    return;
-  }
-  if (!scene.dataUrl) {
-    setApiStatus("Secili katmanda yuklenecek resim yok.");
-    return;
-  }
-
-  saveState();
-  setApiStatus("Imgur'a yukleniyor...");
-  try {
-    const form = new FormData();
-    const blob = dataUrlToBlob(scene.dataUrl);
-    const fileName = safeFilePart(scene.name || "scene") + ".png";
-    form.append("image", blob, fileName);
-    form.append("type", "file");
-    form.append("name", fileName);
-    form.append("title", scene.name || "Roleplay Scene");
-
-    const response = await fetch("https://api.imgur.com/3/image", {
-      method: "POST",
-      headers: { Authorization: `Client-ID ${clientId}` },
-      body: form,
-    });
-    const payload = await response.json().catch(() => null);
-    if (!response.ok || payload?.success === false) {
-      const apiError = payload?.data?.error || payload?.data || `HTTP ${response.status}`;
-      throw new Error(typeof apiError === "string" ? apiError : JSON.stringify(apiError));
-    }
-
-    const uploadedUrl = payload?.data?.link || "";
-    scene.uploadedUrl = uploadedUrl || "";
-    scheduleSceneAutosave();
-    renderScenes();
-    setApiStatus(uploadedUrl ? `Imgur yuklendi: ${uploadedUrl}` : "Imgur yukledi ama link donmedi.");
-  } catch (error) {
-    setApiStatus(`Imgur yukleme basarisiz: ${error.message}`);
-  }
-}
-
-function dataUrlToBlob(dataUrl) {
-  const [header, payload] = dataUrl.split(",");
-  const mime = header.match(/data:([^;]+)/)?.[1] || "image/png";
-  const binary = atob(payload || "");
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) bytes[index] = binary.charCodeAt(index);
-  return new Blob([bytes], { type: mime });
-}
-
 function setDateDefaults() {
   const today = new Date().toISOString().slice(0, 10);
   controls.startDate.value = today;
@@ -3096,8 +3036,6 @@ applyGlobalTransitionBtn.addEventListener("click", () => {
   renderScenes();
   setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
 });
-imgurClientId.addEventListener("input", saveState);
-uploadSceneBtn.addEventListener("click", uploadSelectedSceneToImgur);
 prepareSceneHistoryControl(sceneFontSize);
 sceneFontSize.addEventListener("input", () => {
   saveState();
@@ -3105,7 +3043,7 @@ sceneFontSize.addEventListener("input", () => {
 });
 scenePadding.addEventListener("input", refreshSceneStyles);
 window.addEventListener("resize", () => {
-  if (activeMode === "scene") renderScenes();
+  renderScenes();
 });
 downloadBtn.addEventListener("click", handleMainDownload);
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
@@ -3119,6 +3057,7 @@ showLayersBtn.addEventListener("click", showLayersPanel);
 hideShortcutsBtn.addEventListener("click", hideShortcuts);
 showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".editor-panel").addEventListener("pointerdown", startToolboxResize);
+document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
 window.addEventListener("keydown", handleSceneKeyDown);
@@ -3129,13 +3068,12 @@ window.addEventListener("beforeunload", () => {
 });
 document.addEventListener("pointerdown", startSceneViewportPan);
 
-switchMode("scene");
+switchMode();
 loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
 if (window.lucide) window.lucide.createIcons();
 
 /* ── Window Manager (Dock & Float) ── */
 document.addEventListener("pointerdown", (e) => {
-  if (activeMode !== "scene") return;
   const handle = e.target.closest(".panel-drag-handle");
   if (!handle) return;
   if (e.target.closest(".layer-window-button, .panel-resize-handle")) return;
