@@ -1,7 +1,15 @@
 "use strict";
 
-const appVersion = "2.1.0";
+const appVersion = "2.2.0";
 const appChangelog = [
+  {
+    version: "2.2.0",
+    date: "2026-07-10",
+    title: "Persona icin bir marka simgesi",
+    notes: [
+      "Uygulamaya, tiyatro maskesi fikrini camgobegi-mor gecisli bir simgeyle anlatan bir logo eklendi; favicon ve menu cubugu/Yardim panelindeki simge olarak kullaniliyor.",
+    ],
+  },
   {
     version: "2.1.0",
     date: "2026-07-10",

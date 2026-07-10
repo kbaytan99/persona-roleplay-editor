@@ -9,8 +9,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 1. Ana Yerlesim
 
-- **Menu Cubugu** — ust barda Dosya/Duzen/Sahne/Ayarlar/Gorunum/Hakkinda
+- **Menu Cubugu** — ust barda Dosya/Duzen/Sahne/Ayarlar/Gorunum/Yardim
   basliklarindan olusan acilir-menu sistemi. *(`initMenuBar`, `.menu-bar`)*
+- **Marka Simgesi** — camgobegi-mor gecisli, tiyatro maskesi bicimli logo;
+  favicon ve menu cubugu/Yardim panelindeki ikon. *(`icon.svg`)*
 - **Sahne Alani** (Canvas) — ortadaki, tum katmanlarin ustuste bindigi tek
   calisma yuzeyi. *(`.composite-stage`)*
 - **Katman Yoneticisi** — sag taraftaki panel; tum resim ve yazi katmanlarinin

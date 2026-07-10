@@ -90,12 +90,11 @@ textarea {
 
 .menu-bar-brand .brand-mark {
   display: inline-flex;
-  color: var(--cyan);
 }
 
-.menu-bar-brand .brand-mark .lucide {
-  width: 16px;
-  height: 16px;
+.menu-bar-brand .brand-mark img {
+  width: 18px;
+  height: 23px;
 }
 
 .menu-bar-brand h1 {
@@ -291,12 +290,11 @@ textarea {
 
 .about-header .brand-mark {
   display: inline-flex;
-  color: var(--cyan);
 }
 
-.about-header .brand-mark .lucide {
-  width: 20px;
-  height: 20px;
+.about-header .brand-mark img {
+  width: 22px;
+  height: 28px;
 }
 
 .about-header-text strong {
