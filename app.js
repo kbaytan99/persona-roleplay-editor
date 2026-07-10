@@ -73,7 +73,7 @@ const sceneImageFilterDefaults = {
   sepia: 4,
   blur: 0,
 };
-const sceneSnapThresholdPx = 9;
+const sceneSnapThresholdPx = 12;
 const sceneHistoryLimit = 20;
 const sceneUndoStack = [];
 const sceneRedoStack = [];
@@ -84,6 +84,7 @@ let isSpacePanning = false;
 let selectedSceneId = "";
 let selectedSceneIds = [];
 let hoveredSceneId = "";
+let selectedTextBlockId = "";
 let shouldAutoFitSceneViewport = true;
 let draggingSceneId = "";
 let currentUserId = localClientId;
@@ -751,20 +752,20 @@ function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = fal
   if (allowX) {
     const xTargets = [0, stageWidth / 2, stageWidth];
     const xPoints = [box.left, box.left + box.width / 2, box.left + box.width];
-    const snap = findNearestSnapDelta(xPoints, xTargets);
-    if (snap) {
-      result.deltaX = snap.delta;
-      result.guides.vertical.push(snap.target);
+    const matches = findSnapMatches(xPoints, xTargets);
+    if (matches.length) {
+      result.deltaX = matches[0].delta;
+      result.guides.vertical.push(...new Set(matches.map((match) => match.target)));
     }
   }
 
   if (allowY) {
     const yTargets = [0, stageHeight / 2, stageHeight];
     const yPoints = [box.top, box.top + box.height / 2, box.top + box.height];
-    const snap = findNearestSnapDelta(yPoints, yTargets);
-    if (snap) {
-      result.deltaY = snap.delta;
-      result.guides.horizontal.push(snap.target);
+    const matches = findSnapMatches(yPoints, yTargets);
+    if (matches.length) {
+      result.deltaY = matches[0].delta;
+      result.guides.horizontal.push(...new Set(matches.map((match) => match.target)));
     }
   }
 
@@ -772,18 +773,19 @@ function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = fal
   return result;
 }
 
-function findNearestSnapDelta(points, targets) {
-  let best = null;
+function findSnapMatches(points, targets) {
+  const matches = [];
   points.forEach((point) => {
     targets.forEach((target) => {
       const delta = target - point;
       const distance = Math.abs(delta);
-      if (distance <= sceneSnapThresholdPx && (!best || distance < best.distance)) {
-        best = { delta, distance, target };
+      if (distance <= sceneSnapThresholdPx) {
+        matches.push({ delta, distance, target });
       }
     });
   });
-  return best;
+  matches.sort((a, b) => a.distance - b.distance);
+  return matches;
 }
 
 function getImageVisualBox(stageRect, scene, visualWidth, visualHeight) {
@@ -860,6 +862,11 @@ function handleSceneKeyDown(event) {
   }
 
   if (event.key === "Delete" || event.code === "Delete") {
+    if (selectedTextBlockId && findTextBlock(selectedTextBlockId)) {
+      event.preventDefault();
+      removeTextBlock(selectedSceneId, selectedTextBlockId);
+      return;
+    }
     const sceneIds = getSceneDeleteTargets();
     if (!sceneIds.length) return;
     event.preventDefault();
@@ -1788,12 +1795,14 @@ function setSelectedScene(id) {
   if (!scenes.some((scene) => scene.id === id)) return;
   selectedSceneId = id;
   selectedSceneIds = [id];
+  selectedTextBlockId = "";
   refreshSceneSelection();
 }
 
 function clearSceneSelection() {
   selectedSceneId = "";
   selectedSceneIds = [];
+  selectedTextBlockId = "";
   refreshSceneSelection();
 }
 
@@ -2270,6 +2279,7 @@ function removeTextBlock(sceneId, blockId) {
   if (!confirm("Bu yazi kutusu silinsin mi? Resim/sahne kalacak.")) return;
   pushSceneHistory();
   scene.blocks = scene.blocks.filter((block) => block.id !== blockId);
+  if (selectedTextBlockId === blockId) selectedTextBlockId = "";
   renderScenes();
   setSceneStatus("Yazi kutusu silindi.");
 }
@@ -2544,6 +2554,7 @@ function startSceneTextDrag(event, textBlock) {
   event.preventDefault();
   event.stopPropagation();
   setSelectedScene(block.dataset.sceneId);
+  selectedTextBlockId = textBlock.id;
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
   const blockRect = block.getBoundingClientRect();
