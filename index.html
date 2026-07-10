@@ -8,97 +8,114 @@
   </head>
   <body>
     <main class="app-shell scene-mode">
-      <section class="editor-panel" aria-label="Editor ayarlari">
-        <div class="toolbox-top-strip" aria-hidden="true"></div>
-        <div class="brand-row">
-          <div class="brand-main">
-            <span class="brand-mark" aria-hidden="true"><i data-lucide="image"></i></span>
-            <div class="brand-copy">
-              <h1 id="appTitle">Sahne Olusturucu</h1>
-              <p id="appSubtitle">Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
-            </div>
-          </div>
-          <div class="header-actions">
-            <button id="downloadBtn" class="primary-action" type="button"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
-          </div>
+      <header class="menu-bar" id="menuBar" aria-label="Menu cubugu">
+        <div class="menu-bar-brand">
+          <span class="brand-mark" aria-hidden="true"><i data-lucide="image"></i></span>
+          <h1 id="appTitle">Sahne Olusturucu</h1>
+          <p id="appSubtitle" hidden>Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
         </div>
 
-        <section id="sceneEditorPane" class="scene-tools mode-pane active" aria-label="Sahne olusturucu">
-          <div class="scene-card scene-actions-card">
-            <div class="section-title">
-              <h2><i data-lucide="sparkles"></i><span>Sahne Olusturucu</span></h2>
-              <div class="section-actions">
-                <button id="blankSceneBtn" type="button"><i data-lucide="scan-plus"></i><span>Bos sahne</span></button>
-                <button id="exportSceneProjectBtn" type="button"><i data-lucide="download"></i><span>RSE indir</span></button>
-                <label class="button-link file-button">
-                  <i data-lucide="upload"></i><span>RSE yukle</span>
-                  <input id="sceneProjectInput" type="file" accept=".rse,application/json" />
-                </label>
-                <label class="button-link file-button">
-                  <i data-lucide="image-plus"></i><span>Resim ekle</span>
-                  <input id="sceneImageInput" type="file" accept="image/*" multiple />
-                </label>
-              </div>
-            </div>
-            <p class="helper-text"><i data-lucide="info"></i><span>Resim sec veya panodaki gorseli Ctrl+V ile yapistir.</span></p>
-          </div>
-
-          <div class="scene-card scene-settings-card">
-            <div class="controls-grid compact-grid">
-              <label>
-                <span>Cikti genisligi</span>
-                <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="1200" />
+        <nav class="menu-bar-nav">
+          <div class="menu-item" data-menu="dosya">
+            <button type="button" class="menu-trigger">Dosya</button>
+            <div class="menu-dropdown">
+              <button id="downloadBtn" type="button" class="menu-dropdown-item"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
+              <button id="exportSceneProjectBtn" type="button" class="menu-dropdown-item"><i data-lucide="save"></i><span>RSE indir</span></button>
+              <label class="menu-dropdown-item file-button">
+                <i data-lucide="upload"></i><span>RSE yukle</span>
+                <input id="sceneProjectInput" type="file" accept=".rse,application/json" />
               </label>
-              <label>
-                <span>Arka plan yuksekligi</span>
-                <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="800" />
-              </label>
-              <label>
-                <span>Sahne font</span>
-                <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
-              </label>
-              <label>
-                <span>Sahne bosluk</span>
-                <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
-              </label>
-              <label>
-                <span>Gecis boyutu</span>
-                <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
-              </label>
-              <label>
-                <span>Gecis filtresi</span>
-                <select id="sceneTransitionStyle">
-                  <option value="soft" selected>Soft fade</option>
-                  <option value="cinematic">Sinematik kararma</option>
-                  <option value="blur">Blur gecis</option>
-                  <option value="none">Keskin</option>
-                </select>
-              </label>
-              <label class="wide-field">
-                <span>Gecis yonu</span>
-                <select id="sceneTransitionSides">
-                  <option value="both" selected>Her iki taraf (Ust & Alt)</option>
-                  <option value="top">Sadece Ust (Baslangic)</option>
-                  <option value="bottom">Sadece Alt (Bitis)</option>
-                </select>
-              </label>
-              <div class="wide-field apply-row">
-                <button id="applyGlobalTransitionBtn" type="button">
-                  <i data-lucide="layers"></i><span>Secilenleri tum katmanlara uygula</span>
-                </button>
-              </div>
             </div>
           </div>
 
-          <div class="scene-card scene-footer-card">
-            <div class="actions-row">
-              <button id="hideToolboxBtn" type="button"><i data-lucide="eye-off"></i><span>Toolbox gizle</span></button>
-              <button id="clearScenesBtn" class="danger-action" type="button"><i data-lucide="trash-2"></i><span>Sahneleri sil</span></button>
+          <div class="menu-item" data-menu="duzen">
+            <button type="button" class="menu-trigger">Duzen</button>
+            <div class="menu-dropdown">
+              <button id="undoMenuBtn" type="button" class="menu-dropdown-item"><span>Geri al</span><kbd>Ctrl+Z</kbd></button>
+              <button id="redoMenuBtn" type="button" class="menu-dropdown-item"><span>Ileri al</span><kbd>Ctrl+Y</kbd></button>
+              <button id="copyMenuBtn" type="button" class="menu-dropdown-item"><span>Kopyala</span><kbd>Ctrl+C</kbd></button>
+              <button id="cutMenuBtn" type="button" class="menu-dropdown-item"><span>Kes</span><kbd>Ctrl+X</kbd></button>
+              <button id="pasteMenuBtn" type="button" class="menu-dropdown-item"><span>Yapistir</span><kbd>Ctrl+V</kbd></button>
+              <button id="selectAllMenuBtn" type="button" class="menu-dropdown-item"><span>Tumunu sec</span><kbd>Ctrl+A</kbd></button>
             </div>
-            <div id="sceneStatus" class="status-text" aria-live="polite"></div>
           </div>
-        </section>
-      </section>
+
+          <div class="menu-item" data-menu="sahne">
+            <button type="button" class="menu-trigger">Sahne</button>
+            <div class="menu-dropdown">
+              <button id="blankSceneBtn" type="button" class="menu-dropdown-item"><i data-lucide="scan-plus"></i><span>Bos sahne</span></button>
+              <label class="menu-dropdown-item file-button" title="Resim sec veya panodaki gorseli Ctrl+V ile yapistir.">
+                <i data-lucide="image-plus"></i><span>Resim ekle</span>
+                <input id="sceneImageInput" type="file" accept="image/*" multiple />
+              </label>
+              <button id="clearScenesBtn" type="button" class="menu-dropdown-item danger-action"><i data-lucide="trash-2"></i><span>Sahneleri sil</span></button>
+            </div>
+          </div>
+
+          <div class="menu-item" data-menu="ayarlar">
+            <button type="button" class="menu-trigger">Ayarlar</button>
+            <div class="menu-dropdown menu-dropdown-panel">
+              <div class="controls-grid compact-grid">
+                <label>
+                  <span>Cikti genisligi</span>
+                  <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="1200" />
+                </label>
+                <label>
+                  <span>Arka plan yuksekligi</span>
+                  <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="800" />
+                </label>
+                <label>
+                  <span>Sahne font</span>
+                  <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
+                </label>
+                <label>
+                  <span>Sahne bosluk</span>
+                  <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
+                </label>
+                <label>
+                  <span>Gecis boyutu</span>
+                  <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
+                </label>
+                <label>
+                  <span>Gecis filtresi</span>
+                  <select id="sceneTransitionStyle">
+                    <option value="soft" selected>Soft fade</option>
+                    <option value="cinematic">Sinematik kararma</option>
+                    <option value="blur">Blur gecis</option>
+                    <option value="none">Keskin</option>
+                  </select>
+                </label>
+                <label class="wide-field">
+                  <span>Gecis yonu</span>
+                  <select id="sceneTransitionSides">
+                    <option value="both" selected>Her iki taraf (Ust & Alt)</option>
+                    <option value="top">Sadece Ust (Baslangic)</option>
+                    <option value="bottom">Sadece Alt (Bitis)</option>
+                  </select>
+                </label>
+                <div class="wide-field apply-row">
+                  <button id="applyGlobalTransitionBtn" type="button">
+                    <i data-lucide="layers"></i><span>Secilenleri tum katmanlara uygula</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="menu-item" data-menu="gorunum">
+            <button type="button" class="menu-trigger">Gorunum</button>
+            <div class="menu-dropdown">
+              <button id="toggleLayersMenuBtn" type="button" class="menu-dropdown-item"><span>Katman panelini goster/gizle</span></button>
+              <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span>Kisayollari goster/gizle</span></button>
+              <button id="zoomFitMenuBtn" type="button" class="menu-dropdown-item"><span>Sigdir</span><kbd>Ctrl+0</kbd></button>
+              <button id="zoomInMenuBtn" type="button" class="menu-dropdown-item"><span>Yakinlastir</span><kbd>Ctrl++</kbd></button>
+              <button id="zoomOutMenuBtn" type="button" class="menu-dropdown-item"><span>Uzaklastir</span><kbd>Ctrl+-</kbd></button>
+            </div>
+          </div>
+        </nav>
+
+        <div id="sceneStatus" class="menu-bar-status" aria-live="polite"></div>
+      </header>
 
       <section class="preview-panel" aria-label="SS onizleme">
         <section id="scenePreviewPane" class="mode-pane active">
@@ -125,7 +142,6 @@
           </aside>
         </section>
       </section>
-      <button id="showToolboxBtn" class="toolbox-show-button" type="button">Toolbox</button>
       <button id="showLayersBtn" class="layers-show-button" type="button">Katmanlar</button>
       <button id="showShortcutsBtn" class="shortcut-toggle-button" type="button">Kisayollar</button>
     </main>

@@ -15,8 +15,6 @@ const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
 const clearScenesBtn = document.querySelector("#clearScenesBtn");
-const hideToolboxBtn = document.querySelector("#hideToolboxBtn");
-const showToolboxBtn = document.querySelector("#showToolboxBtn");
 const showLayersBtn = document.querySelector("#showLayersBtn");
 const hideShortcutsBtn = document.querySelector("#hideShortcutsBtn");
 const showShortcutsBtn = document.querySelector("#showShortcutsBtn");
@@ -25,7 +23,6 @@ const sceneList = document.querySelector("#sceneList");
 const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
 const appTitle = document.querySelector("#appTitle");
 const appSubtitle = document.querySelector("#appSubtitle");
-const sceneEditorPane = document.querySelector("#sceneEditorPane");
 const scenePreviewPane = document.querySelector("#scenePreviewPane");
 
 const controls = {
@@ -45,13 +42,9 @@ const storageKeys = {
   sceneTransitionSize: "rollSs.sceneTransitionSize",
   sceneTransitionStyle: "rollSs.sceneTransitionStyle",
   sceneTransitionSides: "rollSs.sceneTransitionSides",
-  toolboxWidth: "rollSs.toolboxWidth",
-  toolboxLayoutVersion: "rollSs.toolboxLayoutVersion",
-  toolboxHidden: "rollSs.toolboxHidden",
   layersWidth: "rollSs.layersWidth",
   shortcutsHidden: "rollSs.shortcutsHidden",
 };
-const toolboxLayoutVersion = "scene-toolbox-20260710";
 const localClientId = "local-client";
 const legacyUserRegistryKey = "rollSs.users";
 const legacyActiveUserKey = "rollSs.activeUser";
@@ -322,9 +315,7 @@ function restoreState() {
   sceneTransitionSize.value = getClientStoredValue(storageKeys.sceneTransitionSize) ?? sceneTransitionSize.value;
   sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
   sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
-  appShell.style.setProperty("--toolbox-width", `${getSavedToolboxWidth()}px`);
   appShell.style.setProperty("--layers-width", `${getSavedLayersWidth()}px`);
-  appShell.classList.toggle("toolbox-hidden", getClientStoredValue(storageKeys.toolboxHidden) === "true");
   document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
 }
 
@@ -548,7 +539,6 @@ function setIconButtonContent(button, icon, label) {
 
 function switchMode() {
   appShell.classList.add("scene-mode");
-  sceneEditorPane.classList.add("active");
   scenePreviewPane.classList.add("active");
   setIconButtonContent(downloadBtn, "download", "Tek PNG indir");
   appTitle.textContent = "Sahne Olusturucu";
@@ -559,18 +549,6 @@ function switchMode() {
 
 function handleMainDownload() {
   downloadCompositeScene();
-}
-
-function hideToolbox() {
-  appShell.classList.add("toolbox-hidden");
-  localStorage.setItem(clientStorageKey(storageKeys.toolboxHidden), "true");
-  renderScenes();
-}
-
-function showToolbox() {
-  appShell.classList.remove("toolbox-hidden");
-  localStorage.setItem(clientStorageKey(storageKeys.toolboxHidden), "false");
-  renderScenes();
 }
 
 function closeLayersPanel() {
@@ -597,33 +575,52 @@ function showShortcuts() {
   localStorage.setItem(clientStorageKey(storageKeys.shortcutsHidden), "false");
 }
 
-function startToolboxResize(event) {
-  if (appShell.classList.contains("toolbox-hidden")) return;
-  const panelRect = document.querySelector(".editor-panel").getBoundingClientRect();
-  if (Math.abs(event.clientX - panelRect.right) > 14) return;
+function initMenuBar() {
+  const menuItems = [...document.querySelectorAll(".menu-item")];
 
-  event.preventDefault();
-  const startX = event.clientX;
-  const startWidth = panelRect.width;
-
-  const onMove = (moveEvent) => {
-    const width = clampNumber(startWidth + moveEvent.clientX - startX, 380, 640, startWidth);
-    appShell.style.setProperty("--toolbox-width", `${width}px`);
-    localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), String(Math.round(width)));
-    renderScenes();
+  const closeAllMenus = () => {
+    menuItems.forEach((item) => item.classList.remove("open"));
   };
 
-  const onUp = () => {
-    document.removeEventListener("pointermove", onMove);
-    document.removeEventListener("pointerup", onUp);
-    document.removeEventListener("pointercancel", onUp);
-    document.body.classList.remove("resizing-toolbox");
-  };
+  menuItems.forEach((item) => {
+    const trigger = item.querySelector(".menu-trigger");
+    trigger.addEventListener("click", (event) => {
+      event.stopPropagation();
+      const wasOpen = item.classList.contains("open");
+      closeAllMenus();
+      if (!wasOpen) item.classList.add("open");
+    });
+    item.querySelector(".menu-dropdown").addEventListener("click", (event) => {
+      if (event.target.closest(".menu-dropdown-panel")) return;
+      closeAllMenus();
+    });
+  });
 
-  document.body.classList.add("resizing-toolbox");
-  document.addEventListener("pointermove", onMove);
-  document.addEventListener("pointerup", onUp);
-  document.addEventListener("pointercancel", onUp);
+  document.addEventListener("pointerdown", (event) => {
+    if (!event.target.closest(".menu-item")) closeAllMenus();
+  });
+
+  document.querySelector("#undoMenuBtn").addEventListener("click", undoSceneHistory);
+  document.querySelector("#redoMenuBtn").addEventListener("click", redoSceneHistory);
+  document.querySelector("#copyMenuBtn").addEventListener("click", copySelectedScenes);
+  document.querySelector("#cutMenuBtn").addEventListener("click", cutSelectedScenes);
+  document.querySelector("#pasteMenuBtn").addEventListener("click", pasteSceneClipboard);
+  document.querySelector("#selectAllMenuBtn").addEventListener("click", selectAllScenes);
+  document.querySelector("#toggleLayersMenuBtn").addEventListener("click", () => {
+    if (document.body.classList.contains("layers-hidden")) showLayersPanel();
+    else closeLayersPanel();
+  });
+  document.querySelector("#toggleShortcutsMenuBtn").addEventListener("click", () => {
+    if (document.body.classList.contains("shortcuts-hidden")) showShortcuts();
+    else hideShortcuts();
+  });
+  document.querySelector("#zoomFitMenuBtn").addEventListener("click", fitSceneToViewport);
+  document.querySelector("#zoomInMenuBtn").addEventListener("click", () => {
+    setSceneViewportZoom(sceneViewportZoom * 1.18, undefined, undefined);
+  });
+  document.querySelector("#zoomOutMenuBtn").addEventListener("click", () => {
+    setSceneViewportZoom(sceneViewportZoom / 1.18, undefined, undefined);
+  });
 }
 
 function handleSceneWheel(event) {
@@ -2840,17 +2837,6 @@ function getScenePadding() {
   return clampNumber(scenePadding.value, 4, 80, 18);
 }
 
-function getSavedToolboxWidth() {
-  if (getClientStoredValue(storageKeys.toolboxLayoutVersion) !== toolboxLayoutVersion) {
-    localStorage.setItem(clientStorageKey(storageKeys.toolboxWidth), "520");
-    localStorage.setItem(clientStorageKey(storageKeys.toolboxLayoutVersion), toolboxLayoutVersion);
-    return 520;
-  }
-  const savedWidth = Number(getClientStoredValue(storageKeys.toolboxWidth));
-  if (!Number.isFinite(savedWidth)) return 520;
-  return clampNumber(savedWidth, 380, 640, 520);
-}
-
 function getSavedLayersWidth() {
   const savedWidth = Number(getClientStoredValue(storageKeys.layersWidth));
   if (!Number.isFinite(savedWidth)) return 380;
@@ -3051,13 +3037,11 @@ blankSceneBtn.addEventListener("click", addBlankScene);
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);
 sceneProjectInput.addEventListener("change", importSceneProject);
 clearScenesBtn.addEventListener("click", clearScenes);
-hideToolboxBtn.addEventListener("click", hideToolbox);
-showToolboxBtn.addEventListener("click", showToolbox);
 showLayersBtn.addEventListener("click", showLayersPanel);
 hideShortcutsBtn.addEventListener("click", hideShortcuts);
 showShortcutsBtn.addEventListener("click", showShortcuts);
-document.querySelector(".editor-panel").addEventListener("pointerdown", startToolboxResize);
 document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
+initMenuBar();
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
 window.addEventListener("keydown", handleSceneKeyDown);

@@ -45,7 +45,8 @@ textarea {
 }
 
 .app-shell.scene-mode {
-  grid-template-columns: var(--toolbox-width, 560px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: 44px minmax(0, 1fr);
   gap: 0;
   width: 100vw;
   height: 100vh;
@@ -53,76 +54,187 @@ textarea {
   align-items: stretch;
 }
 
-.app-shell.scene-mode.toolbox-hidden {
-  grid-template-columns: 0 minmax(0, 1fr);
-}
-
-body.editor-floating .app-shell.scene-mode {
-  grid-template-columns: 0 minmax(0, 1fr);
-}
-
-.editor-panel,
 .preview-panel {
+  grid-row: 2;
+  grid-column: 1;
   border: 1px solid var(--panel-border);
   border-radius: 8px;
   background: var(--panel-bg);
 }
 
-.editor-panel {
-  padding: 16px;
-}
-
-.scene-mode .editor-panel {
+/* ── Top menu bar (Photoshop-style) ── */
+.menu-bar {
+  grid-row: 1;
+  grid-column: 1;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 44px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent), #14161c;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
-  height: 100vh;
-  overflow: auto;
-  border-radius: 0;
-  border-top: 0;
-  border-bottom: 0;
-  border-left: 0;
-  background:
-    linear-gradient(180deg, rgba(82, 209, 197, 0.055), transparent 170px),
-    linear-gradient(180deg, #171a20, #121419 62%, #101217);
-  box-shadow: 18px 0 48px rgba(0, 0, 0, 0.36);
-  scrollbar-width: thin;
-  scrollbar-color: #4a5568 #111318;
+  z-index: 40;
 }
 
-.scene-mode .editor-panel::after {
-  content: "";
-  position: fixed;
-  left: calc(var(--toolbox-width, 560px) - 5px);
-  top: 0;
-  width: 10px;
-  height: 100vh;
-  cursor: col-resize;
-  z-index: 8;
-  background:
-    linear-gradient(to right, transparent 0 3px, #4f74d8 3px 5px, transparent 5px 10px);
-  opacity: 0.65;
+.menu-bar-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-right: 12px;
+  margin-right: 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  color: var(--text);
+  white-space: nowrap;
 }
 
-.scene-mode .editor-panel:hover::after,
-body.resizing-toolbox .scene-mode .editor-panel::after {
-  opacity: 1;
-  background:
-    linear-gradient(to right, transparent 0 2px, #6f98ff 2px 6px, transparent 6px 10px);
+.menu-bar-brand .brand-mark {
+  display: inline-flex;
+  color: var(--cyan);
 }
 
-.scene-mode.toolbox-hidden .editor-panel {
-  width: 0;
-  padding: 0;
-  overflow: hidden;
+.menu-bar-brand .brand-mark .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+.menu-bar-brand h1 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.menu-bar-nav {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+
+.menu-item {
+  position: relative;
+  height: 100%;
+}
+
+.menu-trigger {
+  height: 100%;
+  padding: 0 12px;
   border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
 }
 
-.scene-mode.toolbox-hidden .editor-panel::after {
+.menu-item:hover .menu-trigger,
+.menu-item.open .menu-trigger {
+  background: rgba(255, 255, 255, 0.06);
+  color: var(--text);
+}
+
+.menu-dropdown {
   display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  min-width: 220px;
+  padding: 6px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 8px;
+  background: #191c23;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+  flex-direction: column;
+  gap: 2px;
 }
 
-body.resizing-toolbox {
-  cursor: col-resize;
-  user-select: none;
+.menu-item.open .menu-dropdown {
+  display: flex;
+}
+
+.menu-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 7px 9px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--text);
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.menu-dropdown-item:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.menu-dropdown-item .lucide {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--muted);
+}
+
+.menu-dropdown-item kbd {
+  margin-left: auto;
+  padding: 1px 5px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 4px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--muted);
+  font-size: 10px;
+}
+
+.menu-dropdown-item.danger-action {
+  color: #ff9797;
+}
+
+.menu-dropdown-item.file-button input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.menu-dropdown-panel {
+  min-width: 280px;
+  max-width: 340px;
+  padding: 12px;
+}
+
+.menu-dropdown-panel .controls-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.menu-dropdown-panel .wide-field {
+  grid-column: 1 / -1;
+}
+
+.menu-dropdown-panel label {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.menu-bar-status {
+  margin-left: auto;
+  padding-left: 12px;
+  color: var(--muted);
+  font-size: 11px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 260px;
 }
 
 .preview-panel {
@@ -133,8 +245,8 @@ body.resizing-toolbox {
 }
 
 .scene-mode .preview-panel {
-  min-height: 100vh;
-  height: 100vh;
+  min-height: 0;
+  height: 100%;
   padding: 0;
   border-radius: 0;
   border: 0;
@@ -198,24 +310,6 @@ body.resizing-toolbox {
   z-index: 90;
   pointer-events: none;
   display: none;
-}
-
-.toolbox-show-button {
-  display: none;
-}
-
-.scene-mode.toolbox-hidden .toolbox-show-button {
-  display: inline-flex;
-  position: fixed;
-  left: 10px;
-  top: 10px;
-  z-index: 20;
-  min-height: 34px;
-  align-items: center;
-  background: linear-gradient(135deg, rgba(82, 209, 197, 0.92), rgba(111, 152, 255, 0.92));
-  border-color: rgba(255, 255, 255, 0.18);
-  color: #071014;
-  box-shadow: 0 14px 36px rgba(0, 0, 0, 0.38);
 }
 
 .scene-mode .brand-row {
@@ -524,7 +618,7 @@ button:hover,
 }
 
 .scene-mode #scenePreviewPane.active {
-  height: 100vh;
+  height: 100%;
   max-height: none;
   overflow: hidden;
   display: grid;
@@ -1644,13 +1738,6 @@ input[type="range"] {
   background: #0d0f13;
 }
 
-.scene-mode.toolbox-hidden .toolbox-show-button {
-  border-color: #3b82f6;
-  background: #2563eb;
-  color: #fff;
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
-}
-
 .scene-zoom-shell {
   position: relative;
   transform-origin: top left;
@@ -1755,13 +1842,6 @@ button:hover,
 }
 
 .primary-action,
-.scene-mode.toolbox-hidden .toolbox-show-button {
-  background:
-    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
-    #2f6fed;
-  border-color: rgba(112, 158, 255, 0.78);
-}
-
 .scene-image-transform-box.selected {
   opacity: 1;
   border-color: rgba(125, 184, 255, 0.98);
@@ -2006,11 +2086,6 @@ body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
   pointer-events: none;
 }
 
-/* Responsive scene workspace fixes */
-.app-shell.scene-mode {
-  grid-template-columns: var(--toolbox-width, 560px) minmax(0, 1fr);
-}
-
 .scene-mode .brand-row {
   flex-direction: column;
   align-items: stretch;
@@ -2051,7 +2126,7 @@ body.layers-hidden.shortcuts-hidden .scene-mode .shortcut-toggle-button,
 }
 
 .scene-layers-panel {
-  max-height: 100vh;
+  max-height: 100%;
 }
 
 .scene-editor-list-container {
@@ -2392,7 +2467,6 @@ button:active,
 }
 
 .primary-action,
-.scene-mode.toolbox-hidden .toolbox-show-button,
 body.layers-hidden .layers-show-button {
   border-color: rgba(72, 199, 184, 0.58);
   background:
@@ -2405,7 +2479,6 @@ body.layers-hidden .layers-show-button {
 }
 
 .primary-action:hover,
-.scene-mode.toolbox-hidden .toolbox-show-button:hover,
 body.layers-hidden .layers-show-button:hover {
   border-color: rgba(132, 225, 211, 0.72);
   background:
@@ -2773,13 +2846,11 @@ input[type="range"] {
   font-size: clamp(13px, 3.6cqi, 18px);
 }
 
-.scene-mode .toolbox-show-button,
 .scene-mode .layers-show-button,
 .scene-mode .shortcut-toggle-button {
   display: none;
 }
 
-.scene-mode.toolbox-hidden .toolbox-show-button,
 body.layers-hidden .scene-mode .layers-show-button,
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex;
@@ -2987,13 +3058,11 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   min-height: 56px;
 }
 
-.scene-mode .toolbox-show-button,
 .scene-mode .layers-show-button,
 .scene-mode .shortcut-toggle-button {
   display: none !important;
 }
 
-.scene-mode.toolbox-hidden .toolbox-show-button,
 body.layers-hidden .scene-mode .layers-show-button,
 body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: inline-flex !important;
