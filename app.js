@@ -5,21 +5,79 @@ const appChangelog = [
   {
     version: "2.0.0",
     date: "2026-07-10",
+    title: "Hakkinda menusu ve otomatik ayarlar",
     notes: [
-      "Kopyala/kes/yapistir/cogalt: kademeli kaydirma offseti ve Ctrl+D ile anlik cogaltma eklendi",
-      "Canvasta sag tik menusu (kopyala/kes/yapistir/sil/RSE) ve kutu ile (marquee) coklu secim eklendi",
-      "Sol toolbox kaldirildi; Dosya/Duzen/Sahne/Ayarlar/Gorunum baslikli ust menu cubugu eklendi",
-      "Metin kutulari resimlerle ayni listede bagimsiz katman oldu, sirasi serbestce degistirilebiliyor",
-      "Katman yoneticisi paneli yeniden boyutlandirilabiliyor, deger kutularina ikon ve yazilabilir sayi alani eklendi",
-      "Gecis ayarlari artik tum katmanlara otomatik uygulaniyor, Imgur entegrasyonu ve eski kod kalintilari kaldirildi",
+      "Menu cubugona bir Hakkinda/Yardim kategorisi eklendi; artik uygulamanin surum numarasini ve bu degisiklik gunlugunu buradan gorebiliyorsun.",
+      "Ayarlar menusundeki gecis (transition) ayarlarini degistirdiginde artik ayri bir 'tum katmanlara uygula' butonuna basmana gerek yok, degisiklik aninda tum mevcut katmanlara yansiyor.",
+      "Uygulamadaki her ozelligin resmi adini listeleyen bir sistem sozlugu (SISTEMLER.md) olusturuldu, boylece hangi ozellikten bahsettigimiz hep netlesiyor.",
+    ],
+  },
+  {
+    version: "1.6.0",
+    date: "2026-07-10",
+    title: "Kopyala/kes/yapistir cilasi",
+    notes: [
+      "Yapistirilan veya cogaltilan bir katman artik orijinalin tam ustune dusmuyor; her yapistirmada biraz daha kaydirilarak yerlestiriliyor, boylece gorunur ve ayirt edilebilir kaliyor.",
+      "Ctrl+D ile panoya hic dokunmadan anlik cogaltma yapilabiliyor; bu kisayol Duzen menusune, sag tik menusune ve kisayollar kutusuna da eklendi.",
+      "Kopyala/Kes/Yapistir/Cogalt gibi secenekler artik ortada hicbir sey yokken otomatik olarak griye donup tiklanamaz hale geliyor.",
+    ],
+  },
+  {
+    version: "1.5.0",
+    date: "2026-07-10",
+    title: "Sag tik menusu, kutu ile secim ve arayuz temizligi",
+    notes: [
+      "Canvas uzerinde sag tiklayinca artik tarayicinin varsayilan menusu degil, Kopyala/Kes/Yapistir/Cogalt/Sil/RSE secenekli kendi menumuz aciliyor.",
+      "Bos canvas alaninda surukleyerek bir secim kutusu (marquee) cizebiliyorsun; kutunun icine giren tum resim katmanlari otomatik seciliyor.",
+      "Katman panelini gizleyince ekranda kalip 'Tek PNG indir' dugmesinin ustune binen mavi 'Katmanlar' butonu kaldirildi, yerine 'L' tusu kisayolu eklendi.",
+      "'Yazi ekle' butonu artik kirmizi degil kendi vurgu rengiyle ve bir ikonla gosteriliyor; kisayollar kutusu artik katman paneliyle cakismiyor ve tasarsa kayabiliyor.",
+    ],
+  },
+  {
+    version: "1.4.0",
+    date: "2026-07-10",
+    title: "Ust menu cubugu (Photoshop tarzi)",
+    notes: [
+      "Soldaki buyuk dikey arac kutusu tamamen kaldirildi; yerine ince bir ust menu cubugu geldi: Dosya, Duzen, Sahne, Ayarlar, Gorunum.",
+      "Dosya indirme/yukleme, geri al/ileri al/kopyala/kes/yapistir, sahne ekleme ve gorunum ayarlari gibi her sey artik kategorilere ayrilmis acilir menulerden erisiliyor.",
+      "Bu degisiklik canvas icin ekranda cok daha fazla yer acti.",
+    ],
+  },
+  {
+    version: "1.3.0",
+    date: "2026-07-10",
+    title: "Katman kontrolleri ikonlu ve yazilabilir oldu",
+    notes: [
+      "Pozisyon ve Filtreler bolumundeki kaydiricilarin (Boyut, Genislik, Parlaklik, Kontrast vb.) yanina anlamli ikonlar eklendi.",
+      "Degerler artik sadece suruklenerek degil dogrudan yazilarak da girilebiliyor; kaydiricinin veya kutunun uzerinde fare tekerlegini cevirerek de ince ayar yapilabiliyor.",
+    ],
+  },
+  {
+    version: "1.2.0",
+    date: "2026-07-10",
+    title: "Bagimsiz metin katmanlari",
+    notes: [
+      "Yazi kutulari artik bir resmin icine gomulu degil, resimlerle tamamen esit haklara sahip bagimsiz katmanlar; istedigin bir yaziyi istedigin bir resmin onune ya da arkasina tasiyabiliyorsun.",
+      "'Yazi ekle' artik katman yoneticisinden genel bir islem; PNG olarak disa aktarirken katmanlar onizlemedeki gercek sirasina gore ciziliyor (oncesinde yazilar her zaman tum resimlerin onunde ciziliyordu).",
+    ],
+  },
+  {
+    version: "1.1.0",
+    date: "2026-07-10",
+    title: "Temel duzeltmeler",
+    notes: [
+      "Bos canvas alanina tiklayinca secim artik duzgun sekilde kalkiyor.",
+      "Katman yoneticisi paneli artik kenarindan suruklenerek genisletilip daraltilabiliyor.",
+      "Imgur'a yukleme ozelligi tamamen kaldirildi; kullanilmayan eski kod temizlendi.",
     ],
   },
   {
     version: "1.0.0",
     date: "2026-07-09",
+    title: "Sahne editoru temeli",
     notes: [
-      "Sahne editoru temeli: tek canvas uzerinde katmanli resim/rol yazisi duzenleme",
-      "Akilli hizalama, pencere yonetimi (dock/float), RSE proje disa/ice aktarma",
+      "Tek canvas uzerinde katmanli resim ve rol yapma (roleplay) yazisi duzenleme.",
+      "Akilli hizalama, pencere yonetimi (sabitle/serbest birak) ve .rse proje formatiyla disa/ice aktarma.",
     ],
   },
 ];
@@ -744,13 +802,20 @@ function renderAboutPanel() {
     const heading = document.createElement("div");
     heading.className = "about-changelog-heading";
     heading.innerHTML = `<strong>v${entry.version}</strong><span>${entry.date}</span>`;
+    block.append(heading);
+    if (entry.title) {
+      const title = document.createElement("div");
+      title.className = "about-changelog-title";
+      title.textContent = entry.title;
+      block.append(title);
+    }
     const list = document.createElement("ul");
     entry.notes.forEach((note) => {
       const li = document.createElement("li");
       li.textContent = note;
       list.append(li);
     });
-    block.append(heading, list);
+    block.append(list);
     listEl.append(block);
   });
 }

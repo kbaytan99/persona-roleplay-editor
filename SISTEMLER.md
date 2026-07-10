@@ -107,12 +107,15 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   gizlenir.
   *(hepsi: `parseLines`, `buildSystemSegments`, `buildChatSegments`)*
 
-## 10. Hakkinda Sistemi
+## 10. Yardim Menusu
 
-- **Surum Numarasi** — Hakkinda menusunde gosterilen guncel versiyon.
+- **Kisayollari Goster/Gizle** — Kisayollar Kutusu'nu ac/kapat, artik Yardim
+  menusunde. *(`showShortcuts`, `hideShortcuts`)*
+- **Surum Numarasi** — Yardim menusunde gosterilen guncel versiyon.
   *(`appVersion`)*
-- **Degisiklik Gunlugu** (Changelog) — "Son guncellemeler" listesi; yeni bir
-  ozellik eklendiginde buraya ve `appChangelog`'a birer satir eklenir.
+- **Degisiklik Gunlugu** (Changelog) — "Son guncellemeler" listesi, her
+  giris bir surum + baslik + detayli notlar iceriyor; yeni bir ozellik
+  eklendiginde buraya ve `appChangelog`'a birer giris eklenir.
   *(`appChangelog`, `renderAboutPanel`)*
 
 ---
