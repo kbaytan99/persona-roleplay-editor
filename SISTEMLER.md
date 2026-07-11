@@ -65,6 +65,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Akilli Hizalama** (Smart Guides) — bir katmani suruklerken kenara/merkeze
   yaklasinca beliren mor hizalama cizgileri. *(`snapStageBox`,
   `drawSmartGuides`)*
+- **Coklu Secimde Birlikte Surukleme** — birden fazla katman (resim+yazi
+  karisik olabilir) seciliyken canvas'ta bunlardan birini suruklemek,
+  kilitli olmayan tum secili katmanlari ayni miktarda birlikte tasir -
+  katman listesindeki surukle-siralamanin canvas karsiligi.
+  *(`getGroupDragSceneIds`, `applyGroupDragDelta`)*
 - **Yazi Kutusu Stilleri** — bir yazi katmaninin arka plan efekti: Siyah
   kutu, Kontur, Soft golge, Efektsiz, Yari saydam kutu, Kalin kontur, Neon
   parlama. Listede en cok onerilen iki stil (Siyah kutu, Soft golge) yildiz

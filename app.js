@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.4.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.4.0";
+import { clampNumber } from "./scripts/utils.js?v=3.4.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.4.1";
 
-const appVersion = "3.4.0";
+const appVersion = "3.4.1";
 const appChangelog = [
+  {
+    version: "3.4.1",
+    date: "2026-07-11",
+    title: "Coklu secim canvas'ta artik hep birlikte hareket ediyor",
+    notes: [
+      "Birden fazla katman secip canvas uzerinde birini surukleyince sadece o tek katman hareket ediyordu, digerleri yerinde kaliyordu - surukleme baslar baslamaz secimi tek katmana sifirlayan bir kod satiri yuzunden. Artik zaten secili olan bir katmani surukleme, secimi bozmuyor ve secili tum katmanlar (resim+yazi karisik olsa bile, kilitli olanlar haric) ayni miktarda birlikte hareket ediyor - katman listesindeki surukle-siralama zaten boyle calisiyordu, canvas'taki surukleme de artik ayni mantigi kullaniyor.",
+    ],
+  },
   {
     version: "3.4.0",
     date: "2026-07-11",
@@ -2678,6 +2686,59 @@ function applySceneLayerPosition(wrap, scene) {
   wrap.style.top = `${scene.imageY || 0}%`;
 }
 
+// Text and image layers keep position in different fields (x/y vs
+// imageX/imageY) but both are percent-of-stage-dimension, so a single
+// delta computed from the dragged layer can be applied uniformly across
+// a mixed text+image multi-selection during a group drag.
+function getScenePosition(scene) {
+  return scene.type === "text"
+    ? { x: scene.x ?? 0, y: scene.y ?? 0 }
+    : { x: scene.imageX || 0, y: scene.imageY || 0 };
+}
+
+function setScenePosition(scene, x, y) {
+  if (scene.type === "text") {
+    scene.x = x;
+    scene.y = y;
+  } else {
+    scene.imageX = x;
+    scene.imageY = y;
+  }
+}
+
+// When the layer being dragged on the canvas is already part of a
+// multi-selection, every other selected (unlocked) layer should move
+// with it - matching the layer-list's existing group-drag behavior.
+// Dragging an unselected layer instead replaces the selection as usual.
+function getGroupDragSceneIds(primarySceneId) {
+  if (!selectedSceneIds.includes(primarySceneId) || selectedSceneIds.length <= 1) return [primarySceneId];
+  return selectedSceneIds.filter((id) => {
+    const scene = scenes.find((sc) => sc.id === id);
+    return scene && !scene.isLocked;
+  });
+}
+
+function applyGroupDragDelta(groupIds, groupInitial, deltaX, deltaY) {
+  groupIds.forEach((id) => {
+    const scene = scenes.find((sc) => sc.id === id);
+    if (!scene) return;
+    const initial = groupInitial.get(id);
+    if (!initial) return;
+    const nextX = initial.x + deltaX;
+    const nextY = initial.y + deltaY;
+    setScenePosition(scene, nextX, nextY);
+    if (scene.type === "text") {
+      const block = document.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(id)}"]`);
+      if (block) {
+        block.style.left = `${nextX}%`;
+        block.style.top = `${nextY}%`;
+      }
+    } else {
+      updateSceneImageTransform(scene);
+    }
+  });
+}
+
 function getSceneImageFilter(scene) {
   const brightness = clampNumber(scene.filterBrightness, 70, 145, sceneImageFilterDefaults.brightness);
   const contrast = clampNumber(scene.filterContrast, 70, 150, sceneImageFilterDefaults.contrast);
@@ -3057,7 +3118,8 @@ function startSceneImagePan(event, scene) {
 
   event.preventDefault();
   event.stopPropagation();
-  setSelectedScene(scene.id);
+  const isGroupMember = selectedSceneIds.includes(scene.id) && selectedSceneIds.length > 1;
+  if (!isGroupMember) setSelectedScene(scene.id);
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
   const startBoxRect = box.getBoundingClientRect();
@@ -3067,6 +3129,9 @@ function startSceneImagePan(event, scene) {
   const startY = event.clientY;
   const initialX = scene.imageX || 0;
   const initialY = scene.imageY || 0;
+
+  const groupIds = getGroupDragSceneIds(scene.id).filter((id) => id !== scene.id);
+  const groupInitial = new Map(groupIds.map((id) => [id, getScenePosition(scenes.find((s) => s.id === id))]));
 
   box.setPointerCapture(event.pointerId);
   box.classList.add("moving");
@@ -3080,6 +3145,9 @@ function startSceneImagePan(event, scene) {
     scene.imageX = roundPositionValue(scene.imageX + (snap.deltaX / Math.max(1, stageRect.width)) * 100);
     scene.imageY = roundPositionValue(scene.imageY + (snap.deltaY / Math.max(1, stageRect.height)) * 100);
     updateSceneImageTransform(scene);
+    if (groupIds.length) {
+      applyGroupDragDelta(groupIds, groupInitial, scene.imageX - initialX, scene.imageY - initialY);
+    }
   };
 
   const onUp = () => {
@@ -3262,13 +3330,19 @@ function startSceneTextDrag(event, textBlock) {
 
   event.preventDefault();
   event.stopPropagation();
-  setSelectedScene(block.dataset.sceneId);
+  const isGroupMember = selectedSceneIds.includes(block.dataset.sceneId) && selectedSceneIds.length > 1;
+  if (!isGroupMember) setSelectedScene(block.dataset.sceneId);
   if (textBlock.isLocked) return;
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
   const blockRect = block.getBoundingClientRect();
   const offsetX = event.clientX - blockRect.left;
   const offsetY = event.clientY - blockRect.top;
+  const initialX = textBlock.x ?? 0;
+  const initialY = textBlock.y ?? 0;
+
+  const groupIds = getGroupDragSceneIds(textBlock.id).filter((id) => id !== textBlock.id);
+  const groupInitial = new Map(groupIds.map((id) => [id, getScenePosition(scenes.find((s) => s.id === id))]));
 
   block.setPointerCapture(event.pointerId);
   block.classList.add("dragging");
@@ -3290,6 +3364,9 @@ function startSceneTextDrag(event, textBlock) {
     textBlock.y = (top / stageRect.height) * 100;
     block.style.left = `${textBlock.x}%`;
     block.style.top = `${textBlock.y}%`;
+    if (groupIds.length) {
+      applyGroupDragDelta(groupIds, groupInitial, textBlock.x - initialX, textBlock.y - initialY);
+    }
   };
 
   const onMove = (moveEvent) => moveBlock(moveEvent.clientX, moveEvent.clientY, moveEvent.altKey);
