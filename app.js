@@ -2,11 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.5.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.5.0";
+import { clampNumber } from "./scripts/utils.js?v=3.6.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.6.0";
 
-const appVersion = "3.5.0";
+const appVersion = "3.6.0";
 const appChangelog = [
+  {
+    version: "3.6.0",
+    date: "2026-07-11",
+    title: "Akilli hizalama artik diger resimlere de calisiyor + yapistirilan/cogaltilan katman artik onde",
+    notes: [
+      "Akilli hizalama (mor cizgiler) sadece canvas'in kenarina/ortasina hizalanirken cikiyordu, diger katmanlarin kenar/orta noktalarina hizalanirken hic cikmiyordu. Artik bir katmani suruklerken (ya da boyutlandirirken) diger tum katmanlarin kenar ve orta noktalari da hizalama hedefi - Figma/Photoshop'taki gibi.",
+      "Yapistirilan (Ctrl+V) veya cogaltilan (Ctrl+D) bir katman, kopyalandigi orijinalin hafifce kaydirilmis bir kopyasi oldugu icin ikisi neredeyse tamamen ust uste biniyordu - ama yapistirilan/cogaltilan katman yanlislikla orijinalin ARKASINA yerlesiyordu. Bu yuzden yeni yapistirilan seyi surukleyip tasimaya calisinca aslinda altindaki orijinal resim hareket ediyordu. Artik yapistirilan/cogaltilan katman orijinalin ONUNE yerlesiyor, dogrudan tiklanip surukelenebiliyor.",
+    ],
+  },
   {
     version: "3.5.0",
     date: "2026-07-11",
@@ -1133,7 +1142,31 @@ function drawSmartGuides(stage, guides) {
   });
 }
 
-function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = false } = {}) {
+// Other layers' own edges/centers are valid smart-guide snap targets too
+// (Photoshop/Figma-style "align to other objects"), not just the canvas's
+// own edges/center. Reads straight from the rendered DOM (covers both
+// text and image layers the same way) rather than recomputing each
+// layer's box from its own imageX/imageY/x/y math.
+function getOtherLayerSnapTargets(stage, excludeSceneId) {
+  const stageRect = stage.getBoundingClientRect();
+  const xTargets = [];
+  const yTargets = [];
+  scenes.forEach((scene) => {
+    if (scene.id === excludeSceneId) return;
+    const el = scene.type === "text"
+      ? stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`)
+      : stage.querySelector(`.scene-image-wrap[data-scene-id="${CSS.escape(scene.id)}"]`);
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    const left = rect.left - stageRect.left;
+    const top = rect.top - stageRect.top;
+    xTargets.push(left, left + rect.width / 2, left + rect.width);
+    yTargets.push(top, top + rect.height / 2, top + rect.height);
+  });
+  return { xTargets, yTargets };
+}
+
+function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = false, excludeSceneId } = {}) {
   const stageRect = stage.getBoundingClientRect();
   const stageWidth = stageRect.width;
   const stageHeight = stageRect.height;
@@ -1148,8 +1181,10 @@ function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = fal
     return result;
   }
 
+  const otherTargets = excludeSceneId ? getOtherLayerSnapTargets(stage, excludeSceneId) : { xTargets: [], yTargets: [] };
+
   if (allowX) {
-    const xTargets = [0, stageWidth / 2, stageWidth];
+    const xTargets = [0, stageWidth / 2, stageWidth, ...otherTargets.xTargets];
     const xPoints = [box.left, box.left + box.width / 2, box.left + box.width];
     const matches = findSnapMatches(xPoints, xTargets);
     if (matches.length) {
@@ -1159,7 +1194,7 @@ function snapStageBox(stage, box, { allowX = true, allowY = true, disabled = fal
   }
 
   if (allowY) {
-    const yTargets = [0, stageHeight / 2, stageHeight];
+    const yTargets = [0, stageHeight / 2, stageHeight, ...otherTargets.yTargets];
     const yPoints = [box.top, box.top + box.height / 2, box.top + box.height];
     const matches = findSnapMatches(yPoints, yTargets);
     if (matches.length) {
@@ -2180,10 +2215,15 @@ function pasteSceneClipboard() {
   const clones = sceneClipboardScenes.map((scene) => cloneSceneForPaste(scene, offset));
   const selectedIds = getSelectedSceneIds();
   const anchorIds = selectedIds.length ? selectedIds : hoveredSceneId ? [hoveredSceneId] : [];
-  const anchorIndex = anchorIds.length
-    ? Math.max(...anchorIds.map((id) => scenes.findIndex((scene) => scene.id === id)).filter((index) => index >= 0))
-    : scenes.length - 1;
-  scenes.splice(anchorIndex + 1, 0, ...clones);
+  const anchorIndices = anchorIds.map((id) => scenes.findIndex((scene) => scene.id === id)).filter((index) => index >= 0);
+  // Insert in FRONT of (lower array index than) the anchor, not behind it.
+  // A pasted clone lands at a slight position offset from what it was
+  // copied from, so the two heavily overlap - if the clone were placed
+  // behind, its clickable area would mostly be covered by the very layer
+  // it overlaps, making the just-pasted thing effectively ungrabbable
+  // until the user first reorders it forward.
+  const insertIndex = anchorIndices.length ? Math.min(...anchorIndices) : scenes.length;
+  scenes.splice(insertIndex, 0, ...clones);
   selectedSceneIds = clones.map((scene) => scene.id);
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
@@ -2205,8 +2245,12 @@ function duplicateSelectedScenes() {
   const originals = scenes.filter((scene) => targetSet.has(scene.id));
   pushSceneHistory();
   const clones = originals.map((scene) => cloneSceneForPaste(scene, 3));
-  const anchorIndex = Math.max(...targetIds.map((id) => scenes.findIndex((scene) => scene.id === id)));
-  scenes.splice(anchorIndex + 1, 0, ...clones);
+  // Same reasoning as pasteSceneClipboard: insert in front of the
+  // originals (not behind), since the duplicate lands at a slight offset
+  // and would otherwise be mostly covered - and thus hard to grab - by
+  // the very layer it was duplicated from.
+  const anchorIndex = Math.min(...targetIds.map((id) => scenes.findIndex((scene) => scene.id === id)));
+  scenes.splice(anchorIndex, 0, ...clones);
   selectedSceneIds = clones.map((scene) => scene.id);
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
@@ -3249,7 +3293,7 @@ function startSceneImagePan(event, scene) {
     const deltaY = ((moveEvent.clientY - startY) / Math.max(1, stageRect.height)) * 100;
     scene.imageX = roundPositionValue(initialX + deltaX);
     scene.imageY = roundPositionValue(initialY + deltaY);
-    const snap = snapStageBox(stage, getImageVisualBox(stageRect, scene, visualWidth, visualHeight), { disabled: moveEvent.altKey });
+    const snap = snapStageBox(stage, getImageVisualBox(stageRect, scene, visualWidth, visualHeight), { disabled: moveEvent.altKey, excludeSceneId: scene.id });
     scene.imageX = roundPositionValue(scene.imageX + (snap.deltaX / Math.max(1, stageRect.width)) * 100);
     scene.imageY = roundPositionValue(scene.imageY + (snap.deltaY / Math.max(1, stageRect.height)) * 100);
     updateSceneImageTransform(scene);
@@ -3403,7 +3447,7 @@ function startSceneImageScale(event, scene) {
         top: liveRect.top - stageRect.top,
         width: liveRect.width,
         height: liveRect.height,
-      }, { allowX: true, allowY: true });
+      }, { allowX: true, allowY: true, excludeSceneId: scene.id });
     }
   };
 
@@ -3465,7 +3509,7 @@ function startSceneTextDrag(event, textBlock) {
       top,
       width: blockRect.width,
       height: blockRect.height,
-    }, { disabled: snapDisabled });
+    }, { disabled: snapDisabled, excludeSceneId: textBlock.id });
     left = Math.min(maxLeft, Math.max(0, left + snap.deltaX));
     top = Math.min(maxTop, Math.max(0, top + snap.deltaY));
     textBlock.x = (left / stageRect.width) * 100;
@@ -3521,7 +3565,7 @@ function startSceneTextResize(event, textBlock) {
       top: blockRect.top - stageRect.top,
       width: clampedWidth,
       height: blockRect.height,
-    }, { allowY: false, disabled: snapDisabled });
+    }, { allowY: false, disabled: snapDisabled, excludeSceneId: textBlock.id });
     clampedWidth = Math.min(maxWidth, Math.max(minWidth, clampedWidth + snap.deltaX));
     textBlock.width = (clampedWidth / stageRect.width) * 100;
     block.style.width = `${textBlock.width}%`;

@@ -62,8 +62,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Gecis Efektleri** — Stil (Soft fade/Sinematik/Blur/Keskin), Boyut ve Yon;
   Ayarlar menusunde degistirilince **otomatik olarak tum katmanlara**
   uygulanir. *(`applyGlobalTransitionToAllScenes`)*
-- **Akilli Hizalama** (Smart Guides) — bir katmani suruklerken kenara/merkeze
-  yaklasinca beliren mor hizalama cizgileri. *(`snapStageBox`,
+- **Akilli Hizalama** (Smart Guides) — bir katmani suruklerken/
+  boyutlandirirken canvas'in kenarina/merkezine VEYA diger herhangi bir
+  katmanin kenar/merkez noktasina yaklasinca beliren mor hizalama
+  cizgileri. *(`snapStageBox`, `getOtherLayerSnapTargets`,
   `drawSmartGuides`)*
 - **Coklu Secimde Birlikte Surukleme** — birden fazla katman (resim+yazi
   karisik olabilir) seciliyken canvas'ta bunlardan birini suruklemek,
@@ -106,7 +108,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   `duplicateSelectedScenes`, `isScenePasteShortcut`)*
 - **Kademeli Kaydirma** — art arda yapistirinca her kopyanin bir oncekinden
   biraz daha kaydirilarak (offset) yerlestirilmesi, boylece ustuste
-  binmemesi. *(`cloneSceneForPaste`, `sceneClipboardPasteCount`)*
+  binmemesi. Yapistirilan/cogaltilan katman, hafifce ust uste bindigi
+  orijinalin ONUNE yerlesir, boylece dogrudan tiklanip surukelenebilir
+  (arkasina yerlesseydi orijinal tiklamalari yerine gecerdi).
+  *(`cloneSceneForPaste`, `sceneClipboardPasteCount`)*
 
 ## 6. Gorunum Kontrolleri
 
