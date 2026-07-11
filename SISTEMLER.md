@@ -82,14 +82,23 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   kesistigi tum resim ve yazi katmanlarini birlikte secme.
   *(`startSceneMarqueeSelect`)*
 - **Sag Tik Menusu** (Context Menu) — canvas uzerinde sag tiklayinca cikan
-  Kopyala/Kes/Yapistir/Cogalt/Sil/RSE menusu. *(`showSceneContextMenu`)*
+  Kopyala/Kes/Yapistir/Cogalt/Sil/RSE menusu; canvas'in bos alaninda da
+  aciliyor. Kilitli olmayan bir resim katmaninin uzerinde sag tiklarsa
+  menu ayrica Pozisyon (Boyut/Genislik/Yukseklik) ve Filtreler
+  (Parlaklik/Kontrast/Doygunluk) kontrollerini de ekliyor - katman
+  panelini acmaya gerek kalmadan hizli ayar icin.
+  *(`showSceneContextMenu`)*
 
 ## 5. Pano Sistemi (Kopyala/Kes/Yapistir)
 
 - **Kopyala / Kes / Yapistir / Cogalt** — secili katman(lar)i panoya alma,
   silme veya aninda cogaltma. Cogalt (`Ctrl+D`) panoya dokunmadan calisir.
+  Yapistirma (`Ctrl+V`) dogrudan klavye kisayoluyla calisir (tarayicinin
+  yerel "paste" olayina bagli degildir - o olay sadece odak belirli bir
+  yerdeyken tetiklenir); yerel paste olayi artik sadece isletim sistemi
+  panosundan gercek bir resim yapistirmak icin kullaniliyor.
   *(`copySelectedScenes`, `cutSelectedScenes`, `pasteSceneClipboard`,
-  `duplicateSelectedScenes`)*
+  `duplicateSelectedScenes`, `isScenePasteShortcut`)*
 - **Kademeli Kaydirma** — art arda yapistirinca her kopyanin bir oncekinden
   biraz daha kaydirilarak (offset) yerlestirilmesi, boylece ustuste
   binmemesi. *(`cloneSceneForPaste`, `sceneClipboardPasteCount`)*

@@ -185,7 +185,19 @@ textarea {
 
 .scene-context-menu {
   z-index: 200;
-  min-width: 180px;
+  min-width: 220px;
+  max-height: 80vh;
+  overflow-y: auto;
+}
+
+.menu-dropdown-divider {
+  margin: 4px 2px;
+  border: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.scene-context-menu .layer-section {
+  width: 100%;
 }
 
 .scene-marquee-select {

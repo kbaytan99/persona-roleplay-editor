@@ -2,11 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.3.4";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.4";
+import { clampNumber } from "./scripts/utils.js?v=3.4.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.4.0";
 
-const appVersion = "3.3.4";
+const appVersion = "3.4.0";
 const appChangelog = [
+  {
+    version: "3.4.0",
+    date: "2026-07-11",
+    title: "Yapistirma artik gercekten guvenilir + sag tik menusunde hizli ayarlar",
+    notes: [
+      "Ctrl+V ile katman yapistirma, tarayicinin yerel 'paste' olayina baglıydi - bu olay sadece belirli odak (focus) durumlarinda gerceklesiyor, bir katman kartina tiklamak gibi normal bir islemden sonra odak hicbir seyin uzerinde kalmayinca (document.body) sessizce hic tetiklenmiyordu. Kopyalama calisiyordu ama yapistirma cogu zaman hicbir sey yapmiyordu - tam olarak 'kopyaliyorum, yapistirinca gelmiyor' sikayeti. Artik Ctrl+V dogrudan klavye olayiyla (her zaman guvenilir) yakalaniyor; tarayicinin yerel yapistirma olayi artik sadece isletim sistemi panosundan gercek bir resim (ekran goruntusu) yapistirmak icin kullaniliyor.",
+      "Sag tik menusu, kilitli olmayan bir resim katmaninin uzerinde acilinca artik Pozisyon (Boyut/Genislik/Yukseklik) ve Filtreler (Parlaklik/Kontrast/Doygunluk) kontrollerini de gosteriyor - Katman Yoneticisi panelini acmadan hizlica ayar yapilabiliyor.",
+    ],
+  },
   {
     version: "3.3.4",
     date: "2026-07-11",
@@ -632,7 +641,7 @@ function handleSceneContextMenuEscape(event) {
   if (event.key === "Escape") closeSceneContextMenu();
 }
 
-function showSceneContextMenu(clientX, clientY) {
+function showSceneContextMenu(clientX, clientY, scene) {
   closeSceneContextMenu();
 
   const menu = document.createElement("div");
@@ -663,6 +672,54 @@ function showSceneContextMenu(clientX, clientY) {
   }, "Del", "delete");
   addItem("RSE indir", exportSceneProject);
   addItem("RSE yukle", () => sceneProjectInput.click());
+
+  // Right-clicking directly on an unlocked image layer also offers its
+  // Pozisyon/Filtreler controls inline, so boyut/parlaklik/vs. can be
+  // tweaked without opening the layer card in the (possibly far away or
+  // hidden) Katman Yoneticisi panel. Gecis efekti is deliberately left out
+  // here - its controls call renderScenes() on change, which would tear
+  // down this menu's own DOM out from under the user mid-adjustment;
+  // Pozisyon/Filtreler only touch the image's live transform/filter style
+  // in place, so they're safe inside a transient popup.
+  if (scene && scene.type !== "text" && scene.dataUrl && !scene.isLocked) {
+    const divider = document.createElement("hr");
+    divider.className = "menu-dropdown-divider";
+    menu.append(divider);
+
+    const posSection = createLayerSection(`${scene.id}:ctxPos`, "Pozisyon", false);
+    posSection.body.append(
+      createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
+        scene.imageZoom = value;
+        updateSceneImageTransform(scene);
+      }, "maximize-2"),
+      createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
+        scene.imageScaleX = value;
+        updateSceneImageTransform(scene);
+      }, "unfold-horizontal"),
+      createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
+        scene.imageScaleY = value;
+        updateSceneImageTransform(scene);
+      }, "unfold-vertical"),
+    );
+    menu.append(posSection.el);
+
+    const filterSection = createLayerSection(`${scene.id}:ctxFilter`, "Filtreler", false);
+    filterSection.body.append(
+      createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
+        scene.filterBrightness = value;
+        updateSceneImageTransform(scene);
+      }, "sun"),
+      createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
+        scene.filterContrast = value;
+        updateSceneImageTransform(scene);
+      }, "contrast"),
+      createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
+        scene.filterSaturate = value;
+        updateSceneImageTransform(scene);
+      }, "droplets"),
+    );
+    menu.append(filterSection.el);
+  }
 
   document.body.append(menu);
   menu.style.display = "flex";
@@ -1151,6 +1208,22 @@ function handleSceneKeyDown(event) {
     return;
   }
 
+  // Scene-paste used to rely solely on the native browser "paste" DOM
+  // event (see handlePaste) - but that event only reliably fires when
+  // focus is on a genuinely editable/paste-capable element. After
+  // clicking a layer card (a plain, non-focusable div), focus commonly
+  // sits on document.body, and Ctrl+V then silently does nothing at all -
+  // no error, no native event, nothing - which is exactly what looked
+  // like "paste is broken". A keydown handler always fires regardless of
+  // focus, so it's the reliable path for scene-paste; handlePaste is now
+  // only responsible for OS-clipboard image pastes (which do need the
+  // real clipboardData a keydown event can't provide).
+  if (!isTextEntryTarget(event.target) && isScenePasteShortcut(event) && sceneClipboardScenes.length) {
+    event.preventDefault();
+    pasteSceneClipboard();
+    return;
+  }
+
   if (isEditableTarget(event.target)) return;
 
   if (event.altKey && !event.ctrlKey && !event.metaKey) {
@@ -1359,14 +1432,15 @@ function addSceneImageBlobs(blobs) {
 }
 
 function handlePaste(event) {
+  // Scene-clipboard pasting (Ctrl+V for copied layers) is handled by the
+  // keydown-level isScenePasteShortcut branch in handleSceneKeyDown, which
+  // fires reliably regardless of what has focus - unlike this native
+  // "paste" DOM event, which only fires in certain focus states. This
+  // handler is now only for pasting an actual image from the OS clipboard
+  // (e.g. a screenshot), which does need the real clipboardData a keydown
+  // event can't provide.
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
-  if (!imageItems.length) {
-    if (!hasActiveTextSelection(event.target) && sceneClipboardScenes.length) {
-      event.preventDefault();
-      pasteSceneClipboard();
-    }
-    return;
-  }
+  if (!imageItems.length) return;
 
   const blobs = imageItems.map((item) => item.getAsFile()).filter(Boolean);
   if (!blobs.length) return;
@@ -1562,7 +1636,8 @@ function renderScenes() {
     if (sceneEl && !isSceneSelected(sceneEl.dataset.sceneId)) {
       setSelectedScene(sceneEl.dataset.sceneId);
     }
-    showSceneContextMenu(event.clientX, event.clientY);
+    const targetScene = sceneEl ? scenes.find((scene) => scene.id === sceneEl.dataset.sceneId) : null;
+    showSceneContextMenu(event.clientX, event.clientY, targetScene);
   });
   const zoomShell = document.createElement("div");
   zoomShell.className = "scene-zoom-shell";
@@ -2488,6 +2563,10 @@ function isSceneCutShortcut(event) {
 
 function isSceneDuplicateShortcut(event) {
   return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d";
+}
+
+function isScenePasteShortcut(event) {
+  return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "v";
 }
 
 function refreshSceneStyles() {
