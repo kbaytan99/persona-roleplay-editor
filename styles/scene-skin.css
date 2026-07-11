@@ -656,6 +656,7 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 
 .dockable-panel.floating {
   position: fixed;
+  z-index: 100;
   min-width: 300px;
   min-height: 220px;
   max-width: calc(100vw - 24px);

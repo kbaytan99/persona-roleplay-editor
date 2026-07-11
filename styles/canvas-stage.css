@@ -25,8 +25,11 @@
 }
 
 .dockable-panel.floating {
-  position: absolute;
-  z-index: 100;
+  /* position + z-index live in the scene-skin.css block for this same
+     selector (loaded later) - declaring them here too split the rule
+     across two files and once caused a stale value to survive a cascade
+     override (see git history). Kept here as a single source of truth
+     for the rest of the floating-panel chrome only. */
   box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
   border: 1px solid rgba(255, 255, 255, 0.15);
   border-radius: 10px;
@@ -477,9 +480,14 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 }
 
 .stage-transform-overlay {
+  /* No z-index here on purpose: same reasoning as .stage-text-overlay
+     below - text and image layers share one unified stack (scene order),
+     and each .scene-image-transform-box already carries its own correct
+     z-index via getSceneLayerZIndex(). Giving this container its own
+     z-index would create a separate stacking context that always wins
+     over text layers, regardless of true layer order. */
   position: absolute;
   inset: 0;
-  z-index: 9000;
   overflow: visible;
   pointer-events: none;
 }
@@ -750,6 +758,14 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   cursor: grabbing;
   outline: 2px solid rgba(198, 154, 255, 0.85);
   outline-offset: 2px;
+}
+
+.scene-text-block.locked {
+  cursor: not-allowed;
+}
+
+.scene-text-block.locked .scene-resize-handle {
+  display: none;
 }
 
 .scene-text-block.resizing {

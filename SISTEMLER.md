@@ -36,8 +36,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   (aralarindaki sirayi koruyarak) tasir. Fare tabanli HTML5 surukle-birak
   degil, pointer-event tabanli oldugu icin dokunmatik ekranlarda da calisir.
   *(`reorderScene`, `startLayerDragReorder`, `reorderScenesByDrag`)*
-- **Katman Kilidi** — bir katmanin yanlislikla tasinmasini engelleyen kilit
-  ikonu. *(`scene.isLocked`)*
+- **Katman Kilidi** — bir katmani duzenlemeye karsi tamamen kapatan kilit
+  ikonu: kilitli katman silinemez (tekli/coklu sil, kes, tumunu temizle),
+  yeniden adlandirilamaz, canvas'ta suruklenip boyutlandirilamaz ve
+  genisletilmis karttaki tum kontroller devre disi kalir.
+  *(`scene.isLocked`)*
 - **Katman Paneli Genisletme** — Katman Yoneticisi'nin sol kenarindan
   surukleyerek genislik ayarlama. *(`startLayersPanelResize`)*
 - **Katman Karti Genislet/Daralt** — her katman karti varsayilan daraltilmis

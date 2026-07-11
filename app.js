@@ -3,8 +3,18 @@
 import { clampNumber } from "./scripts/utils.js";
 import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js";
 
-const appVersion = "3.1.1";
+const appVersion = "3.2.0";
 const appChangelog = [
+  {
+    version: "3.2.0",
+    date: "2026-07-11",
+    title: "Kilit, siralama ve menu duzeltmeleri",
+    notes: [
+      "Katman kilidi artik gercekten kilitliyor: kilitli bir katman silinemez (tekli sil, coklu sil, kes, tumunu temizle - hepsi kilitli katmanlari atlar), yeniden adlandirilamaz, canvas uzerinde suruklenemez/boyutlandirilamaz ve genisletilmis kart govdesindeki tum Pozisyon/Filtre/Gecis/Font/Yazi kontrolleri soluklasip devre disi kalir.",
+      "Bir yazi katmani bir resmin onundeyken artik dogru sekilde suruklenebiliyor - onceden resmin surukleme/boyutlandirma kutusu (.stage-transform-overlay) sabit z-index:9000 tasidigi icin kendi stacking context'ini olusturuyor ve katman sirasi ne olursa olsun her zaman yazilarin onune geciyordu (daha once .stage-text-overlay icin cozulen sorunun ayni turu). Kutunun asiri buyuk +500 z-index farki da +2'ye indirildi, boylece kendi katmaninin bandinin disina tasmiyor.",
+      "Ust menu cubugu artik Katman Yoneticisi serbest pencere (floating) modundayken de calisiyor - panel her zaman menu cubugunun (z-index:40) uzerinde kalacak sekilde z-index:100 tasidigindan, panel suruklenip ust kenara birakilirsa menuyu tamamen kapatip tiklamalari yutuyordu. Serbest pencere artik surukleme sirasinda menu cubugunun altina (52px) kenetleniyor, hicbir zaman ustune binemiyor.",
+    ],
+  },
   {
     version: "3.1.1",
     date: "2026-07-11",
@@ -1303,12 +1313,13 @@ function renderScenes() {
       block.dataset.sceneId = scene.id;
       block.dataset.textStyle = scene.textStyle || "box";
       if (isSceneSelected(scene.id)) block.classList.add("selected");
+      if (scene.isLocked) block.classList.add("locked");
       block.style.zIndex = String(getSceneLayerZIndex(index, 5));
       block.style.fontSize = `${scene.fontSize || getSceneFontSize()}px`;
       block.style.left = `${scene.x}%`;
       block.style.top = `${scene.y}%`;
       block.style.width = `${scene.width}%`;
-      block.title = "Surukleyerek konumlandir";
+      block.title = scene.isLocked ? "Katman kilitli" : "Surukleyerek konumlandir";
       const content = document.createElement("div");
       content.className = "scene-text-content";
       renderSceneTextBlock(content, scene.text);
@@ -1405,7 +1416,11 @@ function renderScenes() {
 
     if (!scene.isLocked) {
       const transformBox = createSceneImageTransformBox(scene);
-      transformBox.style.zIndex = String(getSceneLayerZIndex(index, 500));
+      // Offset 2: just above this scene's own image content (offset 1) so
+      // its drag/resize handles are grabbable, but still inside this
+      // scene's own 10-wide z-index band so a layer correctly in front of
+      // it (lower index) keeps winning the hit-test, matching layer order.
+      transformBox.style.zIndex = String(getSceneLayerZIndex(index, 2));
       applySceneLayerPosition(transformBox, scene);
       transformOverlay.append(transformBox);
     }
@@ -1589,7 +1604,8 @@ function createLayerNameInput(scene, index) {
   nameInput.type = "text";
   nameInput.value = scene.name || `Katman ${index + 1}`;
   nameInput.placeholder = "Katman adi";
-  nameInput.title = "Katman ismi";
+  nameInput.title = scene.isLocked ? "Kilitli katman yeniden adlandirilamaz" : "Katman ismi";
+  nameInput.disabled = scene.isLocked;
   prepareSceneHistoryControl(nameInput);
   nameInput.addEventListener("input", () => {
     scene.name = nameInput.value.trim() || `Katman ${index + 1}`;
@@ -1630,8 +1646,12 @@ function createLayerHeaderActions(scene, isExpanded) {
   removeButton.type = "button";
   removeButton.className = "layer-icon-btn danger";
   removeButton.innerHTML = `<i data-lucide="trash-2"></i>`;
-  removeButton.title = "Katmani sil";
-  removeButton.addEventListener("click", () => removeScene(scene.id));
+  removeButton.disabled = scene.isLocked;
+  removeButton.title = scene.isLocked ? "Kilitli katman silinemez" : "Katmani sil";
+  removeButton.addEventListener("click", () => {
+    if (scene.isLocked) return;
+    removeScene(scene.id);
+  });
 
   headerRight.append(expandButton, lockButton, removeButton);
   return headerRight;
@@ -1681,6 +1701,12 @@ function createLayerCardBody(scene, stage) {
     blankNote.className = "blank-layer-note";
     blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
     scrollableBody.append(blankNote);
+  }
+  if (scene.isLocked) {
+    scrollableBody.classList.add("locked-controls");
+    scrollableBody.querySelectorAll("input, select, textarea, button").forEach((control) => {
+      control.disabled = true;
+    });
   }
   return scrollableBody;
 }
@@ -1848,6 +1874,10 @@ function createImageLayerControls(scene) {
 function removeScene(id) {
   const index = scenes.findIndex((scene) => scene.id === id);
   if (index === -1) return;
+  if (scenes[index].isLocked) {
+    setSceneStatus("Kilitli katman silinemez, once kilidi ac.");
+    return;
+  }
   if (!confirm(`Sahne ${index + 1} silinsin mi? Bu islem sadece bu sahneyi kaldirir.`)) return;
   pushSceneHistory();
   scenes.splice(index, 1);
@@ -1859,8 +1889,13 @@ function removeScene(id) {
 }
 
 function removeScenes(ids) {
-  const targetIds = [...new Set(ids)].filter((id) => scenes.some((scene) => scene.id === id));
-  if (!targetIds.length) return;
+  const requestedIds = [...new Set(ids)].filter((id) => scenes.some((scene) => scene.id === id));
+  const lockedCount = requestedIds.filter((id) => scenes.find((scene) => scene.id === id)?.isLocked).length;
+  const targetIds = requestedIds.filter((id) => !scenes.find((scene) => scene.id === id)?.isLocked);
+  if (!targetIds.length) {
+    if (lockedCount) setSceneStatus("Kilitli katman(lar) silinemez, once kilidi ac.");
+    return;
+  }
   if (!confirm(`Secili ${targetIds.length} sahne silinsin mi?`)) return;
 
   pushSceneHistory();
@@ -1870,7 +1905,9 @@ function removeScenes(ids) {
   selectedSceneId = scenes[Math.min(Math.max(firstIndex, 0), scenes.length - 1)]?.id || "";
   selectedSceneIds = selectedSceneId ? [selectedSceneId] : [];
   renderScenes();
-  setSceneStatus(`${targetIds.length} sahne silindi.`);
+  setSceneStatus(lockedCount
+    ? `${targetIds.length} sahne silindi (${lockedCount} kilitli katman atlandi).`
+    : `${targetIds.length} sahne silindi.`);
 }
 
 function copySelectedScenes() {
@@ -1887,9 +1924,15 @@ function copySelectedScenes() {
 }
 
 function cutSelectedScenes() {
-  const targetIds = getSceneClipboardTargets();
-  if (!targetIds.length) {
+  const requestedIds = getSceneClipboardTargets();
+  if (!requestedIds.length) {
     setSceneStatus("Kesilecek sahne yok.");
+    return;
+  }
+  const lockedCount = requestedIds.filter((id) => scenes.find((scene) => scene.id === id)?.isLocked).length;
+  const targetIds = requestedIds.filter((id) => !scenes.find((scene) => scene.id === id)?.isLocked);
+  if (!targetIds.length) {
+    setSceneStatus("Kilitli katman(lar) kesilemez, once kilidi ac.");
     return;
   }
 
@@ -1903,7 +1946,9 @@ function cutSelectedScenes() {
   selectedSceneId = scenes[Math.min(Math.max(firstIndex, 0), scenes.length - 1)]?.id || "";
   selectedSceneIds = selectedSceneId ? [selectedSceneId] : [];
   renderScenes();
-  setSceneStatus(`${targetIds.length} sahne kesildi. Ctrl+V ile yapistir.`);
+  setSceneStatus(lockedCount
+    ? `${targetIds.length} sahne kesildi (${lockedCount} kilitli katman atlandi). Ctrl+V ile yapistir.`
+    : `${targetIds.length} sahne kesildi. Ctrl+V ile yapistir.`);
 }
 
 function pasteSceneClipboard() {
@@ -1977,14 +2022,21 @@ function createId() {
 
 function clearScenes() {
   if (!scenes.length) return;
+  const lockedCount = scenes.filter((scene) => scene.isLocked).length;
+  if (lockedCount === scenes.length) {
+    setSceneStatus("Kilitli katman(lar) silinemez, once kilidi ac.");
+    return;
+  }
   if (!confirm("Tum sahneler silinsin mi?")) return;
   pushSceneHistory();
-  scenes.splice(0, scenes.length);
+  scenes.splice(0, scenes.length, ...scenes.filter((scene) => scene.isLocked));
   selectedSceneId = "";
   selectedSceneIds = [];
   hoveredSceneId = "";
   renderScenes();
-  setSceneStatus("Tum sahneler silindi.");
+  setSceneStatus(lockedCount
+    ? `Sahneler silindi (${lockedCount} kilitli katman atlandi).`
+    : "Tum sahneler silindi.");
 }
 
 function exportSceneProject() {
@@ -3002,6 +3054,7 @@ function startSceneTextDrag(event, textBlock) {
   event.preventDefault();
   event.stopPropagation();
   setSelectedScene(block.dataset.sceneId);
+  if (textBlock.isLocked) return;
   pushSceneHistory();
   const stageRect = stage.getBoundingClientRect();
   const blockRect = block.getBoundingClientRect();
@@ -3046,6 +3099,7 @@ function startSceneTextDrag(event, textBlock) {
 
 function startSceneTextResize(event, textBlock) {
   if (event.button !== 0) return;
+  if (textBlock.isLocked) return;
   const handle = event.currentTarget;
   const block = handle.closest(".scene-text-block");
   const stage = block?.closest(".composite-stage");
@@ -3647,12 +3701,18 @@ document.addEventListener("pointerdown", (e) => {
   let currentDock = null;
   const dockZone = 130;
 
+  // Floating panels sit at a higher z-index than the top menu bar so they
+  // can be dragged above scene content; keeping the drag's top bound below
+  // the menu bar's height (44px) stops a floating panel from ever being
+  // parked on top of it and swallowing menu clicks.
+  const minTop = 52;
+
   const onPointerMove = (moveEvent) => {
     moveEvent.preventDefault();
     const maxLeft = Math.max(12, window.innerWidth - panel.offsetWidth - 12);
-    const maxTop = Math.max(12, window.innerHeight - panel.offsetHeight - 12);
+    const maxTop = Math.max(minTop, window.innerHeight - panel.offsetHeight - 12);
     const newLeft = clampNumber(moveEvent.clientX - offsetX, 12, maxLeft, 12);
-    const newTop = clampNumber(moveEvent.clientY - offsetY, 12, maxTop, 12);
+    const newTop = clampNumber(moveEvent.clientY - offsetY, minTop, maxTop, minTop);
     panel.style.left = newLeft + "px";
     panel.style.top = newTop + "px";
 

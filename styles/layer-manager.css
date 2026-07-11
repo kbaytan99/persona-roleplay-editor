@@ -243,6 +243,14 @@ body.resizing-layers.layers-dock-bottom {
   border-radius: 4px;
 }
 
+.scene-editor-item-scrollable.locked-controls {
+  opacity: 0.5;
+}
+
+.scene-editor-item-scrollable.locked-controls * {
+  cursor: not-allowed !important;
+}
+
 .scene-mode .scene-editor-item {
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
 }
