@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.2.2";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.2.2";
+import { clampNumber } from "./scripts/utils.js?v=3.2.3";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.2.3";
 
-const appVersion = "3.2.2";
+const appVersion = "3.2.3";
 const appChangelog = [
+  {
+    version: "3.2.3",
+    date: "2026-07-11",
+    title: "Menu aslinda hicbir zaman gercekten acilmiyordu - asil sebep bulundu",
+    notes: [
+      "Onceki turlardaki menu duzeltmeleri (z-index catismasi, mobil cekmece) gercekti ama asil sorunu cozmuyordu: Dosya/Duzen/Sahne/Ayarlar/Gorunum/Yardim'a basinca acilir menu DOM'da dogru sekilde 'acik' isaretleniyordu ama goze hicbir zaman gorunmuyor, tiklanabilir de olmuyordu. Sebep: dar ekranlarda menu ogeleri sigmayinca yatay kaydirma ekleyen .menu-bar-nav'a verilen 'overflow-x: auto' kurali, CSS'in kendi kuraliyla 'overflow-y' tarafini da otomatik olarak kirpan bir moda sokuyordu - acilir menuler ust menu cubugunun kendi 44px'lik yuksekliginin disina tasan icerikler oldugundan, boyutlari doğru hesaplaniyor ama ekranin disinda/gorunmez sayiliyorlardi. Acilir menuler artik ust cubuktan bagimsiz (position: fixed) konumlaniyor ve tetikleyici butonun tam altina JS ile yerlestiriliyor - artik hicbir ust kirpma onlari etkileyemiyor. Ayrica ust menu cubugunun on-arka kademesi (z-index) mobil cekmece/serbest panel gibi diger katmanlarin ustune cikacak sekilde yukseltildi.",
+    ],
+  },
   {
     version: "3.2.2",
     date: "2026-07-11",
@@ -829,16 +837,25 @@ function initMenuBar() {
 
   menuItems.forEach((item) => {
     const trigger = item.querySelector(".menu-trigger");
+    const dropdown = item.querySelector(".menu-dropdown");
     trigger.addEventListener("click", (event) => {
       event.stopPropagation();
       const wasOpen = item.classList.contains("open");
       closeAllMenus();
       if (!wasOpen) {
         item.classList.add("open");
+        // .menu-dropdown is position:fixed (see base.css for why), so its
+        // position isn't automatic from the trigger's own layout anymore -
+        // compute it here, clamped so a right-edge item's dropdown doesn't
+        // run off the viewport.
+        const triggerRect = trigger.getBoundingClientRect();
+        const maxLeft = Math.max(4, window.innerWidth - dropdown.offsetWidth - 4);
+        dropdown.style.top = `${triggerRect.bottom}px`;
+        dropdown.style.left = `${Math.min(triggerRect.left, maxLeft)}px`;
         if (item.dataset.menu === "duzen") refreshEditMenuState();
       }
     });
-    item.querySelector(".menu-dropdown").addEventListener("click", (event) => {
+    dropdown.addEventListener("click", (event) => {
       if (event.target.closest(".menu-dropdown-panel")) return;
       closeAllMenus();
     });

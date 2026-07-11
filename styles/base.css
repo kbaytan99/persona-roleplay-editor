@@ -74,7 +74,14 @@ textarea {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent), #14161c;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
-  z-index: 40;
+  /* A child's z-index only ranks it within ITS OWN stacking-context
+     ancestor - .menu-dropdown's z-index:500 only wins against siblings
+     inside .menu-bar's stacking context, not against separate sibling
+     contexts like the mobile layers drawer (z-index:50). So .menu-bar
+     itself (the actual stacking-context boundary here) needs to outrank
+     every overlay that can occupy this same top-of-screen region: mobile
+     drawer 50, floating panel 100, scene-context-menu 200. */
+  z-index: 600;
 }
 
 .menu-bar-brand {
@@ -149,9 +156,19 @@ textarea {
 
 .menu-dropdown {
   display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
+  /* position: fixed (not absolute) - top/left are set from JS
+     (initMenuBar's openMenu) from the trigger's own getBoundingClientRect().
+     .menu-bar-nav needs overflow-x:auto so overflowing menu items can be
+     scrolled to on narrow screens, but overflow-x:auto forces overflow-y to
+     auto too (per spec), which clips any absolutely-positioned descendant
+     to the nav's own 44px height - the dropdown would lay out with the
+     right size but never actually be painted or clickable. Fixed
+     positioning escapes that ancestor clipping entirely. z-index:500 keeps
+     it above every other overlay that can occupy this same top-of-screen
+     region (mobile layers drawer: 50, floating panel: 100, context menu:
+     200) since an open menu should always be frontmost. */
+  position: fixed;
+  z-index: 500;
   min-width: 220px;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
