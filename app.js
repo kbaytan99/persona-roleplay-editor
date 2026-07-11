@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.3.3";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.3";
+import { clampNumber } from "./scripts/utils.js?v=3.3.4";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.4";
 
-const appVersion = "3.3.3";
+const appVersion = "3.3.4";
 const appChangelog = [
+  {
+    version: "3.3.4",
+    date: "2026-07-11",
+    title: "Katman kontrollerindeki sayi kutulari bozuk gorunuyordu",
+    notes: [
+      "Pozisyon/Filtreler/Gecis efekti bolumlerindeki kaydiricilarin yanindaki kucuk sayi kutulari (ve kaydiricinin kendisi) yanlislikla 48-58px yuksekliginde, buyuk yazi tipiyle cizilip sayi cok kucuk bir kutuya sigdirilmaya calisiliyordu. Sebep: eski, kaldirilmis bir arayuzden (v1.4.0'da silinen dikey arac kutusu) kalma '.scene-mode input, .scene-mode select' kurallari hala .scene-mode sinifiyla eslesip TUM uygulama genelindeki input/select elemanlarini etkiliyordu. Bu eski kurallar Ayarlar panelindeki ilgili alanlara daraltildi/kaldirildi; kompakt kontroller artik tasarlandigi gibi (22px, kucuk yazi) gorunuyor.",
+    ],
+  },
   {
     version: "3.3.3",
     date: "2026-07-11",

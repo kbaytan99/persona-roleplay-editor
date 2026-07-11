@@ -524,16 +524,12 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   box-shadow: 0 0 14px rgba(117, 108, 255, 0.7);
 }
 
-.scene-mode input,
-.scene-mode select {
-  height: 58px;
-  border-radius: 10px;
-  border-color: rgba(142, 160, 184, 0.26);
-  background: rgba(4, 10, 15, 0.74);
-  color: #ffffff;
-  font-size: clamp(14px, 4cqi, 21px);
-  padding-inline: 16px;
-}
+/* Duplicate of the .menu-dropdown-panel input/select rule further below
+   (same dead-code origin - see that rule's comment) - this bare
+   ".scene-mode input" copy was overriding the compact 22px
+   .range-control-value/range-slider heights app-wide to 58px. Removed
+   rather than rescoped since the other rule already covers the live
+   Ayarlar panel inputs. */
 
 .scene-mode .wide-field {
   grid-column: 1 / -1;
@@ -681,8 +677,16 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   font-size: clamp(11px, 2.8cqi, 14px);
 }
 
-.scene-mode input,
-.scene-mode select {
+/* Scoped to the Ayarlar (Settings) menu panel specifically - this used to
+   be ".scene-mode input, .scene-mode select" (bare, app-wide), a leftover
+   from the old sidebar-toolbox UI (removed in v1.4.0) that this rule was
+   originally meant for. Since .scene-mode never went away, the bare
+   selector kept silently matching and stretching EVERY input/select
+   app-wide to 48px - including the compact 22px range-control-value boxes
+   next to sliders and the range sliders themselves (same specificity,
+   later file wins), producing the mis-rendered/clipped-looking numbers. */
+.menu-dropdown-panel input,
+.menu-dropdown-panel select {
   height: 48px;
   font-size: clamp(14px, 3.2cqi, 17px);
 }
