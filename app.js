@@ -1,10 +1,20 @@
 "use strict";
 
-import { clampNumber } from "./scripts/utils.js";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js";
+// Cache-buster query strings below (and on index.html's <link>/<script>
+// tags) must match appVersion on every release - see index.html for why.
+import { clampNumber } from "./scripts/utils.js?v=3.2.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.2.2";
 
-const appVersion = "3.2.1";
+const appVersion = "3.2.2";
 const appChangelog = [
+  {
+    version: "3.2.2",
+    date: "2026-07-11",
+    title: "Deploy cache-busting eklendi",
+    notes: [
+      "GitHub Pages tum dosyalari 10 dakika tarayici onbellegine aliyor (Cache-Control: max-age=600) - bu yuzden bir onceki surumu (3.2.1) deploy ettikten sonra bazi kullanicilarda sert yenileme (Ctrl+Shift+R) bile eski app.js/CSS'i gostermeye devam etti, cunku tarayicinin kendi disk onbellegi GitHub'in 10 dakikalik penceresini bekliyordu. index.html'deki tum <link>/<script> etiketlerine ve app.js'in kendi ES module import'larina appVersion ile eslesen bir ?v= cache-buster query'si eklendi - artik her surum kendi benzersiz dosya URL'sini kullaniyor, eski onbellek hicbir zaman yeni kodun onune gecemiyor.",
+    ],
+  },
   {
     version: "3.2.1",
     date: "2026-07-11",
