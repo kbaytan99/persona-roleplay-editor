@@ -1,0 +1,795 @@
+/* ── Floating & Docking Window Manager ── */
+.panel-drag-handle {
+  height: 14px;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 2px, transparent 2px, transparent 4px);
+  margin: -6px -6px 10px;
+  border-radius: 4px;
+  cursor: grab;
+  opacity: 0.5;
+  transition: opacity 0.15s;
+}
+
+.editor-panel .panel-drag-handle {
+  margin: -16px -16px 10px;
+  border-radius: 8px 8px 0 0;
+  height: 18px;
+}
+
+.panel-drag-handle:hover {
+  opacity: 1;
+}
+
+.panel-drag-handle:active {
+  cursor: grabbing;
+}
+
+.dockable-panel.floating {
+  position: absolute;
+  z-index: 100;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  background: color-mix(in srgb, var(--panel-bg) 95%, transparent);
+  resize: both;
+  min-width: 330px;
+  min-height: 200px;
+}
+
+.dockable-panel.dragging {
+  opacity: 0.9;
+  box-shadow: 0 30px 60px rgba(0, 0, 0, 0.8);
+  pointer-events: none; /* Let pointer events fall through to detect dock zones */
+}
+
+/* Drop zone indicators */
+.dock-drop-indicator {
+  position: absolute;
+  background: rgba(82, 209, 197, 0.15);
+  border: 2px dashed var(--cyan);
+  border-radius: 8px;
+  z-index: 90;
+  pointer-events: none;
+  display: none;
+}
+
+.scene-mode .brand-row {
+  display: flex;
+  padding: 12px;
+  margin: -4px -4px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 8px;
+  background:
+    linear-gradient(135deg, rgba(82, 209, 197, 0.12), rgba(198, 154, 255, 0.08) 45%, rgba(255, 107, 138, 0.08));
+}
+
+.brand-row {
+  display: flex;
+  gap: 12px;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.brand-row > div:first-child {
+  min-width: 0;
+}
+
+.header-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.mode-pane {
+  display: none;
+}
+
+.mode-pane.active {
+  display: block;
+}
+
+h1 {
+  margin: 0 0 5px;
+  font-size: 22px;
+  line-height: 1.1;
+}
+
+p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.field-block {
+  display: grid;
+  gap: 7px;
+}
+
+.scene-tools {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: 0;
+}
+
+.scene-mode .scene-tools {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 122px);
+}
+
+.scene-mode .controls-grid {
+  grid-template-columns: 1fr;
+}
+
+.scene-mode .section-title {
+  align-items: stretch;
+  flex-direction: column;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.055);
+  border-radius: 8px;
+  background: rgba(9, 10, 13, 0.42);
+}
+
+.scene-mode .section-title .file-button {
+  justify-content: center;
+}
+
+.section-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.section-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+h2 {
+  margin: 0;
+  font-size: 16px;
+  line-height: 1.2;
+}
+
+label span {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+textarea {
+  width: 100%;
+  min-height: 300px;
+  resize: vertical;
+  border: 1px solid #373c45;
+  border-radius: 6px;
+  background: #0c0d10;
+  color: var(--text);
+  padding: 12px;
+  line-height: 1.45;
+  outline: none;
+}
+
+.small-textarea {
+  min-height: 78px;
+}
+
+.compact-grid {
+  margin-top: 0;
+}
+
+.single-canvas-hidden {
+  display: none;
+}
+
+.helper-text {
+  margin: -4px 0 12px;
+}
+
+.scene-mode .helper-text {
+  margin: 0 0 12px;
+  padding: 8px 10px;
+  border: 1px solid rgba(82, 209, 197, 0.12);
+  border-radius: 6px;
+  background: rgba(82, 209, 197, 0.045);
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  border-color: var(--cyan);
+  box-shadow: 0 0 0 3px rgba(82, 209, 197, 0.14);
+}
+
+.controls-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 14px 0;
+}
+
+input {
+  width: 100%;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  background: rgba(7, 8, 11, 0.78);
+  color: var(--text);
+  padding: 0 9px;
+  outline: none;
+}
+
+select {
+  width: 100%;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  background: rgba(7, 8, 11, 0.78);
+  color: var(--text);
+  padding: 0 9px;
+  outline: none;
+}
+
+input[type="color"] {
+  padding: 3px;
+}
+
+.actions-row {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.status-text {
+  min-height: 18px;
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.scene-mode .status-text {
+  color: #b7c8d6;
+}
+
+button {
+  min-height: 38px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2a2f39, #1e222a);
+  color: var(--text);
+  padding: 0 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.button-link {
+  display: inline-flex;
+  min-height: 38px;
+  align-items: center;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  border-radius: 6px;
+  background: linear-gradient(180deg, #2a2f39, #1e222a);
+  color: var(--text);
+  padding: 0 13px;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.file-button {
+  position: relative;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+button:hover,
+.button-link:hover {
+  border-color: rgba(82, 209, 197, 0.44);
+  background: linear-gradient(180deg, #323846, #252a34);
+}
+
+.primary-action {
+  flex: 0 0 auto;
+  border-color: rgba(82, 209, 197, 0.55);
+  background: linear-gradient(135deg, #2563eb, #1b9aaa 58%, #2bb673);
+  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.2);
+}
+
+.primary-action:hover {
+  border-color: rgba(242, 184, 75, 0.7);
+  background: linear-gradient(135deg, #3474f3, #22b8b0 58%, #3bd07d);
+}
+
+.render-surface {
+  flex: 0 0 auto;
+  min-height: 44px;
+  background: #000;
+  box-shadow: 0 16px 48px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.render-surface[data-background-mode="transparent"] {
+  background:
+    linear-gradient(45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.08) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.08) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.08) 75%),
+    #111318;
+  background-size: 20px 20px, 20px 20px, 20px 20px, 20px 20px, auto;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0, 0 0;
+}
+
+.preview-viewport {
+  width: 100%;
+  min-height: calc(100vh - 68px);
+  overflow: auto;
+}
+
+.preview-scaler {
+  width: max-content;
+  transform-origin: top left;
+}
+
+.scene-list {
+  margin-top: 18px;
+}
+
+#scenePreviewPane.active {
+  display: block;
+  overflow: auto;
+  max-height: calc(100vh - 68px);
+}
+
+.scene-mode #scenePreviewPane.active {
+  height: 100%;
+  max-height: none;
+  overflow: hidden;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+}
+
+body.layers-floating .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr) 0;
+}
+
+.scene-mode .scene-list {
+  height: 100%;
+  margin: 0;
+  overflow: auto;
+}
+
+.scene-composer {
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  background: #111317;
+  overflow: hidden;
+  width: 100%;
+}
+
+.scene-mode .scene-composer {
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr);
+  height: 100%;
+  border: 0;
+  border-radius: 0;
+  background: #0b0c0f;
+}
+
+.composite-toolbar {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px;
+  border-bottom: 1px solid var(--panel-border);
+}
+
+.scene-mode .composite-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  min-height: 54px;
+  padding: 11px 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+  background:
+    linear-gradient(90deg, rgba(82, 209, 197, 0.09), transparent 34%),
+    linear-gradient(180deg, rgba(28, 32, 40, 0.98), rgba(17, 19, 24, 0.98));
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.38);
+}
+
+.scene-canvas-viewport {
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 48px;
+  background:
+    linear-gradient(45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.022) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.022) 75%),
+    linear-gradient(180deg, #11141a, #08090c);
+  background-size: 34px 34px, 34px 34px, 34px 34px, 34px 34px, auto;
+  background-position: 0 0, 0 17px, 17px -17px, -17px 0, 0 0;
+}
+
+.scene-mode .scene-canvas-viewport {
+  display: grid;
+  align-items: center;
+  justify-items: center;
+  min-height: 0;
+  padding: 72px;
+  background:
+    linear-gradient(45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
+    linear-gradient(-45deg, rgba(255,255,255,0.026) 25%, transparent 25%),
+    linear-gradient(45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
+    linear-gradient(-45deg, transparent 75%, rgba(255,255,255,0.026) 75%),
+    linear-gradient(180deg, #101318, #08090c);
+  background-size: 36px 36px, 36px 36px, 36px 36px, 36px 36px, auto;
+  background-position: 0 0, 0 18px, 18px -18px, -18px 0, 0 0;
+}
+
+.scene-title {
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.composite-stage {
+  position: relative;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 180px),
+    #10141b;
+  overflow: visible;
+  user-select: none;
+  touch-action: none;
+  max-width: none;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  box-shadow:
+    0 0 0 1px rgba(82, 209, 197, 0.08),
+    0 26px 90px rgba(0, 0, 0, 0.72),
+    0 0 80px rgba(82, 209, 197, 0.035);
+}
+
+.stage-render-clip {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+}
+
+.stage-transform-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 9000;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.stage-text-overlay {
+  /* No z-index here on purpose: text and image layers share one unified
+     stack (scene order), and each .scene-text-block already carries its
+     own correct z-index via getSceneLayerZIndex(). Giving this container
+     its own z-index would create a separate stacking context that always
+     wins over .stage-render-clip's images, regardless of layer order. */
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.stage-text-overlay .scene-text-block {
+  pointer-events: auto;
+}
+
+.scene-smart-guides {
+  position: absolute;
+  inset: 0;
+  z-index: 9998;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.smart-guide-line {
+  position: absolute;
+  display: block;
+  background: #c064ff;
+  box-shadow:
+    0 0 0 1px rgba(10, 5, 20, 0.34),
+    0 0 12px rgba(192, 100, 255, 0.78);
+}
+
+.smart-guide-line.vertical {
+  top: -9999px;
+  bottom: -9999px;
+  width: 1px;
+  transform: translateX(-0.5px);
+}
+
+.smart-guide-line.horizontal {
+  left: -9999px;
+  right: -9999px;
+  height: 1px;
+  transform: translateY(-0.5px);
+}
+
+.scene-image-wrap {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  overflow: visible;
+  transform-origin: center center;
+}
+
+.scene-image-wrap img {
+  display: block;
+  width: 100%;
+  height: auto;
+  transform-origin: center center;
+  will-change: transform;
+}
+
+.scene-image-transform-box {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  z-index: 3;
+  border: 1px dashed rgba(82, 209, 197, 0.42);
+  cursor: move;
+  transform-origin: center center;
+  will-change: transform;
+  opacity: 0.38;
+  box-sizing: border-box;
+  pointer-events: auto;
+  transition: opacity 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+}
+
+.transform-ghost-image {
+  display: block;
+  width: 100%;
+  height: auto;
+  opacity: 0;
+  pointer-events: none;
+  user-select: none;
+}
+
+.scene-image-transform-box:hover {
+  opacity: 1;
+}
+
+.scene-image-transform-box.moving,
+.scene-image-transform-box.scaling {
+  opacity: 1;
+  border-color: rgba(242, 184, 75, 0.95);
+  box-shadow:
+    inset 0 0 0 1px rgba(242, 184, 75, 0.38),
+    0 0 28px rgba(242, 184, 75, 0.12);
+}
+
+.scene-image-transform-box.selected::after,
+.scene-image-transform-box.moving::after,
+.scene-image-transform-box.scaling::after,
+.scene-text-block.selected::after,
+.scene-text-block.dragging::after,
+.scene-text-block.resizing::after {
+  content: "";
+  position: absolute;
+  inset: -4px;
+  z-index: 30;
+  border: 1px dashed rgba(255, 255, 255, 0.96);
+  box-shadow:
+    0 0 0 1px rgba(0, 0, 0, 0.72),
+    0 0 14px rgba(255, 255, 255, 0.16);
+  pointer-events: none;
+}
+
+.image-transform-handle {
+  position: absolute;
+  z-index: 40;
+  width: 16px;
+  height: 16px;
+  border: 2px solid #e8fff9;
+  background: linear-gradient(135deg, var(--cyan), #6f98ff);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.55);
+}
+
+.image-transform-handle.nw {
+  left: -7px;
+  top: -7px;
+  cursor: nwse-resize;
+}
+
+.image-transform-handle.ne {
+  right: -7px;
+  top: -7px;
+  cursor: nesw-resize;
+}
+
+.image-transform-handle.e {
+  right: -7px;
+  top: 50%;
+  width: 12px;
+  height: 30px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.image-transform-handle.se {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.image-transform-handle.s {
+  left: 50%;
+  bottom: -7px;
+  width: 30px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.image-transform-handle.sw {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+
+.image-transform-handle.w {
+  left: -7px;
+  top: 50%;
+  width: 12px;
+  height: 30px;
+  border-radius: 999px;
+  transform: translateY(-50%);
+  cursor: ew-resize;
+}
+
+.image-transform-handle.n {
+  left: 50%;
+  top: -7px;
+  width: 30px;
+  height: 12px;
+  border-radius: 999px;
+  transform: translateX(-50%);
+  cursor: ns-resize;
+}
+
+.scene-text-block {
+  position: absolute;
+  z-index: 2;
+  width: 88%;
+  min-height: 38px;
+  padding: var(--scene-padding, 18px);
+  background: #000;
+  color: #f5f5f5;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 800;
+  line-height: 1.18;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  cursor: grab;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000,
+    0 2px 8px #000;
+}
+
+.scene-text-block[data-text-style="box"] {
+  background: #000;
+  text-shadow: none;
+}
+
+.scene-text-block[data-text-style="outline"] {
+  background: transparent;
+  text-shadow:
+    1px 1px 0 #000,
+    -1px 1px 0 #000,
+    1px -1px 0 #000,
+    -1px -1px 0 #000;
+}
+
+.scene-text-block[data-text-style="soft"] {
+  background: transparent;
+  text-shadow: 0 1px 4px #000, 1px 1px 2px #000;
+}
+
+.scene-text-block[data-text-style="plain"] {
+  background: transparent;
+  text-shadow: none;
+}
+
+.scene-text-block[data-text-style="boxSoft"] {
+  background: rgba(0, 0, 0, 0.6);
+  text-shadow: none;
+}
+
+.scene-text-block[data-text-style="outlineThick"] {
+  background: transparent;
+  text-shadow:
+    2px 2px 0 #000,
+    -2px 2px 0 #000,
+    2px -2px 0 #000,
+    -2px -2px 0 #000,
+    0 0 3px #000;
+}
+
+.scene-text-block[data-text-style="neon"] {
+  background: transparent;
+  text-shadow:
+    0 0 6px #52d1c5,
+    0 0 12px #52d1c5,
+    0 0 2px #000;
+}
+
+.scene-text-block.dragging {
+  cursor: grabbing;
+  outline: 2px solid rgba(198, 154, 255, 0.85);
+  outline-offset: 2px;
+}
+
+.scene-text-block.resizing {
+  outline: 2px solid rgba(111, 152, 255, 0.9);
+  outline-offset: 2px;
+}
+
+.scene-text-content {
+  pointer-events: none;
+}
+
+.scene-resize-handle {
+  position: absolute;
+  z-index: 40;
+  right: 4px;
+  bottom: 4px;
+  width: 16px;
+  height: 16px;
+  border-right: 3px solid rgba(245, 245, 245, 0.85);
+  border-bottom: 3px solid rgba(245, 245, 245, 0.85);
+  cursor: ew-resize;
+  pointer-events: auto;
+}
+
+.scene-caption-line {
+  margin: 0;
+  /* .scene-caption-line is a <p>, and the global "p { font-size: 13px }"
+     reset hard-locks its text size regardless of the parent scene-text-block's
+     dynamically-set font-size - restore normal inheritance. */
+  font-size: inherit;
+}
+
+.muted-line {
+  color: rgba(245, 245, 245, 0.55);
+}
+
+.scene-editor-list {
+  display: grid;
+  gap: 10px;
+  padding: 0;
+  border-top: 0;
+}
+

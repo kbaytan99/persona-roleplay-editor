@@ -1,0 +1,857 @@
+/* Clean scene workspace skin */
+.scene-mode .editor-panel {
+  background: #111318;
+  box-shadow: 12px 0 40px rgba(0, 0, 0, 0.32);
+}
+
+.scene-mode .preview-panel {
+  background: #0d0f13;
+}
+
+.scene-mode .brand-row {
+  padding: 12px;
+  border: 1px solid #242933;
+  border-radius: 8px;
+  background: #171a20;
+  box-shadow: none;
+}
+
+.scene-mode .brand-row h1 {
+  color: #f4f6fb;
+}
+
+.scene-mode .brand-row p {
+  color: #8e98a8;
+}
+
+.scene-mode .section-title {
+  border: 1px solid #242933;
+  background: #15181e;
+}
+
+.scene-mode .helper-text {
+  border-color: #222833;
+  background: #14171d;
+  color: #8e98a8;
+}
+
+.scene-mode .composite-toolbar {
+  background: #151820;
+  border-bottom: 1px solid #242a35;
+  box-shadow: 0 10px 28px rgba(0, 0, 0, 0.28);
+}
+
+.composite-stage {
+  border: 1px solid #2a303b;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.04),
+    0 28px 70px rgba(0, 0, 0, 0.58);
+}
+
+button,
+.button-link {
+  border-color: #303642;
+  background: #20242d;
+  box-shadow: none;
+}
+
+button:hover,
+.button-link:hover {
+  border-color: #4b5565;
+  background: #292f3a;
+}
+
+.primary-action {
+  border-color: #2f6fed;
+  background: #2563eb;
+  box-shadow: none;
+}
+
+.primary-action:hover {
+  border-color: #4f8bff;
+  background: #3474f3;
+}
+
+input,
+textarea {
+  border-color: #2a303a;
+  background: #0d0f13;
+}
+
+textarea:focus,
+input:focus,
+select:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.16);
+}
+
+input[type="range"] {
+  accent-color: #3b82f6;
+}
+
+.scene-image-transform-box {
+  border-color: rgba(59, 130, 246, 0.42);
+}
+
+.scene-image-transform-box.moving,
+.scene-image-transform-box.scaling {
+  border-color: rgba(96, 165, 250, 0.96);
+  box-shadow:
+    inset 0 0 0 1px rgba(96, 165, 250, 0.36),
+    0 0 24px rgba(59, 130, 246, 0.14);
+}
+
+.image-transform-handle {
+  border-color: #eaf2ff;
+  background: #3b82f6;
+}
+
+.scene-layers-panel {
+  border-top-color: #242a35;
+}
+
+.layers-title {
+  color: #c7d0df;
+}
+
+.scene-editor-item {
+  border-color: #29313d;
+  border-left-color: var(--scene-accent, #3b82f6);
+  background: #151820;
+}
+
+.scene-editor-header {
+  border-bottom-color: #252c37;
+  background: #191d25;
+}
+
+.scene-editor-header .scene-title {
+  color: #d8deea;
+}
+
+.scene-sub-controls {
+  border-bottom-color: #252c37;
+}
+
+.block-editor {
+  border-color: #252c37;
+  background: #101319;
+}
+
+.block-editor-header {
+  border-bottom-color: #252c37;
+  background: #141820;
+}
+
+.scene-text {
+  background: #0d0f13;
+}
+
+.scene-zoom-shell {
+  position: relative;
+  transform-origin: top left;
+}
+
+.composite-stage {
+  transform-origin: top left;
+}
+
+body.space-pan-ready .scene-canvas-viewport {
+  cursor: grab;
+}
+
+body.space-panning .scene-canvas-viewport {
+  cursor: grabbing;
+}
+
+/* Soft scene polish */
+.scene-mode .editor-panel {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 120px),
+    #12151b;
+  border-right: 1px solid rgba(255, 255, 255, 0.075);
+  box-shadow: 16px 0 44px rgba(0, 0, 0, 0.34);
+}
+
+.scene-mode .preview-panel {
+  background: #0a0c10;
+}
+
+.scene-mode .brand-row,
+.scene-mode .section-title,
+.scene-mode .helper-text,
+.scene-editor-item,
+.block-editor {
+  border-color: rgba(255, 255, 255, 0.085);
+  background: rgba(18, 21, 27, 0.82);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 12px 32px rgba(0, 0, 0, 0.18);
+}
+
+.scene-editor-item {
+  border-left-color: var(--scene-accent, #6f98ff);
+}
+
+.scene-editor-header,
+.block-editor-header {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent),
+    rgba(20, 24, 31, 0.96);
+}
+
+.scene-mode .composite-toolbar {
+  background: rgba(18, 21, 27, 0.96);
+  border-bottom-color: rgba(255, 255, 255, 0.08);
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.28);
+}
+
+.composite-stage {
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.035),
+    0 30px 90px rgba(0, 0, 0, 0.62);
+}
+
+.scene-image-wrap img {
+  will-change: transform, filter;
+}
+
+.scene-text-block {
+  box-shadow: 0 12px 34px rgba(0, 0, 0, 0.2);
+}
+
+.scene-text-block[data-text-style="outline"],
+.scene-text-block[data-text-style="soft"],
+.scene-text-block[data-text-style="plain"],
+.scene-text-block[data-text-style="outlineThick"],
+.scene-text-block[data-text-style="neon"] {
+  box-shadow: none;
+}
+
+button,
+.button-link,
+input,
+select,
+textarea {
+  border-radius: 8px;
+}
+
+button,
+.button-link {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.06), transparent),
+    #202530;
+  border-color: rgba(255, 255, 255, 0.11);
+}
+
+button:hover,
+.button-link:hover {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.08), transparent),
+    #2a3040;
+}
+
+.primary-action,
+.scene-image-transform-box.selected {
+  opacity: 1;
+  border-color: rgba(125, 184, 255, 0.98);
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 184, 255, 0.5),
+    0 0 0 2px rgba(47, 111, 237, 0.34),
+    0 0 28px rgba(47, 111, 237, 0.16);
+}
+
+.scene-editor-item.selected {
+  border-color: rgba(125, 184, 255, 0.75);
+  border-left-color: #7db8ff;
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 184, 255, 0.12),
+    0 12px 34px rgba(47, 111, 237, 0.12);
+}
+
+.shortcut-hud {
+  display: none;
+}
+
+.scene-mode .shortcut-hud {
+  position: fixed;
+  top: 110px;
+  left: 12px;
+  z-index: 18;
+  display: grid;
+  gap: 5px;
+  width: min(200px, calc(100vw - 24px));
+  max-height: calc(100vh - 130px);
+  overflow-y: auto;
+  padding: 9px 10px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+  background: rgba(11, 14, 19, 0.4);
+  color: #cbd5e1;
+  font-size: 11px;
+  font-weight: 700;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.16);
+  opacity: 0.55;
+  pointer-events: auto;
+  transition: opacity 0.18s ease, background 0.18s ease, box-shadow 0.18s ease;
+}
+
+.scene-mode .shortcut-hud:hover,
+.scene-mode .shortcut-hud:focus-within {
+  opacity: 1;
+  background: rgba(13, 16, 22, 0.85);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.035),
+    0 14px 40px rgba(0, 0, 0, 0.28);
+}
+
+.shortcut-hud div {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+}
+
+.shortcut-hud-header {
+  display: flex;
+  align-items: center;
+  margin: -2px 0 4px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  justify-content: space-between;
+}
+
+.shortcut-hud-header strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: #f4f7fb;
+  font-size: 11px;
+}
+
+.shortcut-hud-header strong::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan, #52d1c5);
+  box-shadow: 0 0 6px var(--cyan, #52d1c5);
+}
+
+.shortcut-group-title {
+  margin: 7px 0 1px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #7fe0d4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.shortcut-group-title:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.shortcut-hide-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border-radius: 6px;
+  line-height: 1;
+}
+
+.shortcut-hide-button .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.shortcut-toggle-button {
+  display: none;
+}
+
+.shortcut-toggle-button .lucide {
+  width: 16px;
+  height: 16px;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-hud {
+  display: none;
+}
+
+/* A non-right-docked layer manager can grow into the shortcut box's
+   top-left corner (not while fully closed, since it isn't onscreen in
+   that region then). A floating panel also hides it: floating uses a
+   very high z-index (see .dockable-panel.floating) so it can be dragged
+   above everything, and since it can be parked anywhere - including
+   right over the shortcut box - just hide the box whenever the panel is
+   floating rather than trying to guess if this particular drag happens
+   to overlap it. */
+body.layers-dock-left:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-top:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-bottom:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-floating .scene-mode .shortcut-hud {
+  display: none;
+}
+
+body.layers-dock-left.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-top.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-bottom.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  display: none;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+  display: inline-flex;
+  position: fixed;
+  top: 110px;
+  left: 12px;
+  z-index: 19;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: rgba(11, 14, 19, 0.4);
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #cbd5e1;
+  opacity: 0.6;
+  backdrop-filter: blur(6px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.16);
+  transition: opacity 0.18s ease, background 0.18s ease, color 0.18s ease;
+}
+
+body.shortcuts-hidden .scene-mode .shortcut-toggle-button:hover {
+  opacity: 1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.12), transparent),
+    #202530;
+  color: #fff;
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.34);
+}
+
+.shortcut-hud kbd {
+  min-width: 22px;
+  padding: 4px 6px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  color: #f4f7fb;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10px;
+  line-height: 1;
+  text-align: center;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
+}
+
+.shortcut-hud div > span:last-child {
+  margin-left: auto;
+  color: #9aa8ba;
+  text-align: right;
+}
+
+/* Canvas resize and refreshed editor surface */
+.scene-mode .scene-composer {
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.025), transparent 80px),
+    #0a0c10;
+}
+
+.scene-mode .composite-toolbar {
+  min-height: 58px;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.055), transparent),
+    rgba(15, 18, 24, 0.94);
+  backdrop-filter: blur(10px);
+}
+
+.composite-stage {
+  outline: 1px solid rgba(255, 255, 255, 0.07);
+  outline-offset: 5px;
+}
+
+.stage-resize-frame {
+  position: absolute;
+  inset: 0;
+  z-index: 10000;
+  pointer-events: none;
+  box-shadow: inset 0 0 0 1px rgba(125, 184, 255, 0.12);
+}
+
+.composite-stage.resizing-canvas .stage-resize-frame,
+.composite-stage:hover .stage-resize-frame {
+  box-shadow:
+    inset 0 0 0 1px rgba(125, 184, 255, 0.38),
+    inset 0 0 34px rgba(47, 111, 237, 0.08);
+}
+
+.stage-size-badge {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px 8px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 6px;
+  background: rgba(6, 8, 12, 0.72);
+  color: rgba(235, 241, 250, 0.82);
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+  pointer-events: none;
+}
+
+.stage-resize-handle {
+  position: absolute;
+  display: block;
+  border: 1px solid rgba(236, 246, 255, 0.88);
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.26), transparent),
+    #3b82f6;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.38);
+  opacity: 0.68;
+  pointer-events: auto;
+  transition: opacity 120ms ease, transform 120ms ease, background 120ms ease;
+}
+
+.stage-resize-handle:hover,
+.composite-stage.resizing-canvas .stage-resize-handle {
+  opacity: 1;
+  background:
+    linear-gradient(180deg, rgba(255, 255, 255, 0.28), transparent),
+    #5aa2ff;
+}
+
+.stage-resize-handle.e {
+  top: 50%;
+  right: 8px;
+  width: 9px;
+  height: 76px;
+  border-radius: 999px;
+  cursor: ew-resize;
+  transform: translateY(-50%);
+}
+
+.stage-resize-handle.s {
+  left: 50%;
+  bottom: 8px;
+  width: 76px;
+  height: 9px;
+  border-radius: 999px;
+  cursor: ns-resize;
+  transform: translateX(-50%);
+}
+
+.stage-resize-handle.se {
+  right: 8px;
+  bottom: 8px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px 2px 6px 2px;
+  cursor: nwse-resize;
+}
+
+.scene-transition-overlay {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.cinematic-top {
+  top: 0;
+  background: linear-gradient(to bottom, #000000 0%, transparent 100%);
+}
+
+.cinematic-bottom {
+  bottom: 0;
+  background: linear-gradient(to top, #000000 0%, transparent 100%);
+}
+
+.toolbox-top-strip {
+  height: 18px;
+  margin: -16px -16px 10px;
+  border-radius: 8px 8px 0 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.08) 0, rgba(255, 255, 255, 0.08) 2px, transparent 2px, transparent 4px);
+  opacity: 0.34;
+  pointer-events: none;
+}
+
+.scene-mode .brand-row {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 10px;
+}
+
+.scene-mode .brand-row h1 {
+  font-size: clamp(18px, 7vw, 22px);
+}
+
+.scene-mode .brand-row p {
+  max-width: 34ch;
+  overflow-wrap: break-word;
+}
+
+.header-actions {
+  width: 100%;
+  justify-content: space-between;
+}
+
+.scene-mode .primary-action {
+  flex: 1 1 118px;
+}
+
+.scene-mode .section-title .section-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  width: 100%;
+}
+
+.scene-mode .section-title .section-actions > *,
+.scene-mode .actions-row > * {
+  min-width: 0;
+}
+
+.scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr) var(--layers-width, 380px);
+}
+
+body.layers-dock-left .scene-mode #scenePreviewPane.active {
+  grid-template-columns: var(--layers-width, 380px) minmax(0, 1fr);
+}
+
+body.layers-dock-top .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--layers-height, 320px) minmax(0, 1fr);
+}
+
+body.layers-dock-bottom .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) var(--layers-height, 320px);
+}
+
+body.layers-dock-left .scene-layers-panel,
+body.layers-dock-top .scene-layers-panel {
+  order: -1;
+}
+
+body.layers-dock-top .scene-layers-panel,
+body.layers-dock-bottom .scene-layers-panel {
+  width: 100%;
+}
+
+/* Floating overrides any dock axis (rows/columns) reserved above */
+body.layers-floating .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: minmax(0, 1fr) !important;
+}
+
+.scene-layers-panel {
+  max-height: 100%;
+}
+
+.scene-editor-list-container {
+  min-height: 0;
+}
+
+.dockable-panel.floating {
+  position: fixed;
+  min-width: 300px;
+  min-height: 220px;
+  max-width: calc(100vw - 24px);
+  max-height: calc(100vh - 24px);
+  overflow: hidden;
+  resize: none;
+}
+
+.layers-title {
+  justify-content: space-between;
+  user-select: none;
+}
+
+.layers-title > span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.layer-window-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  min-height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 10px;
+  line-height: 1;
+  pointer-events: auto;
+}
+
+.layer-window-button .lucide {
+  width: 12px;
+  height: 12px;
+}
+
+.layer-window-button.accent {
+  border-color: rgba(111, 152, 255, 0.4);
+  color: #d7e2ff;
+  background: rgba(111, 152, 255, 0.12);
+}
+
+.layer-window-button.accent:hover {
+  border-color: rgba(111, 152, 255, 0.7);
+  background: rgba(111, 152, 255, 0.2);
+}
+
+body.layers-hidden .scene-mode #scenePreviewPane.active {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.layers-hidden .scene-layers-panel {
+  display: none;
+}
+
+.panel-resize-handle {
+  display: none;
+}
+
+.dockable-panel.floating .panel-resize-handle {
+  position: absolute;
+  z-index: 130;
+  display: block;
+  pointer-events: auto;
+}
+
+.panel-resize-handle.n,
+.panel-resize-handle.s {
+  left: 14px;
+  right: 14px;
+  height: 10px;
+  cursor: ns-resize;
+}
+
+.panel-resize-handle.e,
+.panel-resize-handle.w {
+  top: 14px;
+  bottom: 14px;
+  width: 10px;
+  cursor: ew-resize;
+}
+
+.panel-resize-handle.n {
+  top: -5px;
+}
+
+.panel-resize-handle.s {
+  bottom: -5px;
+}
+
+.panel-resize-handle.e {
+  right: -5px;
+}
+
+.panel-resize-handle.w {
+  left: -5px;
+}
+
+.panel-resize-handle.ne,
+.panel-resize-handle.nw,
+.panel-resize-handle.se,
+.panel-resize-handle.sw {
+  width: 18px;
+  height: 18px;
+  border-radius: 6px;
+  background: rgba(125, 184, 255, 0.72);
+  box-shadow:
+    0 0 0 1px rgba(255, 255, 255, 0.42),
+    0 8px 20px rgba(0, 0, 0, 0.36);
+}
+
+.panel-resize-handle.ne {
+  top: -7px;
+  right: -7px;
+  cursor: nesw-resize;
+}
+
+.panel-resize-handle.nw {
+  top: -7px;
+  left: -7px;
+  cursor: nwse-resize;
+}
+
+.panel-resize-handle.se {
+  right: -7px;
+  bottom: -7px;
+  cursor: nwse-resize;
+}
+
+.panel-resize-handle.sw {
+  left: -7px;
+  bottom: -7px;
+  cursor: nesw-resize;
+}
+
+body.resizing-floating-panel {
+  user-select: none;
+}
+
+@media (max-width: 1180px) {
+  .scene-mode #scenePreviewPane.active {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scene-layers-panel {
+    position: fixed;
+    inset: 0 0 0 auto;
+    width: min(85vw, 380px) !important;
+    height: auto !important;
+    z-index: 50;
+  }
+}
+
+@media (max-width: 720px) {
+  .app-shell.scene-mode {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .scene-mode .editor-panel {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(330px, calc(100vw - 44px));
+    z-index: 30;
+  }
+
+  .scene-mode.toolbox-hidden .editor-panel {
+    width: 0;
+  }
+
+  .header-actions,
+  .scene-mode .section-title .section-actions,
+  .scene-mode .actions-row {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  .scene-mode .shortcut-hud {
+    display: none;
+  }
+
+  body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
+    display: none;
+  }
+
+  .menu-bar-status {
+    display: none;
+  }
+}
+

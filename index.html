@@ -5,7 +5,15 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Persona</title>
     <link rel="icon" type="image/svg+xml" href="./icon.svg" />
-    <link rel="stylesheet" href="./style.css" />
+    <!-- Split from one 3600-line style.css into files by era/area for
+         readability. Order matters: later files can intentionally override
+         earlier ones (same cascade behavior as the original single file). -->
+    <link rel="stylesheet" href="./styles/base.css" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css" />
+    <link rel="stylesheet" href="./styles/layer-manager.css" />
+    <link rel="stylesheet" href="./styles/scene-skin.css" />
+    <link rel="stylesheet" href="./styles/theme-skin.css" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css" />
   </head>
   <body>
     <main class="app-shell scene-mode">
@@ -163,6 +171,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script src="./app.js"></script>
+    <script type="module" src="./app.js"></script>
   </body>
 </html>

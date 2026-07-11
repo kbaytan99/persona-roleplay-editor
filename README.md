@@ -30,6 +30,25 @@ Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side c
 - Sahne gorselinin boyutunu, genisligini, yuksekligini ve X/Y konumunu katman kontrollerinden ayarlayabilirsin.
 - `Tek PNG indir` dugmesi tum sahneleri tek resim olarak indirir.
 
+## Dosya yapisi
+
+Build araci yok, tum dosyalar dogrudan tarayiciya sunulur (ES module
+`import`/`export` ile). Kod alanlarina gore boluk halinde:
+
+- `index.html` — sayfa iskeleti, tum `<link>`/`<script>` etiketleri
+- `app.js` — uygulamanin cekirdegi: sahne/katman durumu, render dongusu,
+  tum etkilesimler (surukleme, secim, docking, pano, gecmis, RSE, PNG)
+- `scripts/rp-text.js` — RP metin ayristirma/bicimlendirme (emote/OOC/
+  sistem satiri tespiti, kelime kaydirma, canvas'a yazi cizme) — saf
+  fonksiyonlar, sahne durumuna dokunmaz
+- `scripts/utils.js` — genel yardimci fonksiyonlar (`clampNumber`)
+- `styles/*.css` — eskiden tek bir 3600 satirlik `style.css` idi, donem/
+  alana gore 6 dosyaya bolundu (`base`, `canvas-stage`, `layer-manager`,
+  `scene-skin`, `theme-skin`, `layer-manager-polish`); `index.html`'de
+  hangi sirada yuklendigi onemli (sonrakiler oncekileri override edebilir,
+  tek dosyadaki cascade davranisiyla ayni)
+- `server.js` — sadece lokal gelistirme icin statik dosya sunucusu
+
 ## Sistem sozlugu
 
 Uygulamadaki her ozelligin resmi/ortak adi icin [SISTEMLER.md](SISTEMLER.md)
