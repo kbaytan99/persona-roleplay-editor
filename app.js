@@ -1,7 +1,19 @@
 "use strict";
 
-const appVersion = "2.6.0";
+const appVersion = "3.0.0";
 const appChangelog = [
+  {
+    version: "3.0.0",
+    date: "2026-07-11",
+    title: "Katman Yoneticisi bastan asagi guclendirildi",
+    notes: [
+      "Katman surukleme sistemi tamamen yeniden yazildi: eskiden tarayicinin HTML5 surukle-birak API'sini kullaniyordu, bu da dokunmatik ekranlarda (telefon/tablet) hic calismiyordu ve ara sira garip takilmalara sebep oluyordu. Artik farenin de dokunmatigin da anladigi ayni sistemle (pointer events) calisiyor.",
+      "Birden fazla katman seciliyken (Ctrl+tiklama, Shift+tiklama ya da kutu ile secim ile) herhangi birini suruklemek artik hepsini birlikte, aralarindaki sirayi koruyarak tasiyor - Photoshop/Explorer'daki gibi.",
+      "Katman listesinde artik Ctrl/Cmd+tiklama ile tek tek katman ekleme/cikarma, Shift+tiklama ile aralik secme calisiyor (once sadece kutu ile surukleyerek coklu secim vardi, tek tek tiklama her zaman secimi tek katmana sifirliyordu).",
+      "Surukleme sirasinda katmanin nereye yerlesecegini gosteren belirgin, parlayan bir cizgi eklendi (eski gosterge yanlis kenarda - sol/sag yerine yukari/asagi listede - beliriyordu).",
+      "Katman karti render kodu (~300 satirlik tek bir dev fonksiyon) kucuk, isimlendirilmis parcalara ayrildi (createLayerCard, createLayerCardHeader, createLayerThumb, createTextLayerControls, createImageLayerControls, vb.) - ileride bir parcayi degistirmek icin artik butun kodu okumaya gerek yok.",
+    ],
+  },
   {
     version: "2.6.0",
     date: "2026-07-11",
@@ -281,7 +293,6 @@ let selectedSceneIds = [];
 let expandedLayerIds = new Set();
 let hoveredSceneId = "";
 let shouldAutoFitSceneViewport = true;
-let draggingSceneId = "";
 let currentUserId = localClientId;
 let sceneSaveTimer = 0;
 
@@ -1742,313 +1753,7 @@ function renderScenes() {
   }
 
   scenes.forEach((scene, index) => {
-    const item = document.createElement("div");
-    const isExpandedForClass = expandedLayerIds.has(scene.id);
-    item.className = "scene-editor-item" + (scene.type === "text" ? " text-layer" : "") + (isExpandedForClass ? " expanded" : "");
-    item.dataset.sceneEditorId = scene.id;
-    item.addEventListener("dragover", (event) => handleSceneDragOver(event, scene.id));
-    item.addEventListener("drop", (event) => handleSceneDrop(event, scene.id));
-    if (isSceneSelected(scene.id)) item.classList.add("selected");
-    item.style.setProperty("--scene-accent", getSceneAccent(index));
-    item.addEventListener("pointerdown", (event) => {
-      if (isEditableTarget(event.target)) return;
-      setSelectedScene(scene.id);
-    });
-
-    // ── Drag grip strip (left edge) ──
-    const dragGrip = document.createElement("div");
-    dragGrip.className = "layer-drag-grip";
-    dragGrip.title = "Surukleyerek sahne sirasini degistir";
-    dragGrip.draggable = true;
-    dragGrip.innerHTML = `<svg width="6" height="20" viewBox="0 0 6 20" fill="currentColor"><circle cx="1.5" cy="2" r="1.2"/><circle cx="4.5" cy="2" r="1.2"/><circle cx="1.5" cy="6" r="1.2"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="1.5" cy="10" r="1.2"/><circle cx="4.5" cy="10" r="1.2"/><circle cx="1.5" cy="14" r="1.2"/><circle cx="4.5" cy="14" r="1.2"/><circle cx="1.5" cy="18" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg>`;
-    dragGrip.addEventListener("dragstart", (event) => startSceneOrderDrag(event, scene.id));
-    dragGrip.addEventListener("dragend", endSceneOrderDrag);
-
-    // ── Card inner (header + body) ──
-    const cardInner = document.createElement("div");
-    cardInner.className = "layer-card-inner";
-
-    // ── Header ──
-    const itemHeader = document.createElement("div");
-    itemHeader.className = "scene-editor-header";
-
-    const headerLeft = document.createElement("div");
-    headerLeft.className = "layer-header-left";
-
-    const layerNumber = document.createElement("span");
-    layerNumber.className = "layer-number";
-    layerNumber.textContent = `${index + 1}`;
-
-    const layerThumb = document.createElement(scene.type === "text" ? "span" : "img");
-    if (scene.type === "text") {
-      layerThumb.className = "layer-type-badge";
-      layerThumb.textContent = "T";
-      layerThumb.title = "Yazi katmani";
-    } else {
-      layerThumb.className = "layer-thumb";
-      if (scene.dataUrl) layerThumb.src = scene.dataUrl;
-      layerThumb.alt = "";
-      layerThumb.draggable = false;
-      layerThumb.title = "Resim katmani";
-    }
-
-    const nameInput = document.createElement("input");
-    nameInput.className = "scene-name-input";
-    nameInput.type = "text";
-    nameInput.value = scene.name || `Katman ${index + 1}`;
-    nameInput.placeholder = "Katman adi";
-    nameInput.title = "Katman ismi";
-    prepareSceneHistoryControl(nameInput);
-    nameInput.addEventListener("input", () => {
-      scene.name = nameInput.value.trim() || `Katman ${index + 1}`;
-      const image = document.querySelector(`[data-scene-image-id="${CSS.escape(scene.id)}"]`);
-      if (image) image.alt = scene.name;
-      scheduleSceneAutosave();
-    });
-
-    headerLeft.append(layerNumber, layerThumb, nameInput);
-
-    const isExpanded = isExpandedForClass;
-
-    const headerRight = document.createElement("div");
-    headerRight.className = "layer-header-actions";
-
-    const expandButton = document.createElement("button");
-    expandButton.type = "button";
-    expandButton.className = "layer-icon-btn layer-expand-btn" + (isExpanded ? " active" : "");
-    expandButton.innerHTML = isExpanded ? `<i data-lucide="chevron-down"></i>` : `<i data-lucide="chevron-right"></i>`;
-    expandButton.title = isExpanded ? "Daralt" : "Genislet";
-    expandButton.addEventListener("click", () => {
-      if (expandedLayerIds.has(scene.id)) expandedLayerIds.delete(scene.id);
-      else expandedLayerIds.add(scene.id);
-      renderScenes();
-    });
-
-    const lockButton = document.createElement("button");
-    lockButton.type = "button";
-    lockButton.className = "layer-icon-btn" + (scene.isLocked ? " active" : "");
-    lockButton.innerHTML = scene.isLocked ? `<i data-lucide="lock"></i>` : `<i data-lucide="lock-open"></i>`;
-    lockButton.title = scene.isLocked ? "Kilidi ac" : "Kilitle";
-    lockButton.addEventListener("click", () => {
-      pushSceneHistory();
-      scene.isLocked = !scene.isLocked;
-      renderScenes();
-    });
-
-    const removeButton = document.createElement("button");
-    removeButton.type = "button";
-    removeButton.className = "layer-icon-btn danger";
-    removeButton.innerHTML = `<i data-lucide="trash-2"></i>`;
-    removeButton.title = "Katmani sil";
-    removeButton.addEventListener("click", () => removeScene(scene.id));
-
-    headerRight.append(expandButton, lockButton, removeButton);
-    itemHeader.append(headerLeft, headerRight);
-    cardInner.append(itemHeader);
-
-    if (!isExpanded) {
-      // ── Collapsed preview line ──
-      const previewLine = document.createElement("div");
-      previewLine.className = "layer-preview-line";
-      if (scene.type === "text") {
-        const trimmed = (scene.text || "").trim();
-        if (trimmed) {
-          previewLine.textContent = trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
-        } else {
-          previewLine.textContent = "Bos yazi katmani";
-          previewLine.classList.add("empty");
-        }
-      } else if (scene.dataUrl) {
-        previewLine.textContent = `Boyut %${scene.imageZoom || 100}`;
-      } else {
-        previewLine.textContent = "Bos katman";
-        previewLine.classList.add("empty");
-      }
-      cardInner.append(previewLine);
-    } else {
-      // ── Order buttons row ──
-      const orderRow = document.createElement("div");
-      orderRow.className = "layer-order-row";
-      orderRow.append(
-        createSceneOrderButton("En ust", "chevrons-up", scene.id, "top", index === 0),
-        createSceneOrderButton("Uste", "chevron-up", scene.id, "up", index === 0),
-        createSceneOrderButton("Alta", "chevron-down", scene.id, "down", index === scenes.length - 1),
-        createSceneOrderButton("En alt", "chevrons-down", scene.id, "bottom", index === scenes.length - 1),
-      );
-
-      // ── Scrollable body ──
-      const scrollableBody = document.createElement("div");
-      scrollableBody.className = "scene-editor-item-scrollable";
-
-      // ── Text layer controls ──
-      if (scene.type === "text") {
-        const textControls = document.createElement("div");
-        textControls.className = "block-editor-header";
-
-        const fontInput = document.createElement("input");
-        fontInput.className = "block-font-input";
-        fontInput.type = "text";
-        fontInput.inputMode = "numeric";
-        fontInput.value = scene.fontSize || getSceneFontSize();
-        fontInput.title = "Bu yazinin font boyutu";
-        prepareSceneHistoryControl(fontInput);
-        fontInput.addEventListener("input", () => {
-          const val = parseInt(fontInput.value, 10);
-          if (!isNaN(val) && val > 0) {
-            // Don't clamp to the min mid-typing (e.g. typing "24" passes
-            // through "2", which is below the min) - that causes a jarring
-            // jump to the clamped floor before the real value lands. The max
-            // is still capped live so a stray extra digit can't blow up the
-            // preview to an absurd size; the "change" handler below enforces
-            // the full 10-48 range once typing is done.
-            const liveValue = Math.min(48, val);
-            scene.fontSize = liveValue;
-            const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-            if (block) block.style.fontSize = `${liveValue}px`;
-          }
-        });
-        fontInput.addEventListener("change", () => {
-          scene.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
-          fontInput.value = scene.fontSize;
-          saveState();
-          renderScenes();
-        });
-
-        const styleSelect = document.createElement("select");
-        styleSelect.title = "Bu yazinin arka plan/efekt stili";
-        styleSelect.innerHTML = `
-          <option value="box">★ Siyah kutu</option>
-          <option value="soft">★ Soft golge</option>
-          <option value="outline">Kontur</option>
-          <option value="plain">Efektsiz</option>
-          <option value="boxSoft">Yari saydam kutu</option>
-          <option value="outlineThick">Kalin kontur</option>
-          <option value="neon">Neon parlama</option>
-        `;
-        styleSelect.value = scene.textStyle || "box";
-        prepareSceneHistoryControl(styleSelect);
-        styleSelect.addEventListener("change", () => {
-          scene.textStyle = styleSelect.value;
-          const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-          if (block) block.dataset.textStyle = scene.textStyle;
-        });
-
-        textControls.append(fontInput, styleSelect);
-
-        const textarea = document.createElement("textarea");
-        textarea.className = "scene-text";
-        textarea.placeholder = "Bu yaziyi sahneye ekle...";
-        textarea.spellcheck = false;
-        textarea.value = scene.text;
-        prepareSceneHistoryControl(textarea);
-        textarea.addEventListener("input", () => {
-          scene.text = textarea.value;
-          const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-          const content = block?.querySelector(".scene-text-content");
-          if (content) renderSceneTextBlock(content, scene.text);
-        });
-
-        scrollableBody.append(textControls, textarea);
-      } else if (scene.dataUrl) {
-        // ── Image controls (grouped sections) ──
-        // Position section
-        const posSection = createLayerSection("Pozisyon", false);
-        posSection.body.append(
-          createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
-            scene.imageZoom = value;
-            updateSceneImageTransform(scene);
-          }, "maximize-2"),
-          createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
-            scene.imageScaleX = value;
-            updateSceneImageTransform(scene);
-          }, "unfold-horizontal"),
-          createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
-            scene.imageScaleY = value;
-            updateSceneImageTransform(scene);
-          }, "unfold-vertical"),
-          createRangeControl("X", scene.imageX || 0, -1000, 1000, 0.5, (value) => {
-            scene.imageX = value;
-            updateSceneImageTransform(scene);
-          }, "move-horizontal"),
-          createRangeControl("Y", scene.imageY || 0, -1000, 1000, 0.5, (value) => {
-            scene.imageY = value;
-            updateSceneImageTransform(scene);
-          }, "move-vertical"),
-        );
-        scrollableBody.append(posSection.el);
-
-        // Filter section
-        const filterSection = createLayerSection("Filtreler", false);
-        filterSection.body.append(
-          createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
-            scene.filterBrightness = value;
-            updateSceneImageTransform(scene);
-          }, "sun"),
-          createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
-            scene.filterContrast = value;
-            updateSceneImageTransform(scene);
-          }, "contrast"),
-          createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
-            scene.filterSaturate = value;
-            updateSceneImageTransform(scene);
-          }, "droplets"),
-          createRangeControl("Sicaklik", scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
-            scene.filterSepia = value;
-            updateSceneImageTransform(scene);
-          }, "thermometer"),
-          createRangeControl("Blur", scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
-            scene.filterBlur = value;
-            updateSceneImageTransform(scene);
-          }, "scan-eye"),
-        );
-        const resetFilterButton = document.createElement("button");
-        resetFilterButton.type = "button";
-        resetFilterButton.className = "layer-mini-btn";
-        resetFilterButton.textContent = "Sifirla";
-        resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
-        filterSection.body.append(resetFilterButton);
-        scrollableBody.append(filterSection.el);
-
-        // Transition section
-        const transSection = createLayerSection("Gecis efekti", false);
-        transSection.body.append(
-          createSelectControl("Stil", scene.transitionStyle || "none", [
-            { value: "soft", text: "Soft fade" },
-            { value: "cinematic", text: "Sinematik" },
-            { value: "blur", text: "Blur gecis" },
-            { value: "none", text: "Keskin" }
-          ], (value) => {
-            pushSceneHistory();
-            scene.transitionStyle = value;
-            renderScenes();
-          }, "palette"),
-          createRangeControl("Boyut", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
-            scene.transitionSize = value;
-            renderScenes();
-          }, "ruler"),
-          createSelectControl("Yon", scene.transitionSides || "both", [
-            { value: "both", text: "Ust & Alt" },
-            { value: "top", text: "Sadece Ust" },
-            { value: "bottom", text: "Sadece Alt" }
-          ], (value) => {
-            pushSceneHistory();
-            scene.transitionSides = value;
-            renderScenes();
-          }, "compass"),
-        );
-        scrollableBody.append(transSection.el);
-      } else {
-        const blankNote = document.createElement("div");
-        blankNote.className = "blank-layer-note";
-        blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
-        scrollableBody.append(blankNote);
-      }
-
-      cardInner.append(orderRow, scrollableBody);
-    }
-
-    item.append(dragGrip, cardInner);
-    listContainer.append(item);
+    listContainer.append(createLayerCard(scene, index, stage, listContainer));
   });
 
   sceneLayersPanel.append(listContainer);
@@ -2065,6 +1770,349 @@ function renderScenes() {
       shouldAutoFitSceneViewport = false;
     }
   });
+}
+
+// ══════════════════════════════════════════════════════════════════════
+// Katman Yoneticisi (Layer Manager) card components
+//
+// Each function below builds one self-contained piece of a layer card and
+// returns a DOM node (or, for body content, an array of nodes to append).
+// createLayerCard() is the only entry point renderScenes() calls; everything
+// else composes underneath it. To change one part of a card (e.g. the
+// thumbnail, or what image layers show when expanded) find the matching
+// function here rather than hunting through a single giant render loop.
+// ══════════════════════════════════════════════════════════════════════
+
+function createLayerCard(scene, index, stage, listContainer) {
+  const isExpanded = expandedLayerIds.has(scene.id);
+
+  const item = document.createElement("div");
+  item.className = "scene-editor-item" + (scene.type === "text" ? " text-layer" : "") + (isExpanded ? " expanded" : "");
+  item.dataset.sceneEditorId = scene.id;
+  if (isSceneSelected(scene.id)) item.classList.add("selected");
+  item.style.setProperty("--scene-accent", getSceneAccent(index));
+  item.addEventListener("pointerdown", (event) => {
+    if (isEditableTarget(event.target)) return;
+    if (event.shiftKey) selectSceneRange(scene.id);
+    else if (event.ctrlKey || event.metaKey) toggleSceneSelection(scene.id);
+    else setSelectedScene(scene.id);
+  });
+
+  const cardInner = document.createElement("div");
+  cardInner.className = "layer-card-inner";
+  cardInner.append(createLayerCardHeader(scene, index, isExpanded));
+  cardInner.append(isExpanded ? createLayerOrderRow(scene, index) : createLayerPreviewLine(scene));
+  if (isExpanded) cardInner.append(createLayerCardBody(scene, stage));
+
+  item.append(createLayerDragGrip(scene, listContainer), cardInner);
+  return item;
+}
+
+function createLayerDragGrip(scene, listContainer) {
+  const dragGrip = document.createElement("div");
+  dragGrip.className = "layer-drag-grip";
+  dragGrip.title = "Surukleyerek sahne sirasini degistir";
+  dragGrip.innerHTML = `<svg width="6" height="20" viewBox="0 0 6 20" fill="currentColor"><circle cx="1.5" cy="2" r="1.2"/><circle cx="4.5" cy="2" r="1.2"/><circle cx="1.5" cy="6" r="1.2"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="1.5" cy="10" r="1.2"/><circle cx="4.5" cy="10" r="1.2"/><circle cx="1.5" cy="14" r="1.2"/><circle cx="4.5" cy="14" r="1.2"/><circle cx="1.5" cy="18" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg>`;
+  dragGrip.addEventListener("pointerdown", (event) => {
+    if (event.button !== 0) return;
+    event.stopPropagation();
+    startLayerDragReorder(event, scene, listContainer);
+  });
+  return dragGrip;
+}
+
+function createLayerCardHeader(scene, index, isExpanded) {
+  const itemHeader = document.createElement("div");
+  itemHeader.className = "scene-editor-header";
+
+  const headerLeft = document.createElement("div");
+  headerLeft.className = "layer-header-left";
+
+  const layerNumber = document.createElement("span");
+  layerNumber.className = "layer-number";
+  layerNumber.textContent = `${index + 1}`;
+
+  headerLeft.append(layerNumber, createLayerThumb(scene), createLayerNameInput(scene, index));
+  itemHeader.append(headerLeft, createLayerHeaderActions(scene, isExpanded));
+  return itemHeader;
+}
+
+function createLayerThumb(scene) {
+  const layerThumb = document.createElement(scene.type === "text" ? "span" : "img");
+  if (scene.type === "text") {
+    layerThumb.className = "layer-type-badge";
+    layerThumb.textContent = "T";
+    layerThumb.title = "Yazi katmani";
+  } else {
+    layerThumb.className = "layer-thumb";
+    if (scene.dataUrl) layerThumb.src = scene.dataUrl;
+    layerThumb.alt = "";
+    layerThumb.draggable = false;
+    layerThumb.title = "Resim katmani";
+  }
+  return layerThumb;
+}
+
+function createLayerNameInput(scene, index) {
+  const nameInput = document.createElement("input");
+  nameInput.className = "scene-name-input";
+  nameInput.type = "text";
+  nameInput.value = scene.name || `Katman ${index + 1}`;
+  nameInput.placeholder = "Katman adi";
+  nameInput.title = "Katman ismi";
+  prepareSceneHistoryControl(nameInput);
+  nameInput.addEventListener("input", () => {
+    scene.name = nameInput.value.trim() || `Katman ${index + 1}`;
+    const image = document.querySelector(`[data-scene-image-id="${CSS.escape(scene.id)}"]`);
+    if (image) image.alt = scene.name;
+    scheduleSceneAutosave();
+  });
+  return nameInput;
+}
+
+function createLayerHeaderActions(scene, isExpanded) {
+  const headerRight = document.createElement("div");
+  headerRight.className = "layer-header-actions";
+
+  const expandButton = document.createElement("button");
+  expandButton.type = "button";
+  expandButton.className = "layer-icon-btn layer-expand-btn" + (isExpanded ? " active" : "");
+  expandButton.innerHTML = isExpanded ? `<i data-lucide="chevron-down"></i>` : `<i data-lucide="chevron-right"></i>`;
+  expandButton.title = isExpanded ? "Daralt" : "Genislet";
+  expandButton.addEventListener("click", () => {
+    if (expandedLayerIds.has(scene.id)) expandedLayerIds.delete(scene.id);
+    else expandedLayerIds.add(scene.id);
+    renderScenes();
+  });
+
+  const lockButton = document.createElement("button");
+  lockButton.type = "button";
+  lockButton.className = "layer-icon-btn" + (scene.isLocked ? " active" : "");
+  lockButton.innerHTML = scene.isLocked ? `<i data-lucide="lock"></i>` : `<i data-lucide="lock-open"></i>`;
+  lockButton.title = scene.isLocked ? "Kilidi ac" : "Kilitle";
+  lockButton.addEventListener("click", () => {
+    pushSceneHistory();
+    scene.isLocked = !scene.isLocked;
+    renderScenes();
+  });
+
+  const removeButton = document.createElement("button");
+  removeButton.type = "button";
+  removeButton.className = "layer-icon-btn danger";
+  removeButton.innerHTML = `<i data-lucide="trash-2"></i>`;
+  removeButton.title = "Katmani sil";
+  removeButton.addEventListener("click", () => removeScene(scene.id));
+
+  headerRight.append(expandButton, lockButton, removeButton);
+  return headerRight;
+}
+
+function createLayerPreviewLine(scene) {
+  const previewLine = document.createElement("div");
+  previewLine.className = "layer-preview-line";
+  if (scene.type === "text") {
+    const trimmed = (scene.text || "").trim();
+    if (trimmed) {
+      previewLine.textContent = trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
+    } else {
+      previewLine.textContent = "Bos yazi katmani";
+      previewLine.classList.add("empty");
+    }
+  } else if (scene.dataUrl) {
+    previewLine.textContent = `Boyut %${scene.imageZoom || 100}`;
+  } else {
+    previewLine.textContent = "Bos katman";
+    previewLine.classList.add("empty");
+  }
+  return previewLine;
+}
+
+function createLayerOrderRow(scene, index) {
+  const orderRow = document.createElement("div");
+  orderRow.className = "layer-order-row";
+  orderRow.append(
+    createSceneOrderButton("En ust", "chevrons-up", scene.id, "top", index === 0),
+    createSceneOrderButton("Uste", "chevron-up", scene.id, "up", index === 0),
+    createSceneOrderButton("Alta", "chevron-down", scene.id, "down", index === scenes.length - 1),
+    createSceneOrderButton("En alt", "chevrons-down", scene.id, "bottom", index === scenes.length - 1),
+  );
+  return orderRow;
+}
+
+function createLayerCardBody(scene, stage) {
+  const scrollableBody = document.createElement("div");
+  scrollableBody.className = "scene-editor-item-scrollable";
+  if (scene.type === "text") {
+    scrollableBody.append(...createTextLayerControls(scene, stage));
+  } else if (scene.dataUrl) {
+    scrollableBody.append(...createImageLayerControls(scene));
+  } else {
+    const blankNote = document.createElement("div");
+    blankNote.className = "blank-layer-note";
+    blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
+    scrollableBody.append(blankNote);
+  }
+  return scrollableBody;
+}
+
+function createTextLayerControls(scene, stage) {
+  const textControls = document.createElement("div");
+  textControls.className = "block-editor-header";
+
+  const fontInput = document.createElement("input");
+  fontInput.className = "block-font-input";
+  fontInput.type = "text";
+  fontInput.inputMode = "numeric";
+  fontInput.value = scene.fontSize || getSceneFontSize();
+  fontInput.title = "Bu yazinin font boyutu";
+  prepareSceneHistoryControl(fontInput);
+  fontInput.addEventListener("input", () => {
+    const val = parseInt(fontInput.value, 10);
+    if (!isNaN(val) && val > 0) {
+      // Don't clamp to the min mid-typing (e.g. typing "24" passes through
+      // "2", which is below the min) - that causes a jarring jump to the
+      // clamped floor before the real value lands. The max is still capped
+      // live so a stray extra digit can't blow up the preview to an absurd
+      // size; the "change" handler below enforces the full 10-48 range once
+      // typing is done.
+      const liveValue = Math.min(48, val);
+      scene.fontSize = liveValue;
+      const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+      if (block) block.style.fontSize = `${liveValue}px`;
+    }
+  });
+  fontInput.addEventListener("change", () => {
+    scene.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
+    fontInput.value = scene.fontSize;
+    saveState();
+    renderScenes();
+  });
+
+  const styleSelect = document.createElement("select");
+  styleSelect.title = "Bu yazinin arka plan/efekt stili";
+  styleSelect.innerHTML = `
+    <option value="box">★ Siyah kutu</option>
+    <option value="soft">★ Soft golge</option>
+    <option value="outline">Kontur</option>
+    <option value="plain">Efektsiz</option>
+    <option value="boxSoft">Yari saydam kutu</option>
+    <option value="outlineThick">Kalin kontur</option>
+    <option value="neon">Neon parlama</option>
+  `;
+  styleSelect.value = scene.textStyle || "box";
+  prepareSceneHistoryControl(styleSelect);
+  styleSelect.addEventListener("change", () => {
+    scene.textStyle = styleSelect.value;
+    const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+    if (block) block.dataset.textStyle = scene.textStyle;
+  });
+
+  textControls.append(fontInput, styleSelect);
+
+  const textarea = document.createElement("textarea");
+  textarea.className = "scene-text";
+  textarea.placeholder = "Bu yaziyi sahneye ekle...";
+  textarea.spellcheck = false;
+  textarea.value = scene.text;
+  prepareSceneHistoryControl(textarea);
+  textarea.addEventListener("input", () => {
+    scene.text = textarea.value;
+    const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+    const content = block?.querySelector(".scene-text-content");
+    if (content) renderSceneTextBlock(content, scene.text);
+  });
+
+  return [textControls, textarea];
+}
+
+function createImageLayerControls(scene) {
+  const nodes = [];
+
+  const posSection = createLayerSection("Pozisyon", false);
+  posSection.body.append(
+    createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
+      scene.imageZoom = value;
+      updateSceneImageTransform(scene);
+    }, "maximize-2"),
+    createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
+      scene.imageScaleX = value;
+      updateSceneImageTransform(scene);
+    }, "unfold-horizontal"),
+    createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
+      scene.imageScaleY = value;
+      updateSceneImageTransform(scene);
+    }, "unfold-vertical"),
+    createRangeControl("X", scene.imageX || 0, -1000, 1000, 0.5, (value) => {
+      scene.imageX = value;
+      updateSceneImageTransform(scene);
+    }, "move-horizontal"),
+    createRangeControl("Y", scene.imageY || 0, -1000, 1000, 0.5, (value) => {
+      scene.imageY = value;
+      updateSceneImageTransform(scene);
+    }, "move-vertical"),
+  );
+  nodes.push(posSection.el);
+
+  const filterSection = createLayerSection("Filtreler", false);
+  filterSection.body.append(
+    createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
+      scene.filterBrightness = value;
+      updateSceneImageTransform(scene);
+    }, "sun"),
+    createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
+      scene.filterContrast = value;
+      updateSceneImageTransform(scene);
+    }, "contrast"),
+    createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
+      scene.filterSaturate = value;
+      updateSceneImageTransform(scene);
+    }, "droplets"),
+    createRangeControl("Sicaklik", scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
+      scene.filterSepia = value;
+      updateSceneImageTransform(scene);
+    }, "thermometer"),
+    createRangeControl("Blur", scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
+      scene.filterBlur = value;
+      updateSceneImageTransform(scene);
+    }, "scan-eye"),
+  );
+  const resetFilterButton = document.createElement("button");
+  resetFilterButton.type = "button";
+  resetFilterButton.className = "layer-mini-btn";
+  resetFilterButton.textContent = "Sifirla";
+  resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
+  filterSection.body.append(resetFilterButton);
+  nodes.push(filterSection.el);
+
+  const transSection = createLayerSection("Gecis efekti", false);
+  transSection.body.append(
+    createSelectControl("Stil", scene.transitionStyle || "none", [
+      { value: "soft", text: "Soft fade" },
+      { value: "cinematic", text: "Sinematik" },
+      { value: "blur", text: "Blur gecis" },
+      { value: "none", text: "Keskin" }
+    ], (value) => {
+      pushSceneHistory();
+      scene.transitionStyle = value;
+      renderScenes();
+    }, "palette"),
+    createRangeControl("Boyut", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
+      scene.transitionSize = value;
+      renderScenes();
+    }, "ruler"),
+    createSelectControl("Yon", scene.transitionSides || "both", [
+      { value: "both", text: "Ust & Alt" },
+      { value: "top", text: "Sadece Ust" },
+      { value: "bottom", text: "Sadece Alt" }
+    ], (value) => {
+      pushSceneHistory();
+      scene.transitionSides = value;
+      renderScenes();
+    }, "compass"),
+  );
+  nodes.push(transSection.el);
+
+  return nodes;
 }
 
 function removeScene(id) {
@@ -2350,6 +2398,42 @@ function setSelectedScene(id) {
   if (!scenes.some((scene) => scene.id === id)) return;
   selectedSceneId = id;
   selectedSceneIds = [id];
+  refreshSceneSelection();
+}
+
+// Ctrl/Cmd+click: toggle a single layer in/out of the current selection,
+// same as file-explorer / Photoshop layer panel conventions.
+function toggleSceneSelection(id) {
+  if (!scenes.some((scene) => scene.id === id)) return;
+  if (selectedSceneIds.includes(id)) {
+    selectedSceneIds = selectedSceneIds.filter((sceneId) => sceneId !== id);
+    if (selectedSceneId === id) selectedSceneId = selectedSceneIds[selectedSceneIds.length - 1] || "";
+  } else {
+    selectedSceneIds = [...selectedSceneIds, id];
+    selectedSceneId = id;
+  }
+  refreshSceneSelection();
+}
+
+// Shift+click: select the contiguous range between the current anchor
+// (selectedSceneId) and the clicked layer, re-anchored from the same
+// origin on repeated shift-clicks until a plain click resets it.
+function selectSceneRange(id) {
+  if (!scenes.some((scene) => scene.id === id)) return;
+  const anchorId = selectedSceneId || selectedSceneIds[selectedSceneIds.length - 1];
+  if (!anchorId) {
+    setSelectedScene(id);
+    return;
+  }
+  const anchorIndex = scenes.findIndex((scene) => scene.id === anchorId);
+  const targetIndex = scenes.findIndex((scene) => scene.id === id);
+  if (anchorIndex === -1 || targetIndex === -1) {
+    setSelectedScene(id);
+    return;
+  }
+  const [start, end] = anchorIndex < targetIndex ? [anchorIndex, targetIndex] : [targetIndex, anchorIndex];
+  selectedSceneIds = scenes.slice(start, end + 1).map((scene) => scene.id);
+  selectedSceneId = anchorId;
   refreshSceneSelection();
 }
 
@@ -2724,61 +2808,120 @@ function flashSceneEditorItem(sceneId) {
   setTimeout(() => item.classList.remove("reorder-flash"), 500);
 }
 
-function startSceneOrderDrag(event, sceneId) {
-  draggingSceneId = sceneId;
-  setSelectedScene(sceneId);
-  event.dataTransfer.effectAllowed = "move";
-  event.dataTransfer.setData("text/plain", sceneId);
-  document.querySelector(`[data-scene-editor-id="${CSS.escape(sceneId)}"]`)?.classList.add("dragging-order");
-}
-
-function handleSceneDragOver(event, targetSceneId) {
-  if (!draggingSceneId || draggingSceneId === targetSceneId) return;
+// ── Layer drag-reorder (pointer-events based: works with mouse AND touch,
+// unlike the native HTML5 drag-and-drop API it replaces) ──
+//
+// Grabbing the grip of a card that's part of the current multi-selection
+// drags the whole selected group together, preserving their relative
+// order (Photoshop/Explorer convention). Grabbing a card outside the
+// current selection drags just that one card and selects it.
+function startLayerDragReorder(event, scene, listContainer) {
+  if (event.button !== 0) return;
   event.preventDefault();
-  event.dataTransfer.dropEffect = "move";
-  const item = event.currentTarget;
-  const rect = item.getBoundingClientRect();
-  document.querySelectorAll(".scene-editor-item.drop-before, .scene-editor-item.drop-after").forEach((candidate) => {
-    if (candidate !== item) candidate.classList.remove("drop-before", "drop-after");
-  });
-  item.classList.toggle("drop-before", event.clientY < rect.top + rect.height / 2);
-  item.classList.toggle("drop-after", event.clientY >= rect.top + rect.height / 2);
+
+  const isPartOfMultiSelection = selectedSceneIds.includes(scene.id) && selectedSceneIds.length > 1;
+  const draggedIds = isPartOfMultiSelection
+    ? scenes.filter((candidate) => selectedSceneIds.includes(candidate.id)).map((candidate) => candidate.id)
+    : [scene.id];
+  if (!isPartOfMultiSelection) setSelectedScene(scene.id);
+
+  const draggedSet = new Set(draggedIds);
+  const draggedCards = draggedIds
+    .map((id) => listContainer.querySelector(`.scene-editor-item[data-scene-editor-id="${CSS.escape(id)}"]`))
+    .filter(Boolean);
+  draggedCards.forEach((card) => card.classList.add("layer-dragging"));
+
+  const indicator = document.createElement("div");
+  indicator.className = "layer-drop-indicator";
+
+  let lastClientY = event.clientY;
+  let dropTargetId = null;
+  let dropPlacement = null;
+  let scrollRafId = null;
+
+  const dropCandidates = () =>
+    Array.from(listContainer.querySelectorAll(".scene-editor-item")).filter(
+      (card) => !draggedSet.has(card.dataset.sceneEditorId),
+    );
+
+  const placeIndicator = (card, placement) => {
+    if (placement === "before") listContainer.insertBefore(indicator, card);
+    else listContainer.insertBefore(indicator, card.nextSibling);
+    dropTargetId = card.dataset.sceneEditorId;
+    dropPlacement = placement;
+  };
+
+  const autoScrollStep = () => {
+    const rect = listContainer.getBoundingClientRect();
+    const edge = 40;
+    let delta = 0;
+    if (lastClientY < rect.top + edge) delta = lastClientY - (rect.top + edge);
+    else if (lastClientY > rect.bottom - edge) delta = lastClientY - (rect.bottom - edge);
+    if (delta !== 0) listContainer.scrollTop += Math.max(-14, Math.min(14, delta * 0.4));
+    scrollRafId = requestAnimationFrame(autoScrollStep);
+  };
+  scrollRafId = requestAnimationFrame(autoScrollStep);
+
+  const onMove = (moveEvent) => {
+    lastClientY = moveEvent.clientY;
+    const candidates = dropCandidates();
+    if (!candidates.length) return;
+
+    const hovered = candidates.find((card) => {
+      const rect = card.getBoundingClientRect();
+      return moveEvent.clientY >= rect.top && moveEvent.clientY <= rect.bottom;
+    });
+    if (hovered) {
+      const rect = hovered.getBoundingClientRect();
+      placeIndicator(hovered, moveEvent.clientY < rect.top + rect.height / 2 ? "before" : "after");
+      return;
+    }
+
+    const firstRect = candidates[0].getBoundingClientRect();
+    const lastRect = candidates[candidates.length - 1].getBoundingClientRect();
+    if (moveEvent.clientY < firstRect.top) placeIndicator(candidates[0], "before");
+    else if (moveEvent.clientY > lastRect.bottom) placeIndicator(candidates[candidates.length - 1], "after");
+  };
+
+  const onUp = () => {
+    document.removeEventListener("pointermove", onMove);
+    document.removeEventListener("pointerup", onUp);
+    document.removeEventListener("pointercancel", onUp);
+    cancelAnimationFrame(scrollRafId);
+    indicator.remove();
+    draggedCards.forEach((card) => card.classList.remove("layer-dragging"));
+    if (dropTargetId) reorderScenesByDrag(draggedIds, dropTargetId, dropPlacement);
+  };
+
+  document.addEventListener("pointermove", onMove);
+  document.addEventListener("pointerup", onUp);
+  document.addEventListener("pointercancel", onUp);
 }
 
-function handleSceneDrop(event, targetSceneId) {
-  if (!draggingSceneId || draggingSceneId === targetSceneId) return;
-  event.preventDefault();
-  const item = event.currentTarget;
-  const rect = item.getBoundingClientRect();
-  const placement = event.clientY < rect.top + rect.height / 2 ? "before" : "after";
-  reorderSceneByDrop(draggingSceneId, targetSceneId, placement);
-  endSceneOrderDrag();
-}
+function reorderScenesByDrag(draggedIds, targetId, placement) {
+  const draggedSet = new Set(draggedIds);
+  if (draggedSet.has(targetId)) return;
 
-function endSceneOrderDrag() {
-  draggingSceneId = "";
-  document.querySelectorAll(".scene-editor-item").forEach((item) => {
-    item.classList.remove("dragging-order", "drop-before", "drop-after");
-  });
-}
+  const draggedScenes = scenes.filter((scene) => draggedSet.has(scene.id));
+  const remaining = scenes.filter((scene) => !draggedSet.has(scene.id));
+  const targetIndex = remaining.findIndex((scene) => scene.id === targetId);
+  if (targetIndex === -1 || !draggedScenes.length) return;
 
-function reorderSceneByDrop(sceneId, targetSceneId, placement) {
-  const fromIndex = scenes.findIndex((scene) => scene.id === sceneId);
-  const targetIndex = scenes.findIndex((scene) => scene.id === targetSceneId);
-  if (fromIndex === -1 || targetIndex === -1 || fromIndex === targetIndex) return;
+  const insertIndex = placement === "after" ? targetIndex + 1 : targetIndex;
+  remaining.splice(insertIndex, 0, ...draggedScenes);
 
-  let insertIndex = placement === "after" ? targetIndex + 1 : targetIndex;
-  if (fromIndex < insertIndex) insertIndex -= 1;
-  if (insertIndex === fromIndex) return;
+  const unchanged = remaining.length === scenes.length && remaining.every((scene, i) => scene.id === scenes[i].id);
+  if (unchanged) return;
 
   pushSceneHistory();
-  const [scene] = scenes.splice(fromIndex, 1);
-  scenes.splice(insertIndex, 0, scene);
-  selectedSceneId = sceneId;
-  selectedSceneIds = [sceneId];
+  scenes.splice(0, scenes.length, ...remaining);
+  selectedSceneIds = [...draggedIds];
+  selectedSceneId = draggedIds[0];
   hoveredSceneId = "";
   renderScenes();
-  setSceneStatus("Sahne sirasi suruklemeyle degistirildi.");
+  setSceneStatus(
+    draggedIds.length > 1 ? `${draggedIds.length} katman suruklemeyle tasindi.` : "Sahne sirasi suruklemeyle degistirildi.",
+  );
 }
 
 function resetSceneFilter(scene) {

@@ -1686,20 +1686,17 @@ body.resizing-layers.layers-dock-bottom {
   margin-top: 2px;
 }
 
-.scene-editor-item.dragging-order {
-  opacity: 0.58;
+.scene-editor-item.layer-dragging {
+  opacity: 0.4;
 }
 
-.scene-editor-item.drop-before {
-  box-shadow:
-    inset 3px 0 0 #7db8ff,
-    0 8px 24px rgba(47, 111, 237, 0.16);
-}
-
-.scene-editor-item.drop-after {
-  box-shadow:
-    inset -3px 0 0 #7db8ff,
-    0 8px 24px rgba(47, 111, 237, 0.16);
+.layer-drop-indicator {
+  height: 3px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, transparent, #52d1c5 15%, #7c9eff 85%, transparent);
+  box-shadow: 0 0 8px rgba(82, 209, 197, 0.7);
+  flex-shrink: 0;
+  pointer-events: none;
 }
 
 /* ── Controls inside cards ── */

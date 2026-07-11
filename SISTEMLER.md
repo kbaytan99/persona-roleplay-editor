@@ -31,8 +31,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   katmani (bir resmin "icinde" degildir). *(`scene.type === "text"`,
   `addTextLayer`)*
 - **Katman Siralama** — "En ust / Uste / Alta / En alt" butonlari veya
-  surukle-birak ile katmanlarin on-arka sirasini degistirme.
-  *(`reorderScene`, `reorderSceneByDrop`)*
+  kolun (grip) tutup surukleyerek katmanlarin on-arka sirasini degistirme.
+  Birden fazla katman seciliyken herhangi birini suruklemek hepsini birlikte
+  (aralarindaki sirayi koruyarak) tasir. Fare tabanli HTML5 surukle-birak
+  degil, pointer-event tabanli oldugu icin dokunmatik ekranlarda da calisir.
+  *(`reorderScene`, `startLayerDragReorder`, `reorderScenesByDrag`)*
 - **Katman Kilidi** — bir katmanin yanlislikla tasinmasini engelleyen kilit
   ikonu. *(`scene.isLocked`)*
 - **Katman Paneli Genisletme** — Katman Yoneticisi'nin sol kenarindan
@@ -66,8 +69,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 4. Secim Sistemi
 
-- **Tekli/Coklu Secim** — bir veya birden fazla katmani tiklayarak secme.
-  *(`setSelectedScene`, `selectedSceneIds`)*
+- **Tekli/Coklu Secim** — bir katmana tiklayarak tek secim; `Ctrl`/`Cmd` +
+  tiklama ile secime tek tek katman ekleme/cikarma; `Shift` + tiklama ile
+  son secilen katmandan (anchor) o ana kadar araliktaki tum katmanlari
+  secme (Windows/Photoshop mantigi). *(`setSelectedScene`,
+  `toggleSceneSelection`, `selectSceneRange`, `selectedSceneIds`)*
 - **Kutu ile Secim** (Marquee Select) — canvas'in bos bir noktasindan (ya da
   canvas'in disindaki bos gorunum alanindan) suruklenerek cizilen kutunun
   kesistigi tum resim ve yazi katmanlarini birlikte secme.
