@@ -3,8 +3,16 @@
 import { clampNumber } from "./scripts/utils.js";
 import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js";
 
-const appVersion = "3.2.0";
+const appVersion = "3.2.1";
 const appChangelog = [
+  {
+    version: "3.2.1",
+    date: "2026-07-11",
+    title: "Mobil/tablette menu cubugu kapaniyordu duzeltildi",
+    notes: [
+      "1180px'den dar ekranlarda (tablet/telefon) Katman Yoneticisi tam ekran yuksekligindeki (ustten alta) sabit bir cekmece haline geliyordu ve z-index:50 ile ust menu cubugunun (z-index:40) tam ustune biniyordu - bu yuzden telefon/dar pencerede menudeki hicbir tikama tepki vermiyordu. Cekmece artik menu cubugunun (44px) altindan basliyor, hicbir zaman ustune binmiyor.",
+    ],
+  },
   {
     version: "3.2.0",
     date: "2026-07-11",

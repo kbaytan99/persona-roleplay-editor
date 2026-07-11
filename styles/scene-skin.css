@@ -804,7 +804,14 @@ body.resizing-floating-panel {
 
   .scene-layers-panel {
     position: fixed;
-    inset: 0 0 0 auto;
+    /* top starts below the 44px menu bar (not inset's usual 0) so this
+       fixed full-height drawer never covers it - it used to sit at
+       z-index:50, above the menu bar's z-index:40, and silently ate every
+       menu click on tablet/mobile widths. */
+    top: 44px;
+    right: 0;
+    bottom: 0;
+    left: auto;
     width: min(85vw, 380px) !important;
     height: auto !important;
     z-index: 50;
