@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.4.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.4.1";
+import { clampNumber } from "./scripts/utils.js?v=3.5.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.5.0";
 
-const appVersion = "3.4.1";
+const appVersion = "3.5.0";
 const appChangelog = [
+  {
+    version: "3.5.0",
+    date: "2026-07-11",
+    title: "Ilk acilista ornek sahne",
+    notes: [
+      "Persona'yi bu tarayicida hic kullanmamis biri ilk actiginda artik bomboş bir canvas yerine, bir resim katmani (jenerik, gecelik bir sokak silueti - herhangi bir oyun/dizi gorseli degil, ozel olarak cizilmis) ve bir yazi katmanindan (emote + diyalog + isim etiketi ornegi) olusan basit bir ornek sahneyle karsilasiyor. Bu, sadece tarayicida hic kayit yokken bir kereye mahsus gosteriliyor - Sahneleri sil ile her seyi bilerek temizleyen bir kullaniciya tekrar dayatilmiyor.",
+    ],
+  },
   {
     version: "3.4.1",
     date: "2026-07-11",
@@ -542,6 +550,12 @@ async function saveLocalScenesNow() {
 async function loadLocalScenes() {
   const db = await openSceneDb();
   let record = await readSceneRecord(db, currentUserId);
+  // Only true when NEITHER this user's own record NOR a legacy record
+  // exists at all - i.e. this browser has genuinely never saved anything
+  // here before. Distinct from "record exists but scenes is empty" (user
+  // intentionally cleared everything via Sahneleri sil), which must not
+  // be treated as first-time and re-seeded.
+  let isFirstEverVisit = false;
   if (!record) {
     record = await readLegacySceneRecord(db);
     if (record) {
@@ -554,12 +568,19 @@ async function loadLocalScenes() {
       renderScenes();
       return;
     }
+    isFirstEverVisit = true;
   }
   db.close();
   scenes.splice(0, scenes.length, ...((record?.scenes || [])));
   selectedSceneId = record?.selectedSceneId || scenes[0]?.id || "";
   selectedSceneIds = Array.isArray(record?.selectedSceneIds) ? record.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
   normalizeSceneSelection();
+  if (isFirstEverVisit) {
+    scenes.splice(0, scenes.length, ...createExampleScenes());
+    selectedSceneId = "";
+    selectedSceneIds = [];
+    scheduleSceneAutosave();
+  }
   renderScenes();
 }
 
@@ -2217,6 +2238,93 @@ function cloneSceneForPaste(scene, offsetPercent = 0) {
 
 function createId() {
   return crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+}
+
+// Shown once, only on a visitor's very first-ever load (see loadLocalScenes)
+// so the app isn't a blank canvas the first time someone opens it. The
+// background is a generated, generic night-street silhouette - not a real
+// screenshot or any specific game/show's artwork, to keep this free of
+// copyright concerns in a public, permanently-deployed repo.
+function createExampleBackgroundDataUrl() {
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800">
+    <defs>
+      <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#0b1220"/>
+        <stop offset="55%" stop-color="#141c2e"/>
+        <stop offset="100%" stop-color="#05070c"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="50%" cy="35%" r="55%">
+        <stop offset="0%" stop-color="#3a4a7a" stop-opacity="0.55"/>
+        <stop offset="100%" stop-color="#3a4a7a" stop-opacity="0"/>
+      </radialGradient>
+    </defs>
+    <rect width="1200" height="800" fill="url(#sky)"/>
+    <rect width="1200" height="800" fill="url(#glow)"/>
+    <g fill="#050810">
+      <rect x="0" y="520" width="90" height="280"/>
+      <rect x="95" y="470" width="60" height="330"/>
+      <rect x="160" y="560" width="120" height="240"/>
+      <rect x="290" y="430" width="70" height="370"/>
+      <rect x="370" y="500" width="100" height="300"/>
+      <rect x="480" y="380" width="55" height="420"/>
+      <rect x="545" y="520" width="140" height="280"/>
+      <rect x="695" y="460" width="80" height="340"/>
+      <rect x="785" y="540" width="110" height="260"/>
+      <rect x="905" y="410" width="65" height="390"/>
+      <rect x="980" y="500" width="130" height="300"/>
+      <rect x="1120" y="470" width="80" height="330"/>
+    </g>
+    <g fill="#f2c766" opacity="0.85">
+      <rect x="20" y="560" width="6" height="8"/>
+      <rect x="40" y="600" width="6" height="8"/>
+      <rect x="115" y="510" width="6" height="8"/>
+      <rect x="200" y="600" width="6" height="8"/>
+      <rect x="310" y="470" width="6" height="8"/>
+      <rect x="400" y="560" width="6" height="8"/>
+      <rect x="500" y="430" width="6" height="8"/>
+      <rect x="580" y="580" width="6" height="8"/>
+      <rect x="720" y="510" width="6" height="8"/>
+      <rect x="820" y="600" width="6" height="8"/>
+      <rect x="930" y="460" width="6" height="8"/>
+      <rect x="1010" y="560" width="6" height="8"/>
+      <rect x="1150" y="520" width="6" height="8"/>
+    </g>
+    <rect x="0" y="760" width="1200" height="40" fill="#0a0c10"/>
+    <rect x="0" y="778" width="1200" height="3" fill="#3a3f4a" opacity="0.4"/>
+  </svg>`;
+  return `data:image/svg+xml,${encodeURIComponent(svg)}`;
+}
+
+function createExampleScenes() {
+  const backgroundScene = {
+    id: createId(),
+    type: "image",
+    name: "Ornek arka plan",
+    dataUrl: createExampleBackgroundDataUrl(),
+    isBlank: false,
+    imageZoom: 100,
+    imageScaleX: 100,
+    imageScaleY: 100,
+    imageX: 0,
+    imageY: 0,
+    filterBrightness: sceneImageFilterDefaults.brightness,
+    filterContrast: sceneImageFilterDefaults.contrast,
+    filterSaturate: sceneImageFilterDefaults.saturate,
+    filterSepia: sceneImageFilterDefaults.sepia,
+    filterBlur: sceneImageFilterDefaults.blur,
+    blocks: [],
+  };
+  const textScene = {
+    ...createSceneBlock(
+      "* Yabanci arabadan iner, sokak lambasinin altinda durup cevresini suzer.\n" +
+      "Elif Demir: Burada bulusmamiz gerekiyordu, degil mi?\n" +
+      "* Ceketinin yakasini kaldirir, sessizce cevap bekler. (( Elif Demir ))",
+    ),
+    type: "text",
+    name: "Ornek yazi",
+    isLocked: false,
+  };
+  return [textScene, backgroundScene];
 }
 
 function clearScenes() {
@@ -4163,4 +4271,5 @@ window.__persona = {
   showShortcuts,
   hideShortcuts,
   drawSceneTextBlock,
+  createExampleScenes,
 };

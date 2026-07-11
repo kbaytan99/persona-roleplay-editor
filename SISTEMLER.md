@@ -138,6 +138,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*
+- **Ilk Acilis Ornek Sahnesi** — bu tarayicida IndexedDB'de hic kayit
+  yokken (gercekten ilk ziyaret) otomatik eklenen, jenerik (marka/oyuna
+  ozgu olmayan, ozel cizilmis) bir arka plan + ornek RP yazisindan olusan
+  sahne. Bir kereye mahsus; kullanici "Sahneleri sil" ile bilerek
+  bosaltirsa tekrar gelmez. *(`createExampleScenes`, `loadLocalScenes`)*
 
 ## 8. Gecmis Sistemi
 
