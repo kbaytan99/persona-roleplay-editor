@@ -2,11 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.3.2";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.2";
+import { clampNumber } from "./scripts/utils.js?v=3.3.3";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.3";
 
-const appVersion = "3.3.2";
+const appVersion = "3.3.3";
 const appChangelog = [
+  {
+    version: "3.3.3",
+    date: "2026-07-11",
+    title: "Gecis efekti bolumu kapanma hatasi + kopyala/yapistir bug'i",
+    notes: [
+      "Katman kartindaki 'Gecis efekti' bolumu, icindeki bir kontrolu (Stil, Boyut, Yon) her degistirdiginde kendini kapatiyordu - cunku bu kontroller degisiklikte tum katman listesini yeniden ciziyor (renderScenes) ve bu her seferinde acik/kapali durumunu unutan taze bir bolum olusturuyordu. Artik hangi bolumlerin (Pozisyon/Filtreler/Gecis efekti) acik oldugu katman bazinda hatirlaniyor, yeniden cizimler arasinda kapanmiyor.",
+      "Coklu katman secip Ctrl+C ile kopyalamak bazen sessizce hicbir sey yapmiyordu (ekranda bir uyari bile cikmiyordu) ve Ctrl+V ile yapistirinca daha once kopyalanmis eski bir icerik yapisiyordu. Sebep: bir yerde (ornegin bir katman ismi kutusunda) yazi imleci kalmis olsa - icinde hicbir metin secili olmasa bile - kopyala/yapistir kisayollari 'bir yazi kutusundayim, dokunma' diye tamamen devre disi kaliyordu. Artik sadece gercekten secili (vurgulanan) bir metin varsa native kopyala/yapistira birakiliyor; aksi halde secili katmanlarin kopyalanip yapistirilmasi her zaman calisiyor.",
+    ],
+  },
   {
     version: "3.3.2",
     date: "2026-07-11",
@@ -1116,13 +1125,13 @@ function handleSceneKeyDown(event) {
     return;
   }
 
-  if (!isTextEntryTarget(event.target) && isSceneCopyShortcut(event)) {
+  if (!hasActiveTextSelection(event.target) && isSceneCopyShortcut(event)) {
     event.preventDefault();
     copySelectedScenes();
     return;
   }
 
-  if (!isTextEntryTarget(event.target) && isSceneCutShortcut(event)) {
+  if (!hasActiveTextSelection(event.target) && isSceneCutShortcut(event)) {
     event.preventDefault();
     cutSelectedScenes();
     return;
@@ -1244,6 +1253,25 @@ function isTextEntryTarget(target) {
   return target?.closest?.("input, textarea, select, [contenteditable='true']");
 }
 
+// Copy/Cut/Paste defer to the browser's native text copy/paste whenever an
+// editable field is focused - but a field can stay focused (stale DOM focus
+// left over from an earlier click) with nothing actually selected in it.
+// Gating purely on "is *something* editable focused" then silently
+// swallows Ctrl+C/Ctrl+V for the just-multi-selected layers with zero
+// feedback, and the layer clipboard is left holding stale content from
+// the last copy that actually went through. Checking for a real,
+// non-empty text selection is what native copy/paste actually needs -
+// if there's nothing selected, there's nothing for native copy to grab,
+// so it's always safe to let the app-level scene copy/paste run instead.
+function hasActiveTextSelection(target) {
+  const field = target?.closest?.("input, textarea");
+  if (field && typeof field.selectionStart === "number" && typeof field.selectionEnd === "number") {
+    return field.selectionStart !== field.selectionEnd;
+  }
+  const selection = window.getSelection?.();
+  return !!selection && selection.toString().length > 0;
+}
+
 async function addSceneImages(files) {
   const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
   if (!imageFiles.length) {
@@ -1325,7 +1353,7 @@ function addSceneImageBlobs(blobs) {
 function handlePaste(event) {
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
   if (!imageItems.length) {
-    if (!isEditableTarget(event.target) && sceneClipboardScenes.length) {
+    if (!hasActiveTextSelection(event.target) && sceneClipboardScenes.length) {
       event.preventDefault();
       pasteSceneClipboard();
     }
@@ -1864,7 +1892,7 @@ function createTextLayerControls(scene, stage) {
 function createImageLayerControls(scene) {
   const nodes = [];
 
-  const posSection = createLayerSection("Pozisyon", false);
+  const posSection = createLayerSection(`${scene.id}:pos`, "Pozisyon", false);
   posSection.body.append(
     createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
       scene.imageZoom = value;
@@ -1889,7 +1917,7 @@ function createImageLayerControls(scene) {
   );
   nodes.push(posSection.el);
 
-  const filterSection = createLayerSection("Filtreler", false);
+  const filterSection = createLayerSection(`${scene.id}:filter`, "Filtreler", false);
   filterSection.body.append(
     createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
       scene.filterBrightness = value;
@@ -1920,7 +1948,7 @@ function createImageLayerControls(scene) {
   filterSection.body.append(resetFilterButton);
   nodes.push(filterSection.el);
 
-  const transSection = createLayerSection("Gecis efekti", false);
+  const transSection = createLayerSection(`${scene.id}:trans`, "Gecis efekti", false);
   transSection.body.append(
     createSelectControl("Stil", scene.transitionStyle || "none", [
       { value: "soft", text: "Soft fade" },
@@ -2813,10 +2841,24 @@ function addTextLayer() {
   setSceneStatus("Yeni yazi katmani eklendi.");
 }
 
-function createLayerSection(title, openByDefault) {
+// Which per-scene sections (Pozisyon/Filtreler/Gecis efekti) the user has
+// manually opened or closed - keyed by "sceneId:sectionKey". renderScenes()
+// rebuilds every <details> element from scratch on every state change
+// (including a change made INSIDE an open section, e.g. moving the
+// transition-size slider), so without this the section would silently
+// snap back to its default closed state on the very next input event.
+let expandedLayerSections = new Map();
+
+function createLayerSection(stateKey, title, openByDefault) {
   const section = document.createElement("details");
   section.className = "layer-section";
-  if (openByDefault) section.open = true;
+  const isOpen = expandedLayerSections.has(stateKey)
+    ? expandedLayerSections.get(stateKey)
+    : openByDefault;
+  if (isOpen) section.open = true;
+  section.addEventListener("toggle", () => {
+    expandedLayerSections.set(stateKey, section.open);
+  });
   const summary = document.createElement("summary");
   summary.className = "layer-section-title";
   summary.textContent = title;
