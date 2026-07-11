@@ -1,7 +1,17 @@
 "use strict";
 
-const appVersion = "2.5.2";
+const appVersion = "2.6.0";
 const appChangelog = [
+  {
+    version: "2.6.0",
+    date: "2026-07-11",
+    title: "Telefon/tablet uyumlulugu iyilestirildi",
+    notes: [
+      "Onemli bir hata duzeltildi: dar ekranlarda (telefon genisliginde) ust menu cubugu tasiyordu ve Ayarlar/Gorunum/Yardim gibi son menuler ekran disina cikip tamamen erisilemez oluyordu. Menu cubugu artik yatay kaydirilabiliyor, hicbir menu kaybolmuyor.",
+      "Katman Yoneticisi paneli dar oldugunda (telefon asiri penceresi ya da elle en kucuk genislige daraltilinca) katman ismi kutusu okunamayacak kadar kucculuyordu; artik bu durumda gereksiz katman numarasi rozeti gizlenip yer katman ismine ayriliyor.",
+      "Durum mesaji (sag ustteki bilgi yazisi) dar ekranlarda menuleri sikistirmasin diye gizleniyor.",
+    ],
+  },
   {
     version: "2.5.2",
     date: "2026-07-11",

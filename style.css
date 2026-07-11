@@ -80,6 +80,7 @@ textarea {
 .menu-bar-brand {
   display: flex;
   align-items: center;
+  flex-shrink: 0;
   gap: 8px;
   padding-right: 12px;
   margin-right: 4px;
@@ -108,6 +109,19 @@ textarea {
   display: flex;
   align-items: center;
   height: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.menu-bar-nav::-webkit-scrollbar {
+  display: none;
+}
+
+.menu-item {
+  flex-shrink: 0;
 }
 
 .menu-item {
@@ -255,6 +269,8 @@ textarea {
 }
 
 .menu-bar-status {
+  flex-shrink: 1;
+  min-width: 0;
   margin-left: auto;
   padding-left: 12px;
   color: var(--muted);
@@ -1175,6 +1191,7 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 /* ── Layer Manager Panel (dockable: right/left/top/bottom/floating) ── */
 .scene-layers-panel {
   position: relative;
+  container: layers-panel / inline-size;
   --resize-gradient-dir: to right;
   border-left: 2px solid rgba(100, 180, 255, 0.15);
   background:
@@ -2677,6 +2694,10 @@ body.resizing-floating-panel {
   body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
     display: none;
   }
+
+  .menu-bar-status {
+    display: none;
+  }
 }
 
 /* Open Props inspired app skin */
@@ -3504,5 +3525,34 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button {
 #sceneLayersPanel .scene-editor-item-scrollable {
   padding: 8px 10px;
   gap: 8px;
+}
+
+/* Panel is genuinely narrow (phone-width overlay, or manually resized very
+   narrow) - the name input was shrinking to an unreadable sliver because the
+   number badge + thumbnail + 3 action buttons ate almost all the width.
+   Reacts to the panel's own rendered width, not the viewport, so it works
+   the same whether the narrowness comes from a small screen or a manual
+   resize. */
+@container layers-panel (max-width: 300px) {
+  #sceneLayersPanel .layer-number {
+    display: none;
+  }
+
+  #sceneLayersPanel .layer-header-left {
+    gap: 6px;
+  }
+
+  #sceneLayersPanel .layer-header-actions {
+    gap: 2px;
+  }
+
+  #sceneLayersPanel .layer-icon-btn {
+    width: 22px;
+    height: 22px;
+  }
+
+  #sceneLayersPanel .block-editor-header {
+    grid-template-columns: 48px 1fr;
+  }
 }
 
