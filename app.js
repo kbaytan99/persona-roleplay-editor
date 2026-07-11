@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.3.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.0";
+import { clampNumber } from "./scripts/utils.js?v=3.3.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.1";
 
-const appVersion = "3.3.0";
+const appVersion = "3.3.1";
 const appChangelog = [
+  {
+    version: "3.3.1",
+    date: "2026-07-11",
+    title: "Sag tik menusu canvas disinda da acilsin",
+    notes: [
+      "Sag tik menusu (Kopyala/Kes/Yapistir/Cogalt/Sil/RSE) sadece sahnenin/canvas'in tam uzerinde aciliyordu; etrafindaki bos gorunum alaninda sag tiklayinca tarayicinin kendi menusu cikiyordu. Artik sol tikla kutu-ile-secimde oldugu gibi, bos alanda sag tiklamak da ayni ozel menuyu aciyor.",
+    ],
+  },
   {
     version: "3.3.0",
     date: "2026-07-11",
@@ -1485,7 +1493,11 @@ function renderScenes() {
     }
   });
   canvasViewport.addEventListener("contextmenu", (event) => {
-    if (!event.target.closest(".composite-stage")) return;
+    // Scoped to canvasViewport already (menu bar/layers panel are outside
+    // it), so no need to also require the click to land on .composite-stage
+    // itself - right-clicking the empty space around the canvas should
+    // open the same menu, matching how left-click marquee-select already
+    // works both on and around the stage.
     event.preventDefault();
     const sceneEl = event.target.closest("[data-scene-id]");
     if (sceneEl && !isSceneSelected(sceneEl.dataset.sceneId)) {
