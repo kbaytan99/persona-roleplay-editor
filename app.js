@@ -2,11 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.2.3";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.2.3";
+import { clampNumber } from "./scripts/utils.js?v=3.3.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.0";
 
-const appVersion = "3.2.3";
+const appVersion = "3.3.0";
 const appChangelog = [
+  {
+    version: "3.3.0",
+    date: "2026-07-11",
+    title: "ImgBB'ye yukle + BBCode kopyala",
+    notes: [
+      "Dosya menusune 'Yukle ve BBCode kopyala' eklendi: sahneyi tek PNG olarak birlestirip dogrudan ImgBB'ye yukler (backend olmadigi icin tarayicidan CORS ile), donen linki forum BBCode'una sarip ([url=...][img]...[/img][/url]) panoya kopyalar. Daha once elle PNG indirip Hizli Resim/Imgur gibi bir siteye ayrica yuklemek gerekiyordu.",
+      "Pano izni verilmezse (bazi tarayici/ortam kisitlamalari) yukleme yine basarili sayilir, BBCode durum mesajinda gosterilip elle kopyalanabilir hale gelir - boylece link hicbir zaman kaybolmaz.",
+    ],
+  },
   {
     version: "3.2.3",
     date: "2026-07-11",
@@ -286,6 +295,7 @@ const appChangelog = [
 
 const appShell = document.querySelector(".app-shell");
 const downloadBtn = document.querySelector("#downloadBtn");
+const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
 const sceneImageInput = document.querySelector("#sceneImageInput");
 const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
 const sceneBackgroundHeight = document.querySelector("#sceneBackgroundHeight");
@@ -3182,7 +3192,7 @@ function startSceneTextResize(event, textBlock) {
   handle.addEventListener("pointercancel", onUp);
 }
 
-async function downloadCompositeScene() {
+async function buildCompositeCanvas() {
   ensureSceneModel();
   const images = new Map(await Promise.all(
     scenes
@@ -3208,11 +3218,54 @@ async function downloadCompositeScene() {
     if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight);
   });
 
+  return canvas;
+}
+
+async function downloadCompositeScene() {
+  const canvas = await buildCompositeCanvas();
   const link = document.createElement("a");
   link.download = `sahne-kompozit-${Date.now()}.png`;
   link.href = canvas.toDataURL("image/png");
   link.click();
   setSceneStatus("Tek PNG indirildi.");
+}
+
+// Free-tier key, meant to live in client-side code (Persona has no backend -
+// see README) - anyone viewing source can see it, but it only grants upload
+// access to this account's ImgBB quota, nothing more sensitive.
+const imgbbApiKey = "0f89bd300a14fa3bef8baa0bbb70416b";
+
+async function uploadCompositeSceneToImgbb() {
+  setSceneStatus("ImgBB'ye yukleniyor...");
+  try {
+    const canvas = await buildCompositeCanvas();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!blob) throw new Error("PNG olusturulamadi.");
+
+    const form = new FormData();
+    form.append("image", blob, `sahne-kompozit-${Date.now()}.png`);
+    const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
+      method: "POST",
+      body: form,
+    });
+    const result = await response.json();
+    if (!response.ok || !result?.success) {
+      throw new Error(result?.error?.message || `Sunucu hatasi (${response.status})`);
+    }
+
+    const url = result.data.url;
+    const bbcode = `[url=${url}][img]${url}[/img][/url]`;
+    try {
+      await navigator.clipboard.writeText(bbcode);
+      setSceneStatus("Yuklendi, BBCode panoya kopyalandi.");
+    } catch {
+      // Upload itself succeeded - a clipboard permission issue shouldn't
+      // strand the user without the link, so fall back to showing it.
+      setSceneStatus(`Yuklendi ama panoya kopyalanamadi: ${bbcode}`);
+    }
+  } catch (error) {
+    setSceneStatus(`Yukleme basarisiz: ${error.message}`);
+  }
 }
 
 function drawSceneLayerImage(context, image, scene, width, height) {
@@ -3661,6 +3714,7 @@ window.addEventListener("resize", () => {
   renderScenes();
 });
 downloadBtn.addEventListener("click", handleMainDownload);
+uploadImgbbBtn.addEventListener("click", uploadCompositeSceneToImgbb);
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
 blankSceneBtn.addEventListener("click", addBlankScene);
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);

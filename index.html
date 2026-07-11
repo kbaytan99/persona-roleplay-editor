@@ -13,12 +13,12 @@
          for up to 10 minutes even after a hard refresh. Bump this to match
          appVersion (app.js) on every release so old cached copies are never
          reused. -->
-    <link rel="stylesheet" href="./styles/base.css?v=3.2.3" />
-    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.2.3" />
-    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.2.3" />
-    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.2.3" />
-    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.2.3" />
-    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.2.3" />
+    <link rel="stylesheet" href="./styles/base.css?v=3.3.0" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.3.0" />
+    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.3.0" />
+    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.3.0" />
+    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.3.0" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.3.0" />
   </head>
   <body>
     <main class="app-shell scene-mode">
@@ -34,6 +34,7 @@
             <button type="button" class="menu-trigger">Dosya</button>
             <div class="menu-dropdown">
               <button id="downloadBtn" type="button" class="menu-dropdown-item"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
+              <button id="uploadImgbbBtn" type="button" class="menu-dropdown-item"><i data-lucide="cloud-upload"></i><span>Yukle ve BBCode kopyala</span></button>
               <button id="exportSceneProjectBtn" type="button" class="menu-dropdown-item"><i data-lucide="save"></i><span>RSE indir</span></button>
               <label class="menu-dropdown-item file-button">
                 <i data-lucide="upload"></i><span>RSE yukle</span>
@@ -176,6 +177,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script type="module" src="./app.js?v=3.2.3"></script>
+    <script type="module" src="./app.js?v=3.3.0"></script>
   </body>
 </html>

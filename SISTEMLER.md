@@ -116,6 +116,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   `importSceneProject`)*
 - **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
   indirme. *(`downloadCompositeScene`)*
+- **ImgBB'ye Yukle + BBCode Kopyala** — tum katmanlari birlestirip PNG
+  olarak dogrudan ImgBB'ye yukler, donen linki forum BBCode'una
+  (`[url=...][img]...[/img][/url]`) sarip panoya kopyalar. Backend
+  olmadigi icin dogrudan tarayicidan (CORS ile) yukleniyor.
+  *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*
