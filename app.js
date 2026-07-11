@@ -1,7 +1,18 @@
 "use strict";
 
-const appVersion = "3.0.0";
+const appVersion = "3.0.1";
 const appChangelog = [
+  {
+    version: "3.0.1",
+    date: "2026-07-11",
+    title: "Katman rengi + on-arka sira + kisayollar duzeltmeleri",
+    notes: [
+      "Katman kart renkleri sirasina gore degil, katmanin kendi kimligine gore atanmaya baslandi; artik bir katmani suruklerken/siralarken rengi degismiyor.",
+      "Onemli bir goruntu hatasi duzeltildi: yazi katmanlari her zaman butun resim katmanlarinin onunde goruniyordu, katman sirasi ne olursa olsun (bir yazi katmanina her zaman bir resmin arkasinda kalmasini soylesen bile gecmiyordu). Sebep, yazi katmanlarinin kendi sabit, cok yuksek bir on-arka kademesi (z-index) olan ayri bir katmanda tutulmasiydi; artik resim ve yazi katmanlari ayni on-arka kademe sistemini paylasiyor, sadece liste sirasi belirleyici.",
+      "Katman Yoneticisi paneli serbest pencere olarak tasindiginda Kisayollar Kutusu'nun uzerine biniyordu (panel her zaman en onde gorunmesi icin cok yuksek bir kademede); artik panel serbestken kutu gizleniyor.",
+      "Kisayollar Kutusu gorsel olarak yenilendi: kisayollar 'Duzenleme' ve 'Gorunum' basliklariyla gruplandi, tuş gorselleri (kbd) daha belirgin/dokunsal bir gorunume kavustu.",
+    ],
+  },
   {
     version: "3.0.0",
     date: "2026-07-11",
@@ -1790,7 +1801,7 @@ function createLayerCard(scene, index, stage, listContainer) {
   item.className = "scene-editor-item" + (scene.type === "text" ? " text-layer" : "") + (isExpanded ? " expanded" : "");
   item.dataset.sceneEditorId = scene.id;
   if (isSceneSelected(scene.id)) item.classList.add("selected");
-  item.style.setProperty("--scene-accent", getSceneAccent(index));
+  item.style.setProperty("--scene-accent", getSceneAccent(scene.id));
   item.addEventListener("pointerdown", (event) => {
     if (isEditableTarget(event.target)) return;
     if (event.shiftKey) selectSceneRange(scene.id);
@@ -2964,9 +2975,16 @@ function createLayerSection(title, openByDefault) {
   return { el: section, body };
 }
 
-function getSceneAccent(index) {
+function getSceneAccent(sceneId) {
+  // Hashed from the layer's own id (not its position in the list) so a
+  // layer keeps its color when it's reordered - only adding/removing
+  // layers changes the palette, never a drag-reorder.
   const accents = ["#6f98ff", "#c69aff", "#5dde72", "#ff9f2e", "#ff6b7d", "#ffd447"];
-  return accents[index % accents.length];
+  let hash = 0;
+  for (let i = 0; i < sceneId.length; i++) {
+    hash = (hash * 31 + sceneId.charCodeAt(i)) | 0;
+  }
+  return accents[Math.abs(hash) % accents.length];
 }
 
 function createControlIcon(icon) {

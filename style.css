@@ -884,9 +884,13 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 }
 
 .stage-text-overlay {
+  /* No z-index here on purpose: text and image layers share one unified
+     stack (scene order), and each .scene-text-block already carries its
+     own correct z-index via getSceneLayerZIndex(). Giving this container
+     its own z-index would create a separate stacking context that always
+     wins over .stage-render-clip's images, regardless of layer order. */
   position: absolute;
   inset: 0;
-  z-index: 9500;
   overflow: hidden;
   pointer-events: none;
 }
@@ -2205,8 +2209,37 @@ button:hover,
 }
 
 .shortcut-hud-header strong {
+  display: flex;
+  align-items: center;
+  gap: 6px;
   color: #f4f7fb;
   font-size: 11px;
+}
+
+.shortcut-hud-header strong::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--cyan, #52d1c5);
+  box-shadow: 0 0 6px var(--cyan, #52d1c5);
+}
+
+.shortcut-group-title {
+  margin: 7px 0 1px;
+  padding-top: 7px;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  color: #7fe0d4;
+  font-size: 9px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.shortcut-group-title:first-of-type {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
 }
 
 .shortcut-hide-button {
@@ -2239,17 +2272,24 @@ body.shortcuts-hidden .scene-mode .shortcut-hud {
 }
 
 /* A non-right-docked layer manager can grow into the shortcut box's
-   top-left corner (not while floating or fully closed, since it isn't
-   onscreen in that region then) */
-body.layers-dock-left:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud,
-body.layers-dock-top:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud,
-body.layers-dock-bottom:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-hud {
+   top-left corner (not while fully closed, since it isn't onscreen in
+   that region then). A floating panel also hides it: floating uses a
+   very high z-index (see .dockable-panel.floating) so it can be dragged
+   above everything, and since it can be parked anywhere - including
+   right over the shortcut box - just hide the box whenever the panel is
+   floating rather than trying to guess if this particular drag happens
+   to overlap it. */
+body.layers-dock-left:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-top:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-dock-bottom:not(.layers-hidden) .scene-mode .shortcut-hud,
+body.layers-floating .scene-mode .shortcut-hud {
   display: none;
 }
 
-body.layers-dock-left.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button,
-body.layers-dock-top.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button,
-body.layers-dock-bottom.shortcuts-hidden:not(.layers-floating):not(.layers-hidden) .scene-mode .shortcut-toggle-button {
+body.layers-dock-left.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-top.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-dock-bottom.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
+body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: none;
 }
 
@@ -2285,13 +2325,17 @@ body.shortcuts-hidden .scene-mode .shortcut-toggle-button:hover {
 
 .shortcut-hud kbd {
   min-width: 22px;
-  padding: 3px 6px;
-  border: 1px solid rgba(255, 255, 255, 0.13);
+  padding: 4px 6px 3px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-bottom-width: 2px;
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
   color: #f4f7fb;
+  font-family: ui-monospace, "SF Mono", Consolas, monospace;
+  font-size: 10px;
   line-height: 1;
   text-align: center;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 .shortcut-hud div > span:last-child {
@@ -3001,8 +3045,8 @@ input[type="range"] {
 
 .shortcut-hud kbd {
   border-color: var(--ui-border-strong);
-  background: rgba(255, 255, 255, 0.07);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.1), rgba(255, 255, 255, 0.02));
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.35);
 }
 
 ::-webkit-scrollbar {
