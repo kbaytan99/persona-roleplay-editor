@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.3.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.1";
+import { clampNumber } from "./scripts/utils.js?v=3.3.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.3.2";
 
-const appVersion = "3.3.1";
+const appVersion = "3.3.2";
 const appChangelog = [
+  {
+    version: "3.3.2",
+    date: "2026-07-11",
+    title: "Degisiklik gunlugu artik sayfa sayfa",
+    notes: [
+      "Yardim menusundeki 'Son guncellemeler' listesi tum surumleri tek seferde alt alta gosterip asiri uzun bir kaydirma yaratiyordu. Artik tek seferde bir surum gosteriliyor, ok tuslariyla (< >) daha yeni/daha eski surumler arasinda gezilebiliyor; panel her acildiginda en yeni surumden basliyor.",
+    ],
+  },
   {
     version: "3.3.1",
     date: "2026-07-11",
@@ -816,34 +824,49 @@ function refreshEditMenuState() {
   document.querySelectorAll(".scene-context-menu [data-action='delete']").forEach((el) => { el.disabled = !deleteTargets; });
 }
 
+// Which changelog entry the Yardim panel is currently showing (0 = newest,
+// appChangelog is already ordered newest-first). Session-only, not saved -
+// the panel always reopens on the latest update.
+let aboutChangelogPage = 0;
+
 function renderAboutPanel() {
   const versionEl = document.querySelector("#aboutVersion");
   if (versionEl) versionEl.textContent = `Surum ${appVersion}`;
   const listEl = document.querySelector("#aboutChangelog");
   if (!listEl) return;
+
+  aboutChangelogPage = clampNumber(aboutChangelogPage, 0, appChangelog.length - 1, 0);
+  const entry = appChangelog[aboutChangelogPage];
+
+  const pageEl = document.querySelector("#aboutChangelogPage");
+  if (pageEl) pageEl.textContent = `${aboutChangelogPage + 1} / ${appChangelog.length}`;
+  const prevBtn = document.querySelector("#aboutChangelogPrev");
+  if (prevBtn) prevBtn.disabled = aboutChangelogPage === 0;
+  const nextBtn = document.querySelector("#aboutChangelogNext");
+  if (nextBtn) nextBtn.disabled = aboutChangelogPage === appChangelog.length - 1;
+
   listEl.replaceChildren();
-  appChangelog.forEach((entry) => {
-    const block = document.createElement("div");
-    block.className = "about-changelog-entry";
-    const heading = document.createElement("div");
-    heading.className = "about-changelog-heading";
-    heading.innerHTML = `<strong>v${entry.version}</strong><span>${entry.date}</span>`;
-    block.append(heading);
-    if (entry.title) {
-      const title = document.createElement("div");
-      title.className = "about-changelog-title";
-      title.textContent = entry.title;
-      block.append(title);
-    }
-    const list = document.createElement("ul");
-    entry.notes.forEach((note) => {
-      const li = document.createElement("li");
-      li.textContent = note;
-      list.append(li);
-    });
-    block.append(list);
-    listEl.append(block);
+  if (!entry) return;
+  const block = document.createElement("div");
+  block.className = "about-changelog-entry";
+  const heading = document.createElement("div");
+  heading.className = "about-changelog-heading";
+  heading.innerHTML = `<strong>v${entry.version}</strong><span>${entry.date}</span>`;
+  block.append(heading);
+  if (entry.title) {
+    const title = document.createElement("div");
+    title.className = "about-changelog-title";
+    title.textContent = entry.title;
+    block.append(title);
+  }
+  const list = document.createElement("ul");
+  entry.notes.forEach((note) => {
+    const li = document.createElement("li");
+    li.textContent = note;
+    list.append(li);
   });
+  block.append(list);
+  listEl.append(block);
 }
 
 function initMenuBar() {
@@ -3737,6 +3760,16 @@ showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
 initMenuBar();
 renderAboutPanel();
+document.querySelector("#aboutChangelogPrev").addEventListener("click", (event) => {
+  event.stopPropagation();
+  aboutChangelogPage -= 1;
+  renderAboutPanel();
+});
+document.querySelector("#aboutChangelogNext").addEventListener("click", (event) => {
+  event.stopPropagation();
+  aboutChangelogPage += 1;
+  renderAboutPanel();
+});
 document.addEventListener("paste", handlePaste);
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
 window.addEventListener("keydown", handleSceneKeyDown);

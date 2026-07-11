@@ -147,8 +147,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   *(`appVersion`)*
 - **Degisiklik Gunlugu** (Changelog) — "Son guncellemeler" listesi, her
   giris bir surum + baslik + detayli notlar iceriyor; yeni bir ozellik
-  eklendiginde buraya ve `appChangelog`'a birer giris eklenir.
-  *(`appChangelog`, `renderAboutPanel`)*
+  eklendiginde buraya ve `appChangelog`'a birer giris eklenir. Tek seferde
+  bir surum gosterilir, `<`/`>` oklariyla daha yeni/daha eski surumler
+  arasinda gezinilir; panel her acildiginda en yeniden baslar.
+  *(`appChangelog`, `renderAboutPanel`, `aboutChangelogPage`)*
 
 ---
 

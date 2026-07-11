@@ -13,12 +13,12 @@
          for up to 10 minutes even after a hard refresh. Bump this to match
          appVersion (app.js) on every release so old cached copies are never
          reused. -->
-    <link rel="stylesheet" href="./styles/base.css?v=3.3.1" />
-    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.3.1" />
-    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.3.1" />
-    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.3.1" />
-    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.3.1" />
-    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.3.1" />
+    <link rel="stylesheet" href="./styles/base.css?v=3.3.2" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.3.2" />
+    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.3.2" />
+    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.3.2" />
+    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.3.2" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.3.2" />
   </head>
   <body>
     <main class="app-shell scene-mode">
@@ -135,7 +135,14 @@
                   <div id="aboutVersion" class="about-version"></div>
                 </div>
               </div>
-              <div class="about-section-title">Son guncellemeler</div>
+              <div class="about-section-title-row">
+                <div class="about-section-title">Son guncellemeler</div>
+                <div class="about-changelog-pager">
+                  <button id="aboutChangelogPrev" type="button" class="layer-icon-btn" title="Daha yeni"><i data-lucide="chevron-left"></i></button>
+                  <span id="aboutChangelogPage" class="about-changelog-page"></span>
+                  <button id="aboutChangelogNext" type="button" class="layer-icon-btn" title="Daha eski"><i data-lucide="chevron-right"></i></button>
+                </div>
+              </div>
               <div id="aboutChangelog" class="about-changelog"></div>
             </div>
           </div>
@@ -177,6 +184,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script type="module" src="./app.js?v=3.3.1"></script>
+    <script type="module" src="./app.js?v=3.3.2"></script>
   </body>
 </html>
