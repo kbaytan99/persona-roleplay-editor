@@ -1,4 +1,4 @@
-/* ── Layer Manager Panel (dockable: right/left/top/bottom/floating) ── */
+/* ── Layer Manager Panel (dockable: right/left/bottom/floating) ── */
 .scene-layers-panel {
   position: relative;
   container: layers-panel / inline-size;
@@ -26,22 +26,11 @@ body.layers-dock-left .scene-layers-panel {
     inset -1px 0 0 rgba(255, 255, 255, 0.04);
 }
 
-body.layers-dock-top .scene-layers-panel,
 body.layers-dock-bottom .scene-layers-panel {
   --resize-gradient-dir: to bottom;
   border-left: none;
   background:
     linear-gradient(180deg, rgba(16, 20, 30, 0.98), rgba(10, 12, 18, 0.99));
-}
-
-body.layers-dock-top .scene-layers-panel {
-  border-bottom: 2px solid rgba(100, 180, 255, 0.15);
-  box-shadow:
-    0 4px 20px rgba(0, 0, 0, 0.45),
-    inset 0 -1px 0 rgba(255, 255, 255, 0.04);
-}
-
-body.layers-dock-bottom .scene-layers-panel {
   border-top: 2px solid rgba(100, 180, 255, 0.15);
   box-shadow:
     0 -4px 20px rgba(0, 0, 0, 0.45),
@@ -69,19 +58,12 @@ body.layers-dock-left .scene-mode .scene-layers-panel:not(.dockable-panel.floati
   right: 0;
 }
 
-body.layers-dock-top .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before,
 body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
   left: 0;
-  top: auto;
-  bottom: 0;
+  top: 0;
   width: 100%;
   height: 6px;
   cursor: row-resize;
-}
-
-body.layers-dock-bottom .scene-mode .scene-layers-panel:not(.dockable-panel.floating)::before {
-  bottom: auto;
-  top: 0;
 }
 
 .scene-mode .scene-layers-panel:not(.dockable-panel.floating):hover::before,
@@ -96,7 +78,6 @@ body.resizing-layers {
   user-select: none;
 }
 
-body.resizing-layers.layers-dock-top,
 body.resizing-layers.layers-dock-bottom {
   cursor: row-resize;
 }

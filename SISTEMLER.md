@@ -99,11 +99,12 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Canvas Kaydirma** (Panning) — `Space` basiliyken suruklayerek gezinme.
   *(`startSceneViewportPan`)*
 - **Pencere Yonetimi** — Katman Yoneticisi'nin baslik cubugundan
-  surukleyerek sag/sol/ust/alt kenara yaslanmasi (dock) ya da ekranda
-  serbest (floating) bir pencere olarak birakilmasi; hangi kenara
-  yaklastigini gosteren mavi vurgu ve son secilen kenar/boyutun
-  hatirlanmasi. *(`applyLayersDock`, `getSavedLayersDock`, "Window Manager"
-  bolumu)*
+  surukleyerek sag/sol/alt kenara yaslanmasi (dock) ya da ekranda serbest
+  (floating) bir pencere olarak birakilmasi; hangi kenara yaklastigini
+  gosteren mavi vurgu ve son secilen kenar/boyutun hatirlanmasi. Ust kenara
+  yaslama kasten desteklenmiyor — dikey bir kart listesi icin genis-kisa bir
+  serit kotu bir yerlesim oluyordu. *(`applyLayersDock`,
+  `getSavedLayersDock`, "Window Manager" bolumu)*
 
 ## 7. Dosya Sistemi
 

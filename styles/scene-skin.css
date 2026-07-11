@@ -394,14 +394,12 @@ body.shortcuts-hidden .scene-mode .shortcut-hud {
    floating rather than trying to guess if this particular drag happens
    to overlap it. */
 body.layers-dock-left:not(.layers-hidden) .scene-mode .shortcut-hud,
-body.layers-dock-top:not(.layers-hidden) .scene-mode .shortcut-hud,
 body.layers-dock-bottom:not(.layers-hidden) .scene-mode .shortcut-hud,
 body.layers-floating .scene-mode .shortcut-hud {
   display: none;
 }
 
 body.layers-dock-left.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
-body.layers-dock-top.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
 body.layers-dock-bottom.shortcuts-hidden:not(.layers-hidden) .scene-mode .shortcut-toggle-button,
 body.layers-floating.shortcuts-hidden .scene-mode .shortcut-toggle-button {
   display: none;
@@ -629,22 +627,15 @@ body.layers-dock-left .scene-mode #scenePreviewPane.active {
   grid-template-columns: var(--layers-width, 380px) minmax(0, 1fr);
 }
 
-body.layers-dock-top .scene-mode #scenePreviewPane.active {
-  grid-template-columns: minmax(0, 1fr);
-  grid-template-rows: var(--layers-height, 320px) minmax(0, 1fr);
-}
-
 body.layers-dock-bottom .scene-mode #scenePreviewPane.active {
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) var(--layers-height, 320px);
 }
 
-body.layers-dock-left .scene-layers-panel,
-body.layers-dock-top .scene-layers-panel {
+body.layers-dock-left .scene-layers-panel {
   order: -1;
 }
 
-body.layers-dock-top .scene-layers-panel,
 body.layers-dock-bottom .scene-layers-panel {
   width: 100%;
 }

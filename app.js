@@ -3,8 +3,16 @@
 import { clampNumber } from "./scripts/utils.js";
 import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js";
 
-const appVersion = "3.1.0";
+const appVersion = "3.1.1";
 const appChangelog = [
+  {
+    version: "3.1.1",
+    date: "2026-07-11",
+    title: "Katman Yoneticisi'nde ust kenara yaslama kaldirildi",
+    notes: [
+      "Katman Yoneticisi'ni ust kenara yaslama secenegi kaldirildi - dikey bir kart listesi icin genis-kisa bir serit kotu bir yerlesim oluyordu. Sag/sol/alt kenara yaslama ve serbest pencere olarak tasima aynen calismaya devam ediyor. Daha once ust kenara yaslanmis kaydedilmis bir tercih varsa otomatik olarak sag kenara donuyor.",
+    ],
+  },
   {
     version: "3.1.0",
     date: "2026-07-11",
@@ -3324,20 +3332,21 @@ function getSavedLayersHeight() {
 
 function getSavedLayersDock() {
   const saved = getClientStoredValue(storageKeys.layersDock);
-  return ["left", "top", "bottom", "right"].includes(saved) ? saved : "right";
+  // "top" used to be a valid dock, but a wide-short strip at the top is a
+  // bad fit for what's fundamentally a vertical card list - it was removed
+  // as an option. Any previously-saved "top" falls back to "right".
+  return ["left", "bottom", "right"].includes(saved) ? saved : "right";
 }
 
 function applyLayersDock(dock) {
-  document.body.classList.remove("layers-dock-left", "layers-dock-top", "layers-dock-bottom");
+  document.body.classList.remove("layers-dock-left", "layers-dock-bottom");
   if (dock === "left") document.body.classList.add("layers-dock-left");
-  else if (dock === "top") document.body.classList.add("layers-dock-top");
   else if (dock === "bottom") document.body.classList.add("layers-dock-bottom");
   localStorage.setItem(clientStorageKey(storageKeys.layersDock), dock);
 }
 
 function getCurrentLayersDock() {
   if (document.body.classList.contains("layers-dock-left")) return "left";
-  if (document.body.classList.contains("layers-dock-top")) return "top";
   if (document.body.classList.contains("layers-dock-bottom")) return "bottom";
   return "right";
 }
@@ -3347,9 +3356,8 @@ function getLayersPanelResizeEdgeInfo() {
   if (!panel || panel.closest(".dockable-panel.floating")) return null;
   const panelRect = panel.getBoundingClientRect();
   const dock = getCurrentLayersDock();
-  const isVertical = dock === "top" || dock === "bottom";
+  const isVertical = dock === "bottom";
   const edge = dock === "left" ? panelRect.right
-    : dock === "top" ? panelRect.bottom
     : dock === "bottom" ? panelRect.top
     : panelRect.left;
   return { panel, panelRect, dock, isVertical, edge };
@@ -3377,7 +3385,8 @@ function startLayersPanelResize(event) {
     const moveCoord = isVertical ? moveEvent.clientY : moveEvent.clientX;
     const delta = moveCoord - startCoord;
     if (isVertical) {
-      const height = clampNumber(dock === "top" ? startSize + delta : startSize - delta, 220, 640, startSize);
+      // isVertical is only true for the "bottom" dock now that "top" is gone.
+      const height = clampNumber(startSize - delta, 220, 640, startSize);
       appShell.style.setProperty("--layers-height", `${height}px`);
       localStorage.setItem(clientStorageKey(storageKeys.layersHeight), String(Math.round(height)));
     } else {
@@ -3619,12 +3628,12 @@ document.addEventListener("pointerdown", (e) => {
     document.body.classList.remove("layers-hidden");
   }
 
-  // A left/right-docked panel is full-height and a top/bottom-docked one is
+  // A left/right-docked panel is full-height and a bottom-docked one is
   // full-width; carrying that dimension over verbatim makes the detached
   // floating window mostly empty space. Fall back to the other dock type's
   // saved size instead, which is already a sensible panel size.
   const dockBeforeFloat = isLayersPanel ? getCurrentLayersDock() : null;
-  const startWidth = dockBeforeFloat === "top" || dockBeforeFloat === "bottom"
+  const startWidth = dockBeforeFloat === "bottom"
     ? getSavedLayersWidth()
     : Math.min(rect.width, window.innerWidth - 24);
   const startHeight = dockBeforeFloat === "left" || dockBeforeFloat === "right"
@@ -3653,12 +3662,14 @@ document.addEventListener("pointerdown", (e) => {
       return;
     }
 
-    // Determine nearest edge drop zone
+    // Determine nearest edge drop zone. No "top" zone on purpose: a wide,
+    // short strip at the top is a bad fit for what's fundamentally a
+    // vertical card list - dragging up there just leaves the panel
+    // floating instead of forcing a dock.
     const distLeft = moveEvent.clientX;
     const distRight = window.innerWidth - moveEvent.clientX;
-    const distTop = moveEvent.clientY;
     const distBottom = window.innerHeight - moveEvent.clientY;
-    const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+    const minDist = Math.min(distLeft, distRight, distBottom);
 
     if (minDist > dockZone) {
       currentDock = null;
@@ -3680,12 +3691,6 @@ document.addEventListener("pointerdown", (e) => {
       indicator.style.top = "0";
       indicator.style.width = `${dockWidth}px`;
       indicator.style.height = "100vh";
-    } else if (minDist === distTop) {
-      currentDock = "top";
-      indicator.style.left = "0";
-      indicator.style.top = "0";
-      indicator.style.width = "100vw";
-      indicator.style.height = `${dockHeight}px`;
     } else {
       currentDock = "bottom";
       indicator.style.left = "0";
