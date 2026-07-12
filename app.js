@@ -2,12 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.9.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.0";
+import { clampNumber } from "./scripts/utils.js?v=3.9.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.1";
 
-const appVersion = "3.9.0";
+const appVersion = "3.9.1";
 const appChangelog = [
+  {
+    version: "3.9.1",
+    date: "2026-07-12",
+    title: "Codex'in 3 onerisi: pano yedegi, canvas bellek siniri, RSE sertlestirme",
+    notes: [
+      "ImgBB yuklemesinde panoya kopyalama basarisiz olursa BBCode artik durum cubugunda kirpilmiyor; sag ustte, icinde tam BBCode'un oldugu, tek tikla kopyalanabilen kucuk bir kutu (toast) aciliyor.",
+      "Cikti canvas'i (PNG indirme ve ImgBB yukleme) icin toplam piksel butcesi eklendi (40 milyon piksel). Cok buyuk cikti genisligi/yuksekligi kombinasyonlari artik tarayiciyi zorlamak yerine oranini koruyarak otomatik kucultuluyor, durum cubugunda haber veriliyor.",
+      "RSE import artik dosya boyutu (200 MB ust siniri), proje surumu (`version` alani tam eslesmeli) ve resim katmanlarinin `dataUrl` alaninin gercekten bir data: goruntu adresi oldugunu (herhangi bir dis URL degil) dogruluyor; bos katman listesi iceren bir dosya da artik acikca reddediliyor.",
+    ],
+  },
   {
     version: "3.9.0",
     date: "2026-07-12",
@@ -469,9 +479,23 @@ const sceneTransitionPx = 150;
 const sceneCanvasDefaultWidth = 1200;
 const sceneCanvasDefaultHeight = 800;
 const sceneCanvasMaxDimension = 32767;
+// 32767x32767 (the per-side max, mostly there so a single stray huge value
+// can't itself overflow canvas APIs) times an equally large other side would
+// be ~1.07 billion pixels - a ~4.3GB RGBA buffer, which reliably crashes or
+// silently no-ops the tab well before that. This is a separate, much
+// smaller total-area budget: generous for a screenshot compositor (a
+// 10000x4000 canvas fits comfortably under it) but bounded well short of
+// "the browser gives up." Enforced in buildCompositeCanvas() right before
+// the canvas is allocated, so it catches every path that can set the two
+// dimensions (Ayarlar inputs, RSE import, drag-resize handle).
+const sceneCanvasMaxPixels = 40_000_000;
 const sceneCanvasBackground = "#10141b";
 const rseProjectMagic = "ROLEPLAY_SCENE_EXPORT";
 const rseProjectVersion = 1;
+// RSE files embed every layer's image as base64, so a legitimate multi-image
+// project can be large - this is a backstop against a corrupt/malicious
+// file hanging JSON.parse or blowing up memory, not a normal-use limit.
+const rseMaxImportBytes = 200 * 1024 * 1024;
 const sceneImageFilterDefaults = {
   brightness: 106,
   contrast: 108,
@@ -2548,10 +2572,19 @@ async function importSceneProject(event) {
   if (!file) return;
 
   try {
+    if (file.size > rseMaxImportBytes) {
+      setSceneStatus(t("status.rseTooLarge"));
+      return;
+    }
+
     const payload = JSON.parse(await file.text());
     const project = normalizeSceneProjectPayload(payload);
     if (!project) {
       setSceneStatus(t("status.rseInvalidFile"));
+      return;
+    }
+    if (!project.scenes.length) {
+      setSceneStatus(t("status.rseEmptyFile"));
       return;
     }
 
@@ -2574,6 +2607,7 @@ async function importSceneProject(event) {
 function normalizeSceneProjectPayload(payload) {
   if (!payload || typeof payload !== "object") return null;
   if (payload.magic !== rseProjectMagic || payload.format !== "rse") return null;
+  if (payload.version !== rseProjectVersion) return null;
   if (!Array.isArray(payload.scenes)) return null;
 
   const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
@@ -2614,7 +2648,12 @@ function normalizeImportedScene(scene, index) {
       ? clone.textStyle
       : "box";
   } else {
-    clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
+    // Must actually be a data: image URI, not just any string - an import
+    // that accepted an arbitrary URL here (http(s):, javascript:, etc.)
+    // would end up as an <img src>, which for a non-data URL means the
+    // app silently makes an outbound request to whatever host a hand-
+    // edited/corrupt .rse file points at the moment the layer renders.
+    clone.dataUrl = typeof clone.dataUrl === "string" && /^data:image\//i.test(clone.dataUrl) ? clone.dataUrl : "";
     clone.isBlank = !clone.dataUrl;
     clone.imageZoom = clampNumber(clone.imageZoom, 5, 1200, 100);
     clone.imageScaleX = clampNumber(clone.imageScaleX, 5, 1200, 100);
@@ -3844,6 +3883,21 @@ function startSceneTextResize(event, textBlock) {
   handle.addEventListener("pointercancel", onUp);
 }
 
+// Scales width/height down proportionally, if needed, to fit the total
+// pixel budget - keeps the aspect ratio so the composite still looks like
+// what the user configured, just smaller, rather than cropping or
+// stretching it.
+function clampCanvasPixelBudget(width, height) {
+  const area = width * height;
+  if (area <= sceneCanvasMaxPixels) return { width, height, scaled: false };
+  const factor = Math.sqrt(sceneCanvasMaxPixels / area);
+  return {
+    width: Math.max(1, Math.round(width * factor)),
+    height: Math.max(1, Math.round(height * factor)),
+    scaled: true,
+  };
+}
+
 async function buildCompositeCanvas() {
   ensureSceneModel();
   const images = new Map(await Promise.all(
@@ -3853,8 +3907,15 @@ async function buildCompositeCanvas() {
   ));
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
-  const outputWidth = getSceneOutputWidth();
-  const outputHeight = getSceneBackgroundHeight();
+  const { width: outputWidth, height: outputHeight, scaled } = clampCanvasPixelBudget(
+    getSceneOutputWidth(),
+    getSceneBackgroundHeight(),
+  );
+  // Callers report their own final status ("PNG indirildi", "Yuklendi...")
+  // right after this returns, which would immediately overwrite a status
+  // message set here - so hand the scaled-down flag back on the canvas
+  // itself instead, and let each caller fold it into its own message.
+  canvas.budgetClamped = scaled;
 
   canvas.width = outputWidth;
   canvas.height = outputHeight;
@@ -3882,7 +3943,57 @@ async function downloadCompositeScene() {
   link.href = objectUrl;
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   link.click();
-  setSceneStatus(t("status.pngDownloaded"));
+  setSceneStatus(canvas.budgetClamped
+    ? t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })
+    : t("status.pngDownloaded"));
+}
+
+function showImgbbFallbackToast(bbcode) {
+  document.querySelector(".imgbb-fallback-toast")?.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "imgbb-fallback-toast";
+
+  const header = document.createElement("div");
+  header.className = "imgbb-fallback-toast-header";
+  const title = document.createElement("span");
+  title.textContent = t("toast.clipboardFallbackTitle");
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "layer-icon-btn";
+  closeBtn.title = t("shortcuts.close");
+  closeBtn.innerHTML = `<i data-lucide="x"></i>`;
+  closeBtn.addEventListener("click", () => toast.remove());
+  header.append(title, closeBtn);
+
+  const row = document.createElement("div");
+  row.className = "imgbb-fallback-toast-row";
+  const input = document.createElement("input");
+  input.type = "text";
+  input.readOnly = true;
+  input.value = bbcode;
+  const copyBtn = document.createElement("button");
+  copyBtn.type = "button";
+  copyBtn.className = "layer-mini-btn";
+  copyBtn.textContent = t("edit.copy");
+  copyBtn.addEventListener("click", async () => {
+    input.select();
+    try {
+      await navigator.clipboard.writeText(bbcode);
+      setSceneStatus(t("status.imgbbUploadedCopied"));
+      toast.remove();
+    } catch {
+      // Still can't use the async clipboard API - the input is selected,
+      // so the user's own Ctrl+C keeps working as a manual fallback.
+    }
+  });
+  row.append(input, copyBtn);
+
+  toast.append(header, row);
+  document.body.append(toast);
+  if (window.lucide) window.lucide.createIcons();
+  input.focus();
+  input.select();
 }
 
 // Free-tier key, meant to live in client-side code (Persona has no backend -
@@ -3965,17 +4076,25 @@ async function uploadCompositeSceneToImgbb() {
 
     const url = normalizeImgbbResultUrl(result.data?.url);
     const bbcode = `[url=${url}][img]${url}[/img][/url]`;
+    const budgetNote = canvas.budgetClamped
+      ? ` ${t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })}`
+      : "";
     try {
       await promiseWithTimeout(
         navigator.clipboard.writeText(bbcode),
         clipboardWriteTimeoutMs,
         t("error.clipboardTimeout"),
       );
-      setSceneStatus(t("status.imgbbUploadedCopied"));
+      setSceneStatus(t("status.imgbbUploadedCopied") + budgetNote);
     } catch {
       // Upload itself succeeded - a clipboard permission issue shouldn't
-      // strand the user without the link, so fall back to showing it.
-      setSceneStatus(t("status.imgbbUploadedNoCopy", { bbcode }));
+      // strand the user without the link, so fall back to showing it. The
+      // status bar text is truncated with an ellipsis at 260px (see
+      // .menu-bar-status), so the BBCode itself would be unreadable there -
+      // show it in a small fixed toast with a readonly, pre-selected input
+      // instead, which the user can read in full and copy manually.
+      setSceneStatus(t("status.imgbbUploadedNoCopy") + budgetNote);
+      showImgbbFallbackToast(bbcode);
     }
   } catch (error) {
     const message = error?.name === "AbortError"

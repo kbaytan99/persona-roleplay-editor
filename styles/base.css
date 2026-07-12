@@ -39,6 +39,10 @@
                                         occupy the same top-of-screen
                                         region (mobile drawer, floating
                                         panel, context menu)
+       --z-toast (700)                 .imgbb-fallback-toast - a fixed,
+                                        page-level notice, must beat even
+                                        the menu bar since it can appear
+                                        while a menu is open
 
      Canvas layer content (scene images/text, their transform/resize
      handles, smart guides) is NOT in this list on purpose: .composite-
@@ -55,6 +59,7 @@
   --z-context-menu: 200;
   --z-menu-dropdown: 500;
   --z-menu-bar: 600;
+  --z-toast: 700;
 }
 
 * {
@@ -347,6 +352,47 @@ textarea {
   overflow: hidden;
   text-overflow: ellipsis;
   max-width: 260px;
+}
+
+.imgbb-fallback-toast {
+  position: fixed;
+  z-index: var(--z-toast);
+  top: 56px;
+  right: 12px;
+  width: min(360px, calc(100vw - 24px));
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 8px;
+  background: #191c23;
+  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.5);
+}
+
+.imgbb-fallback-toast-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text);
+}
+
+.imgbb-fallback-toast-row {
+  display: flex;
+  gap: 6px;
+}
+
+.imgbb-fallback-toast-row input {
+  flex: 1;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--ui-border, rgba(255, 255, 255, 0.12));
+  border-radius: 5px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--text);
+  font-size: 11px;
 }
 
 .about-panel {

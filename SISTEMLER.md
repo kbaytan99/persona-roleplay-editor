@@ -136,19 +136,35 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   katman alanlari (boyut, konum, filtreler, gecis) gecersiz/asiri deger
   girildiginde guvenli varsayilanlara sabitlenir; bu, elle degistirilmis
   veya bozuk bir dosyanin secim/silme davranisini bozmasini engeller.
-  *(`exportSceneProject`, `importSceneProject`, `normalizeImportedScene`,
-  `deduplicateImportedSceneIds`)*
+  Ayrica: dosya boyutu 200 MB'i asamaz, proje `version` alani tam
+  eslesmelidir (uyumsuz/eksikse dosya reddedilir), resim katmanlarinin
+  `dataUrl`'u gercekten bir `data:image/` adresi olmalidir (aksi halde
+  bos katman sayilir - boylece bozuk bir dosya uygulamayi sessizce dis bir
+  URL'ye istek attirmiyor), ve hic katmani olmayan bir dosya da acikca
+  reddedilir. *(`exportSceneProject`, `importSceneProject`,
+  `normalizeImportedScene`, `deduplicateImportedSceneIds`)*
 - **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
   gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
   ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,
   `canvasToPngBlob`)*
+- **Cikti Piksel Butcesi** — `buildCompositeCanvas` (PNG indirme ve ImgBB
+  yukleme, ikisi de) cikti genisligi x yuksekligi 40 milyon pikseli
+  asarsa oranini koruyarak otomatik kucultur; kullaniciya durum
+  cubugunda haber verilir. Cok buyuk Cikti genisligi/Arka plan yuksekligi
+  degerlerinin (32767'ye kadar izin veriliyor) tarayicinin canvas bellek
+  sinirlarini zorlayip sessizce bos/bozuk gorsel uretmesini engeller.
+  *(`clampCanvasPixelBudget`, `sceneCanvasMaxPixels`)*
 - **ImgBB'ye Yukle + BBCode Kopyala** — tum katmanlari birlestirip PNG
   olarak dogrudan ImgBB'ye yukler, donen linki forum BBCode'una
   (`[url=...][img]...[/img][/url]`) sarip panoya kopyalar. Backend
   olmadigi icin dogrudan tarayicidan (CORS ile) yukleniyor. Kisayolu:
   `Ctrl+Shift+U`. Ayni anda tek yukleme calisir; istek 45 saniyede zaman
-  asimina ugrar ve 32 MB'yi asan PNG gonderilmeden durdurulur.
-  *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`)*
+  asimina ugrar ve 32 MB'yi asan PNG gonderilmeden durdurulur. Panoya
+  yazma basarisiz olursa (izin reddi vb.) BBCode, durum cubugunda
+  kirpilmak yerine sag ustte acilan kucuk bir kutuda (toast) tam
+  metinle ve tek-tikla-kopyala butonuyla gosterilir.
+  *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`,
+  `showImgbbFallbackToast`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*
