@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.15.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.15.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.15.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.15.0";
+import { clampNumber } from "./scripts/utils.js?v=3.16.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.16.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.16.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.16.0";
 
-const appVersion = "3.15.0";
+const appVersion = "3.16.0";
 const appChangelog = [
+  {
+    version: "3.16.0",
+    date: "2026-07-12",
+    title: "Yeni: Cetvel - yeni resimleri referansla ayni boyuta getir",
+    notes: [
+      "Sahne menusune 'Cetvel: boyut esleştirme' eklendi. Acikken, yeni eklenen/yapistirilan her resim otomatik olarak bir referans resimle (secili resim varsa o, yoksa listedeki en ustteki resim) ayni Boyut/Genislik/Yukseklik/X degerlerini alir; dikey konumu ise canvas'in ust veya alt kenarini asmayacak sekilde otomatik ayarlanir. Tek tusla acilip kapanir, tercih tarayicida kalici.",
+    ],
+  },
   {
     version: "3.15.0",
     date: "2026-07-12",
@@ -541,6 +549,7 @@ const ideaCategorySelect = document.querySelector("#ideaCategorySelect");
 const ideaNewBtn = document.querySelector("#ideaNewBtn");
 const ideaDisplay = document.querySelector("#ideaDisplay");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
+const cetvelToggleBtn = document.querySelector("#cetvelToggleBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
 const clearScenesBtn = document.querySelector("#clearScenesBtn");
@@ -650,6 +659,54 @@ function rememberTextLayerDefaults(scene) {
     lineHeight: scene.lineHeight ?? lastTextLayerDefaults.lineHeight,
   };
   localStorage.setItem(textLayerDefaultsStorageKey, JSON.stringify(lastTextLayerDefaults));
+}
+
+// "Cetvel": while on, every newly added/pasted image is auto-sized to
+// match an existing reference image (zoom/scale/x - the "same size" the
+// user asked for), with imageY re-solved so the match never pushes the
+// image past the canvas's top or bottom edge - the "wont overflow" half
+// of the request. Off by default; persisted once toggled.
+const cetvelStorageKey = "personaCetvelEnabled";
+let cetvelEnabled = localStorage.getItem(cetvelStorageKey) === "1";
+
+function setCetvelEnabled(enabled) {
+  cetvelEnabled = enabled;
+  localStorage.setItem(cetvelStorageKey, enabled ? "1" : "0");
+}
+
+function findCetvelReferenceScene() {
+  const selectedImage = scenes.find((scene) => selectedSceneIds.includes(scene.id) && scene.type !== "text" && scene.dataUrl);
+  if (selectedImage) return selectedImage;
+  return scenes.find((scene) => scene.type !== "text" && scene.dataUrl) || null;
+}
+
+// Reuses the exact width/height math drawSceneLayerImage() uses for PNG
+// export, so "does this overflow" is judged against the same geometry the
+// user will actually see in the final image, not an approximation.
+function computeCetvelImagePlacement(reference, naturalWidth, naturalHeight) {
+  const zoom = reference.imageZoom || 100;
+  const scaleX = reference.imageScaleX || 100;
+  const scaleY = reference.imageScaleY || 100;
+  const imageX = reference.imageX || 0;
+
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const baseHeight = (naturalHeight * outputWidth) / Math.max(1, naturalWidth);
+  const drawHeight = baseHeight * (zoom / 100) * (scaleY / 100);
+
+  let drawY;
+  if (drawHeight >= outputHeight) {
+    // Taller than the canvas even before considering position - center it
+    // so any overflow is symmetric top/bottom instead of clipped on one
+    // side only.
+    drawY = (outputHeight - drawHeight) / 2;
+  } else {
+    const preferredDrawY = ((reference.imageY || 0) / 100) * outputHeight + (baseHeight - drawHeight) / 2;
+    drawY = clampNumber(preferredDrawY, 0, outputHeight - drawHeight, 0);
+  }
+  const imageY = ((drawY - (baseHeight - drawHeight) / 2) / outputHeight) * 100;
+
+  return { imageZoom: zoom, imageScaleX: scaleX, imageScaleY: scaleY, imageX, imageY };
 }
 
 restoreState();
@@ -1799,11 +1856,15 @@ async function addSceneImages(files) {
   }
 
   const wasEmpty = scenes.length === 0;
+  // Captured before any new scenes are added, so a multi-file paste/add
+  // always matches the pre-existing reference image, not a sibling from
+  // this same batch.
+  const cetvelReference = cetvelEnabled ? findCetvelReferenceScene() : null;
   pushSceneHistory();
   const newScenes = [];
   for (const file of imageFiles) {
     const dataUrl = await readFileAsDataUrl(file);
-    newScenes.push({
+    const scene = {
       id: crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`,
       name: file.name,
       dataUrl,
@@ -1819,7 +1880,17 @@ async function addSceneImages(files) {
       filterSepia: sceneImageFilterDefaults.sepia,
       filterBlur: sceneImageFilterDefaults.blur,
       blocks: [],
-    });
+    };
+    if (cetvelReference) {
+      try {
+        const image = await loadImage(dataUrl);
+        Object.assign(scene, computeCetvelImagePlacement(cetvelReference, image.naturalWidth, image.naturalHeight));
+      } catch {
+        // Couldn't decode dimensions in time - leave the image at its
+        // normal default size/position rather than failing the whole add.
+      }
+    }
+    newScenes.push(scene);
   }
   scenes.unshift(...newScenes);
   selectedSceneIds = newScenes.map((scene) => scene.id);
@@ -5023,6 +5094,12 @@ discordWebhookInput.addEventListener("change", () => {
 });
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
 blankSceneBtn.addEventListener("click", addBlankScene);
+cetvelToggleBtn.classList.toggle("active", cetvelEnabled);
+cetvelToggleBtn.addEventListener("click", () => {
+  setCetvelEnabled(!cetvelEnabled);
+  cetvelToggleBtn.classList.toggle("active", cetvelEnabled);
+  setSceneStatus(cetvelEnabled ? t("status.cetvelOn") : t("status.cetvelOff"));
+});
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);
 sceneProjectInput.addEventListener("change", importSceneProject);
 clearScenesBtn.addEventListener("click", clearScenes);

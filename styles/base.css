@@ -302,6 +302,19 @@ textarea {
   color: #ff9797;
 }
 
+.menu-dropdown-item.active {
+  background: linear-gradient(180deg, #5b21b6, #3b0764);
+  color: #fff;
+}
+
+.menu-dropdown-item.active:hover {
+  background: linear-gradient(180deg, #6d28d9, #4c1d95);
+}
+
+.menu-dropdown-item.active .lucide {
+  color: #fff;
+}
+
 .menu-dropdown-item-row {
   display: flex;
   align-items: center;

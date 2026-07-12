@@ -53,6 +53,10 @@ const tr = {
   "scene.addImage": "Resim ekle",
   "scene.addImageHint": "Resim seç veya panodaki görseli Ctrl+V ile yapıştır.",
   "scene.clearAll": "Sahneleri sil",
+  "scene.cetvel": "Cetvel: boyut eşleştirme",
+  "scene.cetvelHint": "Yeni eklenen resimleri otomatik olarak referans resimle aynı boyuta getirir.",
+  "status.cetvelOn": "Cetvel açıldı: yeni resimler referans resimle aynı boyuta gelecek.",
+  "status.cetvelOff": "Cetvel kapatıldı.",
 
   "settings.outputWidth": "Çıktı genişliği",
   "settings.backgroundHeight": "Arka plan yüksekliği",
@@ -304,6 +308,10 @@ const en = {
   "scene.addImage": "Add image",
   "scene.addImageHint": "Pick an image or paste one from the clipboard with Ctrl+V.",
   "scene.clearAll": "Clear scenes",
+  "scene.cetvel": "Ruler: match size",
+  "scene.cetvelHint": "Automatically sizes newly added images to match a reference image.",
+  "status.cetvelOn": "Ruler turned on: new images will match the reference image's size.",
+  "status.cetvelOff": "Ruler turned off.",
 
   "settings.outputWidth": "Output width",
   "settings.backgroundHeight": "Background height",
@@ -555,6 +563,10 @@ const ru = {
   "scene.addImage": "Добавить изображение",
   "scene.addImageHint": "Выберите изображение или вставьте его из буфера обмена (Ctrl+V).",
   "scene.clearAll": "Удалить сцены",
+  "scene.cetvel": "Линейка: подогнать размер",
+  "scene.cetvelHint": "Автоматически подгоняет размер новых изображений под эталонное.",
+  "status.cetvelOn": "Линейка включена: новые изображения будут того же размера, что и эталонное.",
+  "status.cetvelOff": "Линейка выключена.",
 
   "settings.outputWidth": "Ширина вывода",
   "settings.backgroundHeight": "Высота фона",
@@ -806,6 +818,10 @@ const es = {
   "scene.addImage": "Añadir imagen",
   "scene.addImageHint": "Elige una imagen o pégala desde el portapapeles con Ctrl+V.",
   "scene.clearAll": "Borrar escenas",
+  "scene.cetvel": "Regla: igualar tamaño",
+  "scene.cetvelHint": "Ajusta automáticamente el tamaño de las imágenes nuevas para que coincida con una imagen de referencia.",
+  "status.cetvelOn": "Regla activada: las imágenes nuevas coincidirán con el tamaño de la imagen de referencia.",
+  "status.cetvelOff": "Regla desactivada.",
 
   "settings.outputWidth": "Ancho de salida",
   "settings.backgroundHeight": "Alto de fondo",

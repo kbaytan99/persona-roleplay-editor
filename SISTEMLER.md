@@ -72,6 +72,14 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   kilitli olmayan tum secili katmanlari ayni miktarda birlikte tasir -
   katman listesindeki surukle-siralamanin canvas karsiligi.
   *(`getGroupDragSceneIds`, `applyGroupDragDelta`)*
+- **Cetvel** (Sahne menusu) — acikken, yeni eklenen/yapistirilan her resim
+  otomatik olarak bir referans resimle (secili resim varsa o, yoksa
+  listedeki en ustteki resim) ayni Boyut/Genislik/Yukseklik/X degerlerini
+  alir; Y konumu ise yeni resmin kendi en-boy oranina gore yeniden
+  hesaplanip canvas'in ust/alt kenarini asmayacak sekilde sinirlanir - ayni
+  boyut, ama tasma yok. Kapaliyken hicbir sey degismez (normal varsayilan
+  boyut/konum). Tercih tarayicida kalici. *(`cetvelEnabled`,
+  `findCetvelReferenceScene`, `computeCetvelImagePlacement`)*
 - **Yazi Kutusu Stilleri** — bir yazi katmaninin arka plan efekti: Siyah
   kutu, Kontur, Soft golge, Efektsiz, Yari saydam kutu, Kalin kontur, Neon
   parlama. Listede en cok onerilen iki stil (Siyah kutu, Soft golge) yildiz
