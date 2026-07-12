@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.17.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.17.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.17.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.17.0";
+import { clampNumber } from "./scripts/utils.js?v=3.17.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.17.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.17.1";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.17.1";
 
-const appVersion = "3.17.0";
+const appVersion = "3.17.1";
 const appChangelog = [
+  {
+    version: "3.17.1",
+    date: "2026-07-12",
+    title: "Hata: Canvas'ta kose tutamaciyla buyutme grubu bozuyordu",
+    notes: [
+      "Bir onceki surumde katman kartindaki kaydiricilar coklu secimde birlikte calisiyordu, ama canvas uzerindeki kose/kenar tutamaciyla dogrudan surukleyerek buyutup kucultmek hala sadece surukledigin tek katmani etkiliyordu - ustelik secimi de o tek katmana sifirliyordu. Artik canvas'tan buyutme/kucultme de, konum surukleme gibi, secili tum kilitli-olmayan resim katmanlarini ayni oranda birlikte buyutup kucultuyor ve secimi bozmuyor.",
+    ],
+  },
   {
     version: "3.17.0",
     date: "2026-07-12",
@@ -4101,7 +4109,8 @@ function startSceneImageScale(event, scene) {
 
   event.preventDefault();
   event.stopPropagation();
-  setSelectedScene(scene.id);
+  const isGroupMember = selectedSceneIds.includes(scene.id) && selectedSceneIds.length > 1;
+  if (!isGroupMember) setSelectedScene(scene.id);
   pushSceneHistory();
   const rect = box.getBoundingClientRect();
   const stageRect = stage.getBoundingClientRect();
@@ -4126,6 +4135,31 @@ function startSceneImageScale(event, scene) {
   const fixedTop = rect.top - stageRect.top;
   const fixedBottom = rect.bottom - stageRect.top;
 
+  // Other selected image layers scale by the same relative factor as the
+  // one being dragged, each around its own current position - not
+  // repositioned to match the dragged handle's anchor edge, just resized.
+  const groupIds = getGroupDragSceneIds(scene.id).filter((id) => {
+    if (id === scene.id) return false;
+    const other = scenes.find((s) => s.id === id);
+    return other && other.type !== "text" && other.dataUrl;
+  });
+  const groupStart = new Map(groupIds.map((id) => {
+    const other = scenes.find((s) => s.id === id);
+    return [id, { zoom: other.imageZoom || 100, scaleX: other.imageScaleX || 100, scaleY: other.imageScaleY || 100 }];
+  }));
+
+  const applyGroupScale = (factorZoom, factorScaleX, factorScaleY) => {
+    groupIds.forEach((id) => {
+      const other = scenes.find((s) => s.id === id);
+      const start = groupStart.get(id);
+      if (!other || !start) return;
+      if (factorZoom !== null) other.imageZoom = roundScaleValue(start.zoom * factorZoom);
+      if (factorScaleX !== null) other.imageScaleX = roundScaleValue(start.scaleX * factorScaleX);
+      if (factorScaleY !== null) other.imageScaleY = roundScaleValue(start.scaleY * factorScaleY);
+      updateSceneImageTransform(other);
+    });
+  };
+
   const keepOppositeSideAnchored = () => {
     const effectiveScaleX = (scene.imageZoom || 100) / 100 * ((scene.imageScaleX || 100) / 100);
     const effectiveScaleY = (scene.imageZoom || 100) / 100 * ((scene.imageScaleY || 100) / 100);
@@ -4149,15 +4183,21 @@ function startSceneImageScale(event, scene) {
   const onMove = (moveEvent) => {
     if (isCorner) {
       const distance = Math.max(1, Math.hypot(moveEvent.clientX - centerX, moveEvent.clientY - centerY));
-      scene.imageZoom = roundScaleValue(startZoom * (distance / startDistance));
+      const factor = distance / startDistance;
+      scene.imageZoom = roundScaleValue(startZoom * factor);
+      applyGroupScale(factor, null, null);
     } else if (isHorizontal) {
       const distance = Math.max(1, Math.abs(moveEvent.clientX - centerX));
-      scene.imageScaleX = roundScaleValue(startScaleX * (distance / startHorizontalDistance));
+      const factor = distance / startHorizontalDistance;
+      scene.imageScaleX = roundScaleValue(startScaleX * factor);
       keepOppositeSideAnchored();
+      applyGroupScale(null, factor, null);
     } else if (isVertical) {
       const distance = Math.max(1, Math.abs(moveEvent.clientY - centerY));
-      scene.imageScaleY = roundScaleValue(startScaleY * (distance / startVerticalDistance));
+      const factor = distance / startVerticalDistance;
+      scene.imageScaleY = roundScaleValue(startScaleY * factor);
       keepOppositeSideAnchored();
+      applyGroupScale(null, null, factor);
     }
     updateSceneImageTransform(scene);
     if (moveEvent.altKey) clearSmartGuides(stage);

@@ -82,6 +82,14 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   bundan etkilenmez; yazi icerigi (metnin kendisi) senkronize edilmez,
   sadece stil ayarlari. *(`applyToSelectedSiblings`,
   `withSelectedSiblings`)*
+- **Coklu Secimde Birlikte Buyutme/Kucultme (canvas)** — birden fazla resim
+  katmani seciliyken, canvas'taki kose/kenar tutamaclarindan birini
+  suruklemek artik SADECE o katmani degil, secili tum kilitli-olmayan
+  resim katmanlarini ayni oranda birlikte buyutup kucultur - her biri
+  kendi merkezi etrafinda. Once bu tutamaclar suruklemeye baslar baslamaz
+  secimi tek katmana sifirliyordu (grup surukleme'nin aksine); artik
+  konum surukleme ile ayni "zaten grubun parcasiysa secimi bozma" kuralini
+  izliyor. *(`startSceneImageScale`, `getGroupDragSceneIds`)*
 - **Cetvel** (Sahne menusu) — acikken, yeni eklenen/yapistirilan her resim
   otomatik olarak bir referans resimle (secili resim varsa o, yoksa
   listedeki en ustteki resim) ayni Boyut/Genislik/Yukseklik/X degerlerini
