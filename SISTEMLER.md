@@ -219,21 +219,24 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 10. Dil Sistemi (i18n)
 
-- **Turkce / Ingilizce** — Tum menu, katman yoneticisi, kisayollar kutusu,
-  Hakkinda paneli ve durum cubugu mesajlari `scripts/i18n.js` icindeki tek
-  bir duz `key -> {tr, en}` sozlukten geliyor. Statik `index.html` metinleri
-  `data-i18n` / `data-i18n-title` / `data-i18n-placeholder` attribute'lari
-  ile isaretlenmis; JS'in urettigi dinamik metinler (katman kartlari, durum
+- **Turkce / Ingilizce / Rusca / Ispanyolca** — Tum menu, katman yoneticisi,
+  kisayollar kutusu, Hakkinda paneli ve durum cubugu mesajlari
+  `scripts/i18n.js` icindeki tek bir duz `key -> {tr, en, ru, es}`
+  sozlukten geliyor. Statik `index.html` metinleri `data-i18n` /
+  `data-i18n-title` / `data-i18n-placeholder` attribute'lari ile
+  isaretlenmis; JS'in urettigi dinamik metinler (katman kartlari, durum
   mesajlari, context menu) render aninda dogrudan `t(key, vars)` cagiriyor.
   Degisiklik gunlugu (`appChangelog`) kapsanmiyor - o bir gelistirici
-  gunlugu, sadece Turkce kaliyor.
-- **Varsayilan dil** — Ilk ziyarette `navigator.language` "tr" ile
-  basliyorsa Turkce, degilse Ingilizce secilir. Kullanici Ayarlar
-  menusundeki acilir listeden degistirebilir; secim `localStorage`'da
-  (`personaLanguage`) kalici olur. Dil degisince `<html lang>` de
-  guncellenir - CSS `text-transform: uppercase` Turkce'ye ozgu
-  i/İ buyutme kuralini uyguladigi icin, `lang` guncellenmezse Ingilizce
-  metin yanlislikla "SİNGLE" gibi noktali I ile buyuyebiliyordu.
+  gunlugu, sadece Turkce kaliyor. Fikir menusundeki senaryo metinleri
+  (`scripts/rp-ideas.js`) su an sadece tr/en; ru/es secilince Turkce'ye
+  geri duser.
+- **Varsayilan dil** — Ilk ziyarette `navigator.language`'a gore otomatik
+  secilir (tr/ru/es baslangicina gore, digerlerinde Ingilizce). Kullanici
+  Ayarlar menusundeki acilir listeden degistirebilir; secim
+  `localStorage`'da (`personaLanguage`) kalici olur. Dil degisince
+  `<html lang>` de guncellenir - CSS `text-transform: uppercase` Turkce'ye
+  ozgu i/İ buyutme kuralini uyguladigi icin, `lang` guncellenmezse
+  Ingilizce metin yanlislikla "SİNGLE" gibi noktali I ile buyuyebiliyordu.
   *(`getLanguage`, `setLanguage`, `t`, `translateStaticDom`, `onLanguageChange`)*
 
 ## 11. Fikir Menusu

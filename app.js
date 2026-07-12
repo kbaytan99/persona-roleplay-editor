@@ -2,13 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.11.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.11.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.11.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.11.0";
+import { clampNumber } from "./scripts/utils.js?v=3.12.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.12.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.12.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.12.0";
 
-const appVersion = "3.11.0";
+const appVersion = "3.12.0";
 const appChangelog = [
+  {
+    version: "3.12.0",
+    date: "2026-07-12",
+    title: "Rusca ve Ispanyolca dil destegi + yapistirma sira hatasi duzeltildi",
+    notes: [
+      "Ayarlar menusundeki dil secimine Rusca ve Ispanyolca eklendi (artik Turkce/Ingilizce/Rusca/Ispanyolca arasinda secim yapilabiliyor); tum arayuz metinleri bu iki dile de cevrildi.",
+      "Hata duzeltildi: panodan bir gorsel veya metin yapistirmak, yeni katmani otomatik olarak listenin en basina (1. sira, en onde) koyuyordu. Artik yapistirilan katman listenin SONUNA ekleniyor - 'Yazi ekle'/'Resim ekle' gibi acik ekleme butonlari hala en basa koyuyor, sadece Ctrl+V ile panodan yapistirma davranisi degisti.",
+    ],
+  },
   {
     version: "3.11.0",
     date: "2026-07-12",
@@ -1579,7 +1588,7 @@ function hasActiveTextSelection(target) {
   return !!selection && selection.toString().length > 0;
 }
 
-async function addSceneImages(files) {
+async function addSceneImages(files, { toFront = true } = {}) {
   const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
   if (!imageFiles.length) {
     setSceneStatus(t("status.noImageSelected"));
@@ -1609,7 +1618,8 @@ async function addSceneImages(files) {
       blocks: [],
     });
   }
-  scenes.unshift(...newScenes);
+  if (toFront) scenes.unshift(...newScenes);
+  else scenes.push(...newScenes);
   selectedSceneIds = newScenes.map((scene) => scene.id);
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
@@ -1626,7 +1636,7 @@ function addBlankScene() {
   pushSceneHistory();
   const scene = {
     id: createId(),
-    name: `Bos sahne ${scenes.length + 1}`,
+    name: t("layer.defaultBlankSceneName", { n: scenes.length + 1 }),
     dataUrl: "",
     isBlank: true,
     imageZoom: 100,
@@ -1652,9 +1662,9 @@ function addBlankScene() {
   setSceneStatus(t("status.blankSceneAdded"));
 }
 
-function addSceneImageBlobs(blobs) {
+function addSceneImageBlobs(blobs, options) {
   const files = blobs.map((blob, index) => new File([blob], `pasted-scene-${Date.now()}-${index + 1}.png`, { type: blob.type || "image/png" }));
-  return addSceneImages(files);
+  return addSceneImages(files, options);
 }
 
 function handlePaste(event) {
@@ -1667,11 +1677,16 @@ function handlePaste(event) {
   // left: pasting an actual image from the OS clipboard (e.g. a
   // screenshot), and pasting plain text with nothing focused to receive
   // it - both need the real clipboardData a keydown event can't provide.
+  // Pasted layers land at the END of the list/stack (toFront: false), not
+  // the top - unlike the explicit "Yazi ekle"/"Resim ekle" buttons, which
+  // still jump their new layer to the front so it's immediately visible.
+  // A paste is adding to existing work, not starting fresh, so it shouldn't
+  // silently become layer #1 and jump in front of everything else.
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
   const blobs = imageItems.map((item) => item.getAsFile()).filter(Boolean);
   if (blobs.length) {
     event.preventDefault();
-    addSceneImageBlobs(blobs);
+    addSceneImageBlobs(blobs, { toFront: false });
     return;
   }
 
@@ -1684,7 +1699,7 @@ function handlePaste(event) {
   if (!text) return;
 
   event.preventDefault();
-  addTextLayer(text);
+  addTextLayer(text, { toFront: false });
 }
 
 function renderScenes() {
@@ -3498,13 +3513,14 @@ function resetSceneFilter(scene) {
   setSceneStatus(t("status.filterReset"));
 }
 
-function addTextLayer(initialText = "") {
+function addTextLayer(initialText = "", { toFront = true } = {}) {
   pushSceneHistory();
   const layer = createSceneBlock(initialText);
   layer.type = "text";
   layer.isLocked = false;
   layer.name = t("layer.defaultTextLayerName", { n: scenes.length + 1 });
-  scenes.unshift(layer);
+  if (toFront) scenes.unshift(layer);
+  else scenes.push(layer);
   selectedSceneId = layer.id;
   selectedSceneIds = [layer.id];
   hoveredSceneId = "";

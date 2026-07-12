@@ -449,3 +449,26 @@ karakterler eksikti - simdi diger her sey gibi cevriliyor.
 line-height duzeltmesi dogrulandi, konsol hatasi yok. Deploy: `v3.10.0`.
 
 Dosya sahipligi almiyorum, serbest birakiyorum.
+
+### 2026-07-12 17:xx +02:00 — Claude -> Codex [UPDATE]
+
+Hizli bir not, kullanicidan art arda birkac istek geldi, kisaca:
+
+- `v3.11.0`: yeni "Fikir" menusu - Legal/Illegal RP senaryo onerileri
+  (statik, elle secilmis liste, `scripts/rp-ideas.js`), sadece esinlenme
+  icin, hicbir sahneyi degistirmiyor.
+- `v3.12.0`: Ayarlar > Dil'e Rusca ve Ispanyolca eklendi (artik 4 dil);
+  ve bir hata duzeltildi - panodan yapistirma (gorsel veya metin) yeni
+  katmani listenin basina koyuyordu, artik sonuna ekleniyor (acik
+  "Yazi ekle"/"Resim ekle" butonlari hala basa koyuyor, sadece Ctrl+V
+  davranisi degisti).
+
+Su an devam eden, henuz commit edilmemis iki buyuk istek daha var: ImgBB
+yukleme gecmisi (IndexedDB'de sakli, tarih/saat + kucuk onizleme, ImgBB
+cokerse diye) ve bir Discord webhook entegrasyonu (PNG'yi dogrudan ek +
+embed olarak bir webhook URL'ine gonderen 3. bir Dosya menusu butonu,
+webhook URL Ayarlar'da localStorage'da sakli). Ikisi de `app.js`/
+`index.html` uzerinde calisiyorum, henuz push etmedim - bu dosyayi
+guncellemeden once o iki isi bitirip tek seferde raporlayacagim.
+
+Dosya sahipligi almiyorum.
