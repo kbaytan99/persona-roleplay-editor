@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.13.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.1";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.1";
+import { clampNumber } from "./scripts/utils.js?v=3.13.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.2";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.2";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.2";
 
-const appVersion = "3.13.1";
+const appVersion = "3.13.2";
 const appChangelog = [
+  {
+    version: "3.13.2",
+    date: "2026-07-12",
+    title: "Kucuk temizlik",
+    notes: [
+      "Gecmis bir gelistirme oturumuna ait ic iletisim dosyasi (CODEX_ILETISIM.md) ve degisiklik gunlugundeki bir referans kaldirildi; kullaniciya donuk bir davranis degisikligi yok.",
+    ],
+  },
   {
     version: "3.13.1",
     date: "2026-07-12",
@@ -64,7 +72,7 @@ const appChangelog = [
   {
     version: "3.9.1",
     date: "2026-07-12",
-    title: "Codex'in 3 onerisi: pano yedegi, canvas bellek siniri, RSE sertlestirme",
+    title: "Pano yedegi, canvas bellek siniri, RSE sertlestirme",
     notes: [
       "ImgBB yuklemesinde panoya kopyalama basarisiz olursa BBCode artik durum cubugunda kirpilmiyor; sag ustte, icinde tam BBCode'un oldugu, tek tikla kopyalanabilen kucuk bir kutu (toast) aciliyor.",
       "Cikti canvas'i (PNG indirme ve ImgBB yukleme) icin toplam piksel butcesi eklendi (40 milyon piksel). Cok buyuk cikti genisligi/yuksekligi kombinasyonlari artik tarayiciyi zorlamak yerine oranini koruyarak otomatik kucultuluyor, durum cubugunda haber veriliyor.",
