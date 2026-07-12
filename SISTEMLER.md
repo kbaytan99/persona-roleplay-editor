@@ -131,8 +131,13 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 ## 7. Dosya Sistemi
 
 - **RSE Proje Formati** — tum sahne projesini (katmanlar, ayarlar, secim)
-  tek `.rse` dosyasina kaydetme/geri yukleme. *(`exportSceneProject`,
-  `importSceneProject`)*
+  tek `.rse` dosyasina kaydetme/geri yukleme. Yuklerken katman ID'lerinin
+  benzersizligi zorunlu kilinir (celisen ID yeniden uretilir) ve sayisal
+  katman alanlari (boyut, konum, filtreler, gecis) gecersiz/asiri deger
+  girildiginde guvenli varsayilanlara sabitlenir; bu, elle degistirilmis
+  veya bozuk bir dosyanin secim/silme davranisini bozmasini engeller.
+  *(`exportSceneProject`, `importSceneProject`, `normalizeImportedScene`,
+  `deduplicateImportedSceneIds`)*
 - **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
   gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
   ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,
@@ -155,8 +160,13 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 8. Gecmis Sistemi
 
-- **Geri Al / Ileri Al** (Undo/Redo) — `Ctrl+Z` / `Ctrl+Y`.
-  *(`undoSceneHistory`, `redoSceneHistory`)*
+- **Geri Al / Ileri Al** (Undo/Redo) — `Ctrl+Z` / `Ctrl+Y`. Her sahne
+  gecmis kaydi sig (shallow) kopyalanir; degismeyen katmanlarin buyuk
+  `dataUrl` (resim) degerleri farkli gecmis kayitlari arasinda ayni
+  string referansini paylasir, tekrar kopyalanmaz. Tekrarlanan/degismemis
+  durum gecmise eklenmez (ucuz alan-alan esitlik kontrolu ile).
+  *(`undoSceneHistory`, `redoSceneHistory`, `pushSceneHistory`,
+  `cloneSceneForHistory`, `historyEntriesEqual`)*
 
 ## 9. Roleplay Metin Bicimlendirme
 

@@ -2,11 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.7.2";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.2";
+import { clampNumber } from "./scripts/utils.js?v=3.7.3";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.3";
 
-const appVersion = "3.7.2";
+const appVersion = "3.7.3";
 const appChangelog = [
+  {
+    version: "3.7.3",
+    date: "2026-07-12",
+    title: "Gecmis bellek kullanimi ve RSE dosyasi dogrulamasi",
+    notes: [
+      "Geri al/ileri al gecmisi artik her adimda tum sahneleri (buyuk resim verileri dahil) iki kez JSON olarak kopyalamiyor; degismeyen resimler snapshot'lar arasinda ayni veriyi paylasiyor, bu da cok sayida yuksek cozunurluklu resimde bellek ve CPU yukunu azaltiyor.",
+      "RSE dosyasi yuklerken katman ID'lerinin benzersizligi artik zorunlu kilindi; ayni ID'ye sahip iki katman iceren bozuk/elle degistirilmis bir dosya artik secim ve silme davranisini bozmuyor. Sayisal katman alanlari (boyut, konum, filtreler, gecis) da artik gecersiz veya asiri degerlere karsi guvenli sinirlarla dogrulaniyor.",
+    ],
+  },
   {
     version: "3.7.2",
     date: "2026-07-12",
@@ -2519,11 +2528,21 @@ function normalizeSceneProjectPayload(payload) {
 
   const settings = payload.settings && typeof payload.settings === "object" ? payload.settings : {};
   const selection = payload.selection && typeof payload.selection === "object" ? payload.selection : {};
-  return {
-    settings,
-    selection,
-    scenes: payload.scenes.map(normalizeImportedScene).filter(Boolean),
-  };
+  const scenes = payload.scenes.map(normalizeImportedScene).filter(Boolean);
+  deduplicateImportedSceneIds(scenes);
+  return { settings, selection, scenes };
+}
+
+// A hand-edited or corrupted .rse can carry two layers with the same id.
+// Every selection/deletion lookup elsewhere in the app assumes ids are
+// unique (Array#find returns only the first match), so a collision here
+// would silently break selecting or deleting the second layer.
+function deduplicateImportedSceneIds(scenes) {
+  const seenIds = new Set();
+  for (const scene of scenes) {
+    if (seenIds.has(scene.id)) scene.id = createId();
+    seenIds.add(scene.id);
+  }
 }
 
 function normalizeImportedScene(scene, index) {
@@ -2532,11 +2551,32 @@ function normalizeImportedScene(scene, index) {
   clone.id = typeof clone.id === "string" && clone.id ? clone.id : createId();
   clone.name = typeof clone.name === "string" && clone.name ? clone.name : `Katman ${index + 1}`;
   clone.type = clone.type === "text" ? "text" : "image";
+  clone.isLocked = clone.isLocked === true;
   if (clone.type === "text") {
     clone.text = typeof clone.text === "string" ? clone.text : "";
+    clone.x = clampNumber(clone.x, -1000, 1000, 2);
+    clone.y = clampNumber(clone.y, -1000, 1000, 72);
+    clone.width = clampNumber(clone.width, 1, 100, 88);
+    clone.fontSize = clampNumber(clone.fontSize, 10, 42, getSceneFontSize());
+    clone.textStyle = ["box", "plain"].includes(clone.textStyle) ? clone.textStyle : "box";
   } else {
     clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
     clone.isBlank = !clone.dataUrl;
+    clone.imageZoom = clampNumber(clone.imageZoom, 5, 1200, 100);
+    clone.imageScaleX = clampNumber(clone.imageScaleX, 5, 1200, 100);
+    clone.imageScaleY = clampNumber(clone.imageScaleY, 5, 1200, 100);
+    clone.imageX = clampNumber(clone.imageX, -1000, 1000, 0);
+    clone.imageY = clampNumber(clone.imageY, -1000, 1000, 0);
+    clone.filterBrightness = clampNumber(clone.filterBrightness, 70, 145, sceneImageFilterDefaults.brightness);
+    clone.filterContrast = clampNumber(clone.filterContrast, 70, 150, sceneImageFilterDefaults.contrast);
+    clone.filterSaturate = clampNumber(clone.filterSaturate, 60, 180, sceneImageFilterDefaults.saturate);
+    clone.filterSepia = clampNumber(clone.filterSepia, 0, 18, sceneImageFilterDefaults.sepia);
+    clone.filterBlur = clampNumber(clone.filterBlur, 0, 8, sceneImageFilterDefaults.blur);
+    clone.transitionStyle = ["soft", "cinematic", "blur", "none"].includes(clone.transitionStyle)
+      ? clone.transitionStyle
+      : "none";
+    clone.transitionSize = clampNumber(clone.transitionSize, 0, 600, 150);
+    clone.transitionSides = ["both", "top", "bottom"].includes(clone.transitionSides) ? clone.transitionSides : "both";
   }
   return clone;
 }
@@ -2686,7 +2726,7 @@ function prepareSceneHistoryControl(control) {
 
 function pushSceneHistory() {
   const entry = createSceneHistoryEntry();
-  if (sceneUndoStack.at(-1)?.key === entry.key) return;
+  if (historyEntriesEqual(sceneUndoStack.at(-1), entry)) return;
   sceneUndoStack.push(entry);
   if (sceneUndoStack.length > sceneHistoryLimit) sceneUndoStack.shift();
   sceneRedoStack.length = 0;
@@ -2714,29 +2754,79 @@ function redoSceneHistory() {
   restoreSceneHistoryEntry(sceneRedoStack.pop(), "Ileri alindi.");
 }
 
+// Every scene field is a scalar (number/string/boolean) - dataUrl included,
+// since it's only ever REPLACED wholesale, never mutated in place. A
+// shallow clone is therefore enough to make an independent history
+// snapshot; it reuses the same dataUrl string reference instead of
+// re-copying potentially megabytes of base64 text through it. Previously
+// createSceneHistoryEntry() built BOTH a JSON.stringify "key" (for
+// dedup) AND a JSON.parse "snapshot" from that same string - two full
+// deep copies of every image's data per history entry, up to
+// sceneHistoryLimit times over.
+function cloneSceneForHistory(scene) {
+  return { ...scene };
+}
+
+function scenesEqualForHistory(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    const sceneA = a[i];
+    const sceneB = b[i];
+    if (sceneA === sceneB) continue;
+    const keysA = Object.keys(sceneA);
+    if (keysA.length !== Object.keys(sceneB).length) return false;
+    for (const key of keysA) {
+      if (sceneA[key] !== sceneB[key]) return false;
+    }
+  }
+  return true;
+}
+
+function idArraysEqualForHistory(a, b) {
+  if (a.length !== b.length) return false;
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] !== b[i]) return false;
+  }
+  return true;
+}
+
+function historyEntriesEqual(a, b) {
+  if (!a || !b) return false;
+  return a.selectedSceneId === b.selectedSceneId
+    && a.sceneOutputWidth === b.sceneOutputWidth
+    && a.sceneBackgroundHeight === b.sceneBackgroundHeight
+    && a.sceneTransitionSize === b.sceneTransitionSize
+    && a.sceneTransitionStyle === b.sceneTransitionStyle
+    && a.sceneTransitionSides === b.sceneTransitionSides
+    && idArraysEqualForHistory(a.selectedSceneIds, b.selectedSceneIds)
+    && scenesEqualForHistory(a.scenes, b.scenes);
+}
+
 function createSceneHistoryEntry() {
-  const key = JSON.stringify({
-    scenes,
+  return {
+    scenes: scenes.map(cloneSceneForHistory),
     selectedSceneId,
-    selectedSceneIds,
+    selectedSceneIds: [...selectedSceneIds],
     sceneOutputWidth: sceneOutputWidth.value,
     sceneBackgroundHeight: sceneBackgroundHeight.value,
     sceneTransitionSize: sceneTransitionSize.value,
     sceneTransitionStyle: sceneTransitionStyle.value,
     sceneTransitionSides: sceneTransitionSides.value,
-  });
-  return { key, snapshot: JSON.parse(key) };
+  };
 }
 
 function restoreSceneHistoryEntry(entry, message) {
-  scenes.splice(0, scenes.length, ...(entry.snapshot.scenes || []));
-  if (entry.snapshot.sceneOutputWidth) sceneOutputWidth.value = entry.snapshot.sceneOutputWidth;
-  if (entry.snapshot.sceneBackgroundHeight) sceneBackgroundHeight.value = entry.snapshot.sceneBackgroundHeight;
-  if (entry.snapshot.sceneTransitionSize) sceneTransitionSize.value = entry.snapshot.sceneTransitionSize;
-  if (entry.snapshot.sceneTransitionStyle) sceneTransitionStyle.value = entry.snapshot.sceneTransitionStyle;
-  if (entry.snapshot.sceneTransitionSides) sceneTransitionSides.value = entry.snapshot.sceneTransitionSides;
-  selectedSceneId = entry.snapshot.selectedSceneId || scenes[0]?.id || "";
-  selectedSceneIds = Array.isArray(entry.snapshot.selectedSceneIds) ? entry.snapshot.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
+  // Clone on the way back in too - entry.scenes must stay untouched by
+  // subsequent live edits, since undo/redo can restore the SAME entry
+  // object again later (e.g. redo after undo).
+  scenes.splice(0, scenes.length, ...(entry.scenes || []).map(cloneSceneForHistory));
+  if (entry.sceneOutputWidth) sceneOutputWidth.value = entry.sceneOutputWidth;
+  if (entry.sceneBackgroundHeight) sceneBackgroundHeight.value = entry.sceneBackgroundHeight;
+  if (entry.sceneTransitionSize) sceneTransitionSize.value = entry.sceneTransitionSize;
+  if (entry.sceneTransitionStyle) sceneTransitionStyle.value = entry.sceneTransitionStyle;
+  if (entry.sceneTransitionSides) sceneTransitionSides.value = entry.sceneTransitionSides;
+  selectedSceneId = entry.selectedSceneId || scenes[0]?.id || "";
+  selectedSceneIds = Array.isArray(entry.selectedSceneIds) ? [...entry.selectedSceneIds] : selectedSceneId ? [selectedSceneId] : [];
   hoveredSceneId = "";
   normalizeSceneSelection();
   saveState();
