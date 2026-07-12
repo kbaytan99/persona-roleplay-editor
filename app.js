@@ -2,11 +2,19 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.7.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.0";
+import { clampNumber } from "./scripts/utils.js?v=3.7.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.1";
 
-const appVersion = "3.7.0";
+const appVersion = "3.7.1";
 const appChangelog = [
+  {
+    version: "3.7.1",
+    date: "2026-07-11",
+    title: "Kisayollar kutusundan ImgBB satiri kaldirildi",
+    notes: [
+      "Ctrl+Shift+U kisayolu Kisayollar Kutusu'nda ayrica listeleniyordu ama zaten Dosya menusundeki 'Yukle ve BBCode kopyala' ogesinin yaninda gorunuyor - kutudan tekrar eden satir kaldirildi, menudeki kisayol yazisi kaldi.",
+    ],
+  },
   {
     version: "3.7.0",
     date: "2026-07-11",
