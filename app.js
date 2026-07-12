@@ -2,14 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.18.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.18.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.18.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.18.0";
-import { promptCategories } from "./scripts/prompt-library.js?v=3.18.0";
+import { clampNumber } from "./scripts/utils.js?v=3.18.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.18.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.18.1";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.18.1";
+import { promptCategories } from "./scripts/prompt-library.js?v=3.18.1";
 
-const appVersion = "3.18.0";
+const appVersion = "3.18.1";
 const appChangelog = [
+  {
+    version: "3.18.1",
+    date: "2026-07-12",
+    title: "Promptlar duzeltildi: AI gorsel/chat log uydurmuyor artik",
+    notes: [
+      "Promptlar menusundeki 4 sablon yanlis kurgulanmisti: 'Resimli' varyantlar AI'a kendi gorsel onerisini uydurmasini soyluyordu, 'Chat log'lu' varyantlar da AI'a sahte bir chat log uydurmasini soyluyordu. Dogrusu: bu kategoriler senin AI'a GERCEK bir chat log yapistiracagini veya gercek bir gorsel/ekran goruntusu verecegini belirtiyor - AI hicbir zaman gorsel veya chat log uretmiyor, sadece senin verdigin gercek log/goruntuyu okuyup Persona formatina uygun metin yaziyor.",
+    ],
+  },
   {
     version: "3.18.0",
     date: "2026-07-12",

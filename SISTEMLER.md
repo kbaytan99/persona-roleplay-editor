@@ -315,8 +315,12 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   Chat log'lu/Chat log'suz x Resimli/Resimsiz kombinasyonlari. Her prompt,
   AI'a Persona'nin kendi metin motorunun (`scripts/rp-text.js`) anladigi
   bicimde ("*" emote satiri, "** Isim durum" kisayolu, "(( ... ))" OOC)
-  yazmasi icin acik talimatlar icerir; "Resimli" varyantlar ayrica sahneye
-  uygun bir arka plan gorseli onerisi de ister. "Promptu kopyala" ile
+  yazmasi icin acik talimatlar icerir. Kategoriler AI'in ne uydurmasi
+  gerektigini degil, kullanicinin AI'a NE VERECEGINI belirtir: "Chat
+  log'lu" AI'a gercek bir chat log yapistirilacagini, "Resimli" gercek bir
+  gorsel/ekran goruntusu verilecegini soyler - AI hicbir zaman kendi
+  gorselini veya sahte chat log'unu uydurmaz, sadece verilen gercek
+  icerigi okuyup Persona formatina uygun metin yazar. "Promptu kopyala" ile
   secili kategori panoya kopyalanir. Icerik su an sadece Turkce
   (`scripts/prompt-library.js`); sadece esinlenme/uretim yardimcisidir,
   hicbir sahne/katmani degistirmez. *(`renderPromptCategoryOptions`,
