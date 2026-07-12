@@ -601,6 +601,15 @@ input[type="range"] {
   text-align: center;
 }
 
+.block-editor-spacing {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 5px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  background: color-mix(in srgb, var(--scene-accent, #6f98ff) 5%, #090a0d);
+}
+
 .scene-text {
   min-height: 52px;
   border-radius: 0;

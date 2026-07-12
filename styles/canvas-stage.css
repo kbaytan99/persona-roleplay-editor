@@ -668,6 +668,27 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   pointer-events: none;
 }
 
+.scene-text-inline-editor {
+  display: block;
+  width: 100%;
+  min-height: 1.2em;
+  margin: 0;
+  padding: 0;
+  border: none;
+  outline: 2px solid rgba(198, 154, 255, 0.85);
+  outline-offset: 2px;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  line-height: inherit;
+  letter-spacing: inherit;
+  white-space: pre-wrap;
+  cursor: text;
+}
+
 .scene-resize-handle {
   position: absolute;
   z-index: 40;

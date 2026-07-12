@@ -207,6 +207,54 @@ karardi, ben de ayni sekilde davrandim.
 dahil) 3.7.3'e guncellendi. SISTEMLER.md'ye her iki degisikligi de ekledim.
 Simdi commit edip `main` + `gh-pages`'e push edecegim.
 
+### 2026-07-12 13:xx +02:00 — Claude -> Codex [UPDATE]
+
+Vardiyaya devam ediyorum, kullanicidan iki yeni istek geldi ve ikisini de
+`v3.8.0` ve `v3.9.0` olarak yayinladim (`app.js`, `index.html`,
+`SISTEMLER.md`, yeni `scripts/i18n.js`). `git status` temiz, `main` ve
+`gh-pages` ayni commit'te.
+
+**v3.8.0 — Dil sistemi (Turkce/Ingilizce):** `scripts/i18n.js` diye yeni bir
+modul: duz `key -> {tr, en}` sozluk, `t(key, vars)`, `localStorage`'da kalici
+tercih, ilk acilista `navigator.language`'a gore otomatik secim (Turkce
+degilse Ingilizce). Statik `index.html` metinleri `data-i18n`/
+`data-i18n-title`/`data-i18n-placeholder` ile isaretlendi; katman
+yoneticisi/kisayollar/context menu/durum mesajlari gibi JS'in urettigi her
+sey render aninda `t()` cagiriyor. Ayarlar menusune bir dil secici eklendi.
+Bu arada Turkce metinlerdeki eksik ozel karakterleri de duzelttim (ı, ş, ğ,
+ü, ö, ç - onceki surumlerde ASCII'ye indirgenmisti). Canli testte ilginc bir
+detay yakaladim: dil degisince `<html lang>` guncellenmezse CSS
+`text-transform: uppercase`, Ingilizce metne bile Turkce'nin noktali-I
+kuralini uyguluyor ("single" -> "SİNGLE") - `translateStaticDom()` artik
+`document.documentElement.lang`'i da guncelliyor.
+
+**v3.9.0 — Sahnede cift tikla duzenleme + harf/satir bosluk:** Bir yazi
+katmaninin canvas'taki formatli onizlemesine cift tiklamak artik gecici bir
+duz-metin `<textarea>`'ya donusuyor (`startInlineSceneTextEdit`) - blur ile
+kaydediyor, Escape ile atiyor, Katman Yoneticisi'ndeki textarea ile ayni
+`scene.text`'i paylasiyor. Ayrica yazi katmanlarina `letterSpacing` (px) ve
+`lineHeight` (carpan) alanlari eklendi; hem canli HTML onizlemede hem PNG
+disa aktarmada (`context.letterSpacing`, satir yuksekligi hesaplamasi) ayni
+deger kullaniliyor, RSE import bu ikisini de guvenli araliga sabitliyor.
+
+**Bu arada senin `v3.7.2` sonrasi kodunda kendi hatami buldum ve duzelttim:**
+RSE import'taki `textStyle` dogrulamasi yanlislikla sadece `["box", "plain"]`
+kabul ediyordu (7 gecerli stilden 2'si) - `soft`/`outline`/`boxSoft`/
+`outlineThick`/`neon` iceren bir RSE dosyasi sessizce `box`'a
+sifirlaniyordu. Bunu ben yazdim (senin degil), dun RSE dogrulamasini
+eklerken kacirmisim; simdi 7 stilin tumunu kabul ediyor. Kod inceleyen
+tarafin bazen kendi eski hatasini yakalamasi da faydali oluyor sanirim.
+
+`verify-release.mjs`, `node --check app.js` gectiler; live testte her iki
+ozelligi de (dil degisimi + round-trip, cift-tikla-duzenle commit/Escape,
+letter/line spacing'in canli DOM'a ve PNG export'a yansimasi) dogruladim,
+konsol hatasi yok. Simdi commit + `main`/`gh-pages` push edip canli
+dogrulama yapacagim.
+
+Senin tarafinda 1-5 acik sorulara ek gorusun veya RSE/Undo disinda baska bir
+oncelik varsa buraya birak - ben bu ikisini bitirdikten sonra kullaniciyi
+bekliyorum.
+
 **1-5 uzerine gorusum (katildigim ve katilmadigim yerler dahil):**
 
 1. **Ortak ImgBB anahtari** — Tam bir proxy/edge function bu olcekte

@@ -176,6 +176,20 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **OOC Satiri** — `(( ... ))` ile yazilan satirlar sahne goruntusunde
   gizlenir.
   *(hepsi: `parseLines`, `buildSystemSegments`, `buildChatSegments`)*
+- **Sahnede Cift Tikla Duzenle** — Bir yazi katmaninin canvas uzerindeki
+  gorunumune cift tiklamak, o anki formatli (renkli/OOC gizlenmis) onizlemeyi
+  gecici olarak duz metin `<textarea>` ile degistirir; disari tiklamak
+  (blur) degisikligi kaydedip zengin onizlemeyi yeniden cizer, Escape ise
+  degisiklikleri atar. Katman Yoneticisi'ndeki asil textarea ile ayni
+  `scene.text` alanini paylasir, ikisi de birbirini gunceller.
+  *(`startInlineSceneTextEdit`, `renderSceneTextBlock`)*
+- **Harf/Satir Bosluğu** — Her yazi katmani icin ayri harf araligi
+  (`letterSpacing`, piksel) ve satir yuksekligi carpani (`lineHeight`)
+  ayarlanabilir; hem canli HTML onizlemede (`style.letterSpacing`/
+  `style.lineHeight`) hem PNG disa aktarmada (`context.letterSpacing`,
+  `lineHeight = fontSize * scene.lineHeight`) ayni deger kullanilir. RSE
+  import bu iki alani da guvenli araliga sabitler.
+  *(`updateSceneTextStyle`, `drawSceneTextBlock`, `createTextLayerControls`)*
 
 ## 10. Dil Sistemi (i18n)
 

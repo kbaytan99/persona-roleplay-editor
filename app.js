@@ -2,12 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.8.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.8.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.8.0";
+import { clampNumber } from "./scripts/utils.js?v=3.9.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.0";
 
-const appVersion = "3.8.0";
+const appVersion = "3.9.0";
 const appChangelog = [
+  {
+    version: "3.9.0",
+    date: "2026-07-12",
+    title: "Sahnede cift tikla duzenleme + harf/satir bosluk kontrolleri",
+    notes: [
+      "Bir yazi katmanina canvas uzerinde cift tiklamak artik dogrudan yerinde duzenlemeye aciyor - Katman Yoneticisi'ni acmaya gerek yok. Yaziyi bitirmek icin disari tikla veya Escape'e bas (Escape degisiklikleri geri alir).",
+      "Yazi katmanlarina Harf bosluğu ve Satir bosluğu kaydiricilari eklendi; hem canli onizlemede hem tek PNG disa aktarmada uygulaniyor. RSE import artik bu iki alani da gecersiz/asiri degerlere karsi dogruluyor.",
+      "Kucuk bir hata duzeltildi: RSE dosyasi ice aktarilirken yazi stili (or. Neon parlama, Kalin kontur) sadece Siyah kutu/Efektsiz'e izin veren eksik bir listeye karsi kontrol ediliyordu, digerleri sessizce Siyah kutu'ya sifirlaniyordu.",
+    ],
+  },
   {
     version: "3.8.0",
     date: "2026-07-12",
@@ -1631,6 +1641,8 @@ function renderScenes() {
       if (scene.isLocked) block.classList.add("locked");
       block.style.zIndex = String(getSceneLayerZIndex(index, 5));
       block.style.fontSize = `${scene.fontSize || getSceneFontSize()}px`;
+      block.style.letterSpacing = `${scene.letterSpacing || 0}px`;
+      block.style.lineHeight = String(scene.lineHeight || 1.18);
       block.style.left = `${scene.x}%`;
       block.style.top = `${scene.y}%`;
       block.style.width = `${scene.width}%`;
@@ -1640,6 +1652,11 @@ function renderScenes() {
       renderSceneTextBlock(content, scene.text);
       block.append(content);
       block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, scene));
+      block.addEventListener("dblclick", (event) => {
+        event.stopPropagation();
+        event.preventDefault();
+        startInlineSceneTextEdit(scene, block, content);
+      });
       const resizeHandle = document.createElement("span");
       resizeHandle.className = "scene-resize-handle";
       resizeHandle.title = t("canvas.resizeWidthOnly");
@@ -2086,6 +2103,19 @@ function createTextLayerControls(scene, stage) {
 
   textControls.append(fontInput, styleSelect);
 
+  const spacingControls = document.createElement("div");
+  spacingControls.className = "block-editor-spacing";
+  spacingControls.append(
+    createRangeControl(t("control.letterSpacing"), scene.letterSpacing || 0, -5, 20, 1, (value) => {
+      scene.letterSpacing = value;
+      updateSceneTextStyle(scene);
+    }, "move-horizontal"),
+    createRangeControl(t("control.lineHeight"), scene.lineHeight ?? 1.18, 0.8, 2.5, 0.05, (value) => {
+      scene.lineHeight = value;
+      updateSceneTextStyle(scene);
+    }, "move-vertical"),
+  );
+
   const textarea = document.createElement("textarea");
   textarea.className = "scene-text";
   textarea.placeholder = t("layer.textPlaceholder");
@@ -2099,7 +2129,15 @@ function createTextLayerControls(scene, stage) {
     if (content) renderSceneTextBlock(content, scene.text);
   });
 
-  return [textControls, textarea];
+  return [textControls, spacingControls, textarea];
+}
+
+function updateSceneTextStyle(scene) {
+  const block = document.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
+  if (!block) return;
+  block.style.letterSpacing = `${scene.letterSpacing || 0}px`;
+  block.style.lineHeight = String(scene.lineHeight || 1.18);
+  scheduleSceneAutosave();
 }
 
 function createImageLayerControls(scene) {
@@ -2570,7 +2608,11 @@ function normalizeImportedScene(scene, index) {
     clone.y = clampNumber(clone.y, -1000, 1000, 72);
     clone.width = clampNumber(clone.width, 1, 100, 88);
     clone.fontSize = clampNumber(clone.fontSize, 10, 42, getSceneFontSize());
-    clone.textStyle = ["box", "plain"].includes(clone.textStyle) ? clone.textStyle : "box";
+    clone.letterSpacing = clampNumber(clone.letterSpacing, -5, 20, 0);
+    clone.lineHeight = clampNumber(clone.lineHeight, 0.8, 2.5, 1.18);
+    clone.textStyle = ["box", "soft", "outline", "plain", "boxSoft", "outlineThick", "neon"].includes(clone.textStyle)
+      ? clone.textStyle
+      : "box";
   } else {
     clone.dataUrl = typeof clone.dataUrl === "string" ? clone.dataUrl : "";
     clone.isBlank = !clone.dataUrl;
@@ -2927,6 +2969,62 @@ function renderSceneTextBlock(container, text) {
   });
 }
 
+// Double-clicking a text layer directly on the canvas swaps its formatted
+// preview for a plain textarea in place, so the raw RP text can be edited
+// without opening the (possibly hidden/far away) layer card. The rich
+// preview (colors, OOC hiding, etc.) only reflects the raw text again once
+// editing ends - editing itself is always plain text, same as the layer
+// card's own textarea.
+function startInlineSceneTextEdit(scene, block, content) {
+  if (scene.isLocked) return;
+  if (block.querySelector(".scene-text-inline-editor")) return;
+
+  content.style.display = "none";
+  const textarea = document.createElement("textarea");
+  textarea.className = "scene-text-inline-editor";
+  textarea.spellcheck = false;
+  textarea.value = scene.text;
+  block.insertBefore(textarea, content);
+
+  const autoGrow = () => {
+    textarea.style.height = "auto";
+    textarea.style.height = `${textarea.scrollHeight}px`;
+  };
+  autoGrow();
+
+  let done = false;
+  const stop = ({ commit }) => {
+    if (done) return;
+    done = true;
+    if (commit) {
+      scene.text = textarea.value;
+      const cardTextarea = document.querySelector(
+        `.scene-editor-item[data-scene-editor-id="${CSS.escape(scene.id)}"] textarea.scene-text`,
+      );
+      if (cardTextarea) cardTextarea.value = scene.text;
+      saveState();
+      scheduleSceneAutosave();
+    }
+    textarea.remove();
+    content.style.display = "";
+    renderSceneTextBlock(content, scene.text);
+  };
+
+  pushSceneHistory();
+  textarea.addEventListener("input", autoGrow);
+  textarea.addEventListener("pointerdown", (event) => event.stopPropagation());
+  textarea.addEventListener("keydown", (event) => {
+    event.stopPropagation();
+    if (event.key === "Escape") {
+      event.preventDefault();
+      stop({ commit: false });
+    }
+  });
+  textarea.addEventListener("blur", () => stop({ commit: true }));
+  textarea.focus();
+  textarea.setSelectionRange(textarea.value.length, textarea.value.length);
+}
+
 function createSceneImageTransformBox(scene) {
   const box = document.createElement("div");
   box.className = "scene-image-transform-box";
@@ -3091,6 +3189,8 @@ function ensureSceneModel() {
       scene.fontSize ??= getSceneFontSize();
       scene.textStyle ??= "box";
       scene.text ??= "";
+      scene.letterSpacing ??= 0;
+      scene.lineHeight ??= 1.18;
       scene.isLocked ??= false;
       return;
     }
@@ -4012,7 +4112,7 @@ function drawSceneTextBlock(context, text, textBlock, width, height) {
   const scale = width / Math.max(1, stageWidth);
   const blockWidth = Math.min(width - getScenePadding() * scale * 2, Math.round(width * (textBlock.width || 88) / 100));
   const fontSize = (textBlock.fontSize || getSceneFontSize()) * scale;
-  const lineHeight = fontSize * 1.18;
+  const lineHeight = fontSize * (textBlock.lineHeight || 1.18);
   const padding = getScenePadding() * scale;
   const maxWidth = blockWidth - padding * 2;
   const x = (textBlock.x / 100) * width;
@@ -4020,6 +4120,7 @@ function drawSceneTextBlock(context, text, textBlock, width, height) {
 
   context.font = `800 ${fontSize}px Arial, Helvetica, sans-serif`;
   context.textBaseline = "top";
+  if ("letterSpacing" in context) context.letterSpacing = `${(textBlock.letterSpacing || 0) * scale}px`;
   const sceneOptions = { ...getOptions(), fontSize, lineGap: lineHeight - fontSize };
   const wrapped = parseLines(text).flatMap((line) => wrapLine(context, line, maxWidth, sceneOptions));
   if (!wrapped.length) return;
