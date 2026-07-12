@@ -308,7 +308,21 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   `scripts/rp-ideas.js`'de, her fikir kendi tr/en metniyle birlikte tutulur.
   *(`renderIdeaCategoryOptions`, `showRandomIdea`, `rpIdeaCategories`)*
 
-## 12. Yardim Menusu
+## 12. Promptlar Menusu
+
+- **Yapay Zeka Prompt Sablonlari** — disaridaki bir AI sohbetine (ChatGPT,
+  Claude vb.) kopyala-yapistir yapilmak uzere hazirlanmis 4 hazir prompt:
+  Chat log'lu/Chat log'suz x Resimli/Resimsiz kombinasyonlari. Her prompt,
+  AI'a Persona'nin kendi metin motorunun (`scripts/rp-text.js`) anladigi
+  bicimde ("*" emote satiri, "** Isim durum" kisayolu, "(( ... ))" OOC)
+  yazmasi icin acik talimatlar icerir; "Resimli" varyantlar ayrica sahneye
+  uygun bir arka plan gorseli onerisi de ister. "Promptu kopyala" ile
+  secili kategori panoya kopyalanir. Icerik su an sadece Turkce
+  (`scripts/prompt-library.js`); sadece esinlenme/uretim yardimcisidir,
+  hicbir sahne/katmani degistirmez. *(`renderPromptCategoryOptions`,
+  `showSelectedPrompt`, `copySelectedPrompt`, `promptCategories`)*
+
+## 13. Yardim Menusu
 
 - **Kisayollari Goster/Gizle** — Kisayollar Kutusu'nu ac/kapat, artik Yardim
   menusunde. *(`showShortcuts`, `hideShortcuts`)*

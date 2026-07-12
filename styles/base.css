@@ -437,6 +437,13 @@ textarea {
   min-height: 40px;
 }
 
+.prompt-display {
+  max-height: 260px;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  font-size: 11px;
+}
+
 .menu-bar-status {
   flex-shrink: 1;
   min-width: 0;

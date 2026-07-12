@@ -2,13 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.17.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.17.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.17.1";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.17.1";
+import { clampNumber } from "./scripts/utils.js?v=3.18.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.18.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.18.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.18.0";
+import { promptCategories } from "./scripts/prompt-library.js?v=3.18.0";
 
-const appVersion = "3.17.1";
+const appVersion = "3.18.0";
 const appChangelog = [
+  {
+    version: "3.18.0",
+    date: "2026-07-12",
+    title: "Yeni: Promptlar menusu - AI'a hazir prompt sablonlari",
+    notes: [
+      "Menu cubuguna yeni bir 'Promptlar' menusu eklendi: Chat log'lu/Chat log'suz ve Resimli/Resimsiz kombinasyonlarindan 4 hazir prompt sablonu, dogrudan ChatGPT/Claude gibi bir yapay zekaya kopyala-yapistir yapmak icin. Her prompt, AI'a Persona'nin anladigi bicimde ('*' emote satiri, '** Isim durum' kisayolu, '(( ... ))' OOC) yazmasi icin talimat verir; 'Resimli' varyantlar ayrica bir arka plan gorseli onerisi de ister. 'Promptu kopyala' ile secili kategori tek tikla panoya kopyalanir.",
+    ],
+  },
   {
     version: "3.17.1",
     date: "2026-07-12",
@@ -564,6 +573,9 @@ const languageSelect = document.querySelector("#languageSelect");
 const ideaCategorySelect = document.querySelector("#ideaCategorySelect");
 const ideaNewBtn = document.querySelector("#ideaNewBtn");
 const ideaDisplay = document.querySelector("#ideaDisplay");
+const promptCategorySelect = document.querySelector("#promptCategorySelect");
+const promptCopyBtn = document.querySelector("#promptCopyBtn");
+const promptDisplay = document.querySelector("#promptDisplay");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const cetvelToggleBtn = document.querySelector("#cetvelToggleBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
@@ -1420,6 +1432,52 @@ function showRandomIdea() {
   const idea = category.ideas[Math.floor(Math.random() * category.ideas.length)];
   ideaDisplay.textContent = idea[getLanguage()] || idea.tr;
   ideaDisplay.removeAttribute("data-i18n");
+}
+
+// "Promptlar" menu: ready-to-paste AI prompt templates (see
+// scripts/prompt-library.js) for generating RP text in the exact format
+// Persona's own text engine understands. Purely a copy-to-clipboard aid -
+// doesn't touch scenes/layers.
+function renderPromptCategoryOptions() {
+  const previousValue = promptCategorySelect.value;
+  promptCategorySelect.replaceChildren();
+
+  promptCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = category.label[getLanguage()] || category.label.tr;
+    promptCategorySelect.append(option);
+  });
+
+  if ([...promptCategorySelect.options].some((option) => option.value === previousValue)) {
+    promptCategorySelect.value = previousValue;
+  }
+  showSelectedPrompt();
+}
+
+// Prompt bodies are Turkish-only (see scripts/prompt-library.js) - only
+// the category label and surrounding menu chrome are translated.
+function getSelectedPromptText() {
+  const category = promptCategories.find((entry) => entry.id === promptCategorySelect.value);
+  return category?.prompt || "";
+}
+
+function showSelectedPrompt() {
+  const text = getSelectedPromptText();
+  if (!text) return;
+  promptDisplay.textContent = text;
+  promptDisplay.removeAttribute("data-i18n");
+}
+
+async function copySelectedPrompt() {
+  const text = getSelectedPromptText();
+  if (!text) return;
+  try {
+    await navigator.clipboard.writeText(text);
+    setSceneStatus(t("prompts.copiedStatus"));
+  } catch {
+    setSceneStatus(t("prompts.copyFailedStatus"));
+  }
 }
 
 function initMenuBar() {
@@ -5190,10 +5248,15 @@ onLanguageChange(() => {
   renderAboutPanel();
   renderScenes();
   renderIdeaCategoryOptions();
+  renderPromptCategoryOptions();
 });
 
 renderIdeaCategoryOptions();
 ideaNewBtn.addEventListener("click", showRandomIdea);
+
+renderPromptCategoryOptions();
+promptCategorySelect.addEventListener("change", showSelectedPrompt);
+promptCopyBtn.addEventListener("click", copySelectedPrompt);
 
 initMenuBar();
 renderAboutPanel();

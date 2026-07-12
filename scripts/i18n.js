@@ -18,6 +18,7 @@ const tr = {
   "menu.settings": "Ayarlar",
   "menu.view": "Görünüm",
   "menu.idea": "Fikir",
+  "menu.prompts": "Promptlar",
   "menu.help": "Yardım",
 
   "file.downloadPng": "Tek PNG indir",
@@ -89,6 +90,12 @@ const tr = {
   "idea.newButton": "Yeni fikir",
   "idea.placeholder": "Bir kategori seç, sonra \"Yeni fikir\"e tıkla.",
   "idea.categoryLabel": "Kategori",
+
+  "prompts.categoryLabel": "Kategori",
+  "prompts.copyButton": "Promptu kopyala",
+  "prompts.placeholder": "Bir kategori seç, prompt burada görünecek.",
+  "prompts.copiedStatus": "Prompt panoya kopyalandı.",
+  "prompts.copyFailedStatus": "Prompt kopyalanamadı, aşağıdaki kutudan elle kopyala.",
 
   "help.toggleShortcuts": "Kısayolları göster/gizle",
   "about.version": "Sürüm {version}",
@@ -273,6 +280,7 @@ const en = {
   "menu.settings": "Settings",
   "menu.view": "View",
   "menu.idea": "Idea",
+  "menu.prompts": "Prompts",
   "menu.help": "Help",
 
   "file.downloadPng": "Download single PNG",
@@ -344,6 +352,12 @@ const en = {
   "idea.newButton": "New idea",
   "idea.placeholder": "Pick a category, then click \"New idea\".",
   "idea.categoryLabel": "Category",
+
+  "prompts.categoryLabel": "Category",
+  "prompts.copyButton": "Copy prompt",
+  "prompts.placeholder": "Pick a category, the prompt will show here.",
+  "prompts.copiedStatus": "Prompt copied to clipboard.",
+  "prompts.copyFailedStatus": "Couldn't copy the prompt, copy it manually from the box below.",
 
   "help.toggleShortcuts": "Show/hide shortcuts",
   "about.version": "Version {version}",
@@ -528,6 +542,7 @@ const ru = {
   "menu.settings": "Настройки",
   "menu.view": "Вид",
   "menu.idea": "Идея",
+  "menu.prompts": "Промпты",
   "menu.help": "Справка",
 
   "file.downloadPng": "Скачать PNG",
@@ -599,6 +614,12 @@ const ru = {
   "idea.newButton": "Новая идея",
   "idea.placeholder": "Выберите категорию, затем нажмите «Новая идея».",
   "idea.categoryLabel": "Категория",
+
+  "prompts.categoryLabel": "Категория",
+  "prompts.copyButton": "Скопировать промпт",
+  "prompts.placeholder": "Выберите категорию, промпт появится здесь.",
+  "prompts.copiedStatus": "Промпт скопирован в буфер обмена.",
+  "prompts.copyFailedStatus": "Не удалось скопировать промпт, скопируйте вручную из поля ниже.",
 
   "help.toggleShortcuts": "Показать/скрыть горячие клавиши",
   "about.version": "Версия {version}",
@@ -783,6 +804,7 @@ const es = {
   "menu.settings": "Ajustes",
   "menu.view": "Vista",
   "menu.idea": "Idea",
+  "menu.prompts": "Prompts",
   "menu.help": "Ayuda",
 
   "file.downloadPng": "Descargar PNG",
@@ -854,6 +876,12 @@ const es = {
   "idea.newButton": "Nueva idea",
   "idea.placeholder": "Elige una categoría y luego pulsa \"Nueva idea\".",
   "idea.categoryLabel": "Categoría",
+
+  "prompts.categoryLabel": "Categoría",
+  "prompts.copyButton": "Copiar prompt",
+  "prompts.placeholder": "Elige una categoría, el prompt aparecerá aquí.",
+  "prompts.copiedStatus": "Prompt copiado al portapapeles.",
+  "prompts.copyFailedStatus": "No se pudo copiar el prompt, cópialo manualmente desde el cuadro de abajo.",
 
   "help.toggleShortcuts": "Mostrar/ocultar atajos",
   "about.version": "Versión {version}",
