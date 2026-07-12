@@ -2,12 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.9.2";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.2";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.2";
+import { clampNumber } from "./scripts/utils.js?v=3.10.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.10.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.10.0";
 
-const appVersion = "3.9.2";
+const appVersion = "3.10.0";
 const appChangelog = [
+  {
+    version: "3.10.0",
+    date: "2026-07-12",
+    title: "Metin yapıştırınca otomatik yazı katmanı olustursun",
+    notes: [
+      "Panoda bir gorsel yerine duz metin varken ve odak gercek bir yazma alaninda (katman adi, yazi kutusu vb.) degilken Ctrl+V yapistirmak artik o metni icinde tasiyan yeni bir yazi katmani olusturuyor - tipki panoda bir gorsel varken yeni bir resim katmani olusturdugu gibi. Bir yazma alaninda odaklanmisken yapistirma her zamanki gibi o alani doldurmaya devam ediyor.",
+      "Kucuk iki hata duzeltildi: yeni yazi katmani ve katman cogaltma/yapistirma varsayilan isimleri (\"Yazi katmani N\", \"... kopya\") dil sistemine tasinmamis, ASCII Turkce olarak kalmisti - simdi diger tum arayuz metinleri gibi dogru Turkce/Ingilizce ceviriyor.",
+    ],
+  },
   {
     version: "3.9.2",
     date: "2026-07-12",
@@ -1606,18 +1615,30 @@ function handlePaste(event) {
   // Scene-clipboard pasting (Ctrl+V for copied layers) is handled by the
   // keydown-level isScenePasteShortcut branch in handleSceneKeyDown, which
   // fires reliably regardless of what has focus - unlike this native
-  // "paste" DOM event, which only fires in certain focus states. This
-  // handler is now only for pasting an actual image from the OS clipboard
-  // (e.g. a screenshot), which does need the real clipboardData a keydown
-  // event can't provide.
+  // "paste" DOM event, which only fires in certain focus states, and which
+  // that branch's preventDefault() suppresses entirely whenever there's a
+  // copied layer to paste (see its comment). This handler covers what's
+  // left: pasting an actual image from the OS clipboard (e.g. a
+  // screenshot), and pasting plain text with nothing focused to receive
+  // it - both need the real clipboardData a keydown event can't provide.
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
-  if (!imageItems.length) return;
-
   const blobs = imageItems.map((item) => item.getAsFile()).filter(Boolean);
-  if (!blobs.length) return;
+  if (blobs.length) {
+    event.preventDefault();
+    addSceneImageBlobs(blobs);
+    return;
+  }
+
+  // No image on the clipboard and no real text field focused (renaming a
+  // layer, editing a text layer's textarea, the inline canvas editor) -
+  // treat a plain-text paste as "make this a new text layer", the same
+  // way pasting an image makes a new image layer.
+  if (isEditableTarget(event.target)) return;
+  const text = event.clipboardData?.getData("text/plain");
+  if (!text) return;
 
   event.preventDefault();
-  addSceneImageBlobs(blobs);
+  addTextLayer(text);
 }
 
 function renderScenes() {
@@ -2403,7 +2424,7 @@ function cloneSceneSnapshot(scene) {
 function cloneSceneForPaste(scene, offsetPercent = 0) {
   const clone = cloneSceneSnapshot(scene);
   clone.id = createId();
-  clone.name = `${clone.name || "sahne"} kopya`;
+  clone.name = t("layer.copyNameSuffix", { name: clone.name || t("layer.copyNameFallback") });
   if (offsetPercent) {
     if (clone.type === "text") {
       clone.x = clampNumber((clone.x ?? 2) + offsetPercent, 0, 96, clone.x ?? 2);
@@ -3431,12 +3452,12 @@ function resetSceneFilter(scene) {
   setSceneStatus(t("status.filterReset"));
 }
 
-function addTextLayer() {
+function addTextLayer(initialText = "") {
   pushSceneHistory();
-  const layer = createSceneBlock("");
+  const layer = createSceneBlock(initialText);
   layer.type = "text";
   layer.isLocked = false;
-  layer.name = `Yazi katmani ${scenes.length + 1}`;
+  layer.name = t("layer.defaultTextLayerName", { n: scenes.length + 1 });
   scenes.unshift(layer);
   selectedSceneId = layer.id;
   selectedSceneIds = [layer.id];

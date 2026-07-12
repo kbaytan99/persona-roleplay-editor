@@ -143,6 +143,16 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   URL'ye istek attirmiyor), ve hic katmani olmayan bir dosya da acikca
   reddedilir. *(`exportSceneProject`, `importSceneProject`,
   `normalizeImportedScene`, `deduplicateImportedSceneIds`)*
+- **Panodan Yapistir (OS clipboard)** — gercek bir yazma alaninda odak yokken
+  Ctrl+V ile yapistirmak, panoda ne varsa ona gore davranir: bir gorsel
+  varsa yeni bir resim katmani, duz metin varsa (RP log'u vb.) o metni
+  icinde tasiyan yeni bir yazi katmani olusturur. Odak bir yazma alaninda
+  (katman adi, yazi kutusu, katman-ici yerinde duzenleme) ise yapistirma
+  her zamanki gibi o alani doldurur, yeni katman olusturmaz. Uygulama ici
+  kopyalanmis katmanlarin yapistirilmasi (Ctrl+C/Ctrl+V ile "Kopyala"/
+  "Yapistir") bundan ayri, klavye seviyesinde ele alinir - bir katman
+  kopyalanmisken Ctrl+V her zaman onu yapistirir. *(`handlePaste`,
+  `addTextLayer`, `addSceneImageBlobs`)*
 - **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
   gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
   ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,

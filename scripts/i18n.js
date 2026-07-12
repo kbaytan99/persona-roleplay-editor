@@ -148,6 +148,9 @@ const tr = {
   "layer.styleTitle": "Bu yazının arka plan/efekt stili",
   "layer.textPlaceholder": "Bu yazıyı sahneye ekle...",
   "layer.defaultName": "Katman {n}",
+  "layer.defaultTextLayerName": "Yazı katmanı {n}",
+  "layer.copyNameSuffix": "{name} kopya",
+  "layer.copyNameFallback": "sahne",
 
   "canvas.zoomReadout": "%{value}",
   "canvas.summaryMulti": "{count} katman - tek sahne / tek PNG",
@@ -368,6 +371,9 @@ const en = {
   "layer.styleTitle": "This text's background/effect style",
   "layer.textPlaceholder": "Add this text to the scene...",
   "layer.defaultName": "Layer {n}",
+  "layer.defaultTextLayerName": "Text layer {n}",
+  "layer.copyNameSuffix": "{name} copy",
+  "layer.copyNameFallback": "scene",
 
   "canvas.zoomReadout": "{value}%",
   "canvas.summaryMulti": "{count} layers - single scene / single PNG",
