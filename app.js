@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.13.3";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.3";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.3";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.3";
+import { clampNumber } from "./scripts/utils.js?v=3.14.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.14.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.14.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.14.0";
 
-const appVersion = "3.13.3";
+const appVersion = "3.14.0";
 const appChangelog = [
+  {
+    version: "3.14.0",
+    date: "2026-07-12",
+    title: "Yeni: Sahneyi kopyala (hicbir yere yuklemeden)",
+    notes: [
+      "Dosya menusune 'Sahneyi kopyala' eklendi: birlesik PNG'yi hicbir servise yuklemeden veya paylasmadan dogrudan panoya kopyalar. ChatGPT gibi baska bir uygulamaya direkt yapistirmak icin - ImgBB, Discord veya indirme gerekmez.",
+    ],
+  },
   {
     version: "3.13.3",
     date: "2026-07-12",
@@ -499,6 +507,7 @@ const appChangelog = [
 
 const appShell = document.querySelector(".app-shell");
 const downloadBtn = document.querySelector("#downloadBtn");
+const copySceneBtn = document.querySelector("#copySceneBtn");
 const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
 const uploadHistoryBtn = document.querySelector("#uploadHistoryBtn");
 const discordWebhookInput = document.querySelector("#discordWebhookInput");
@@ -888,6 +897,32 @@ async function handleMainDownload() {
   } finally {
     downloadBtn.disabled = false;
     downloadBtn.removeAttribute("aria-busy");
+  }
+}
+
+// Writes the composite PNG directly to the OS clipboard - no ImgBB, no
+// download, nothing leaves the browser. For pasting straight into another
+// app (a chat client, an AI tool, an image editor) without sharing the
+// image anywhere first.
+async function handleCopyScene() {
+  if (copySceneBtn.disabled) return;
+  copySceneBtn.disabled = true;
+  copySceneBtn.setAttribute("aria-busy", "true");
+  try {
+    if (typeof ClipboardItem === "undefined" || !navigator.clipboard?.write) {
+      throw new Error(t("error.clipboardImageUnsupported"));
+    }
+    const canvas = await buildCompositeCanvas();
+    const blob = await canvasToPngBlob(canvas);
+    await navigator.clipboard.write([new ClipboardItem({ [blob.type]: blob })]);
+    setSceneStatus(canvas.budgetClamped
+      ? t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })
+      : t("status.sceneCopied"));
+  } catch (error) {
+    setSceneStatus(t("status.sceneCopyFailed", { error: error?.message || t("error.unknown") }));
+  } finally {
+    copySceneBtn.disabled = false;
+    copySceneBtn.removeAttribute("aria-busy");
   }
 }
 
@@ -4904,6 +4939,7 @@ window.addEventListener("resize", () => {
   renderScenes();
 });
 downloadBtn.addEventListener("click", handleMainDownload);
+copySceneBtn.addEventListener("click", handleCopyScene);
 uploadImgbbBtn.addEventListener("click", uploadCompositeSceneToImgbb);
 uploadHistoryBtn.addEventListener("click", showUploadHistoryPanel);
 discordWebhookInput.value = localStorage.getItem("personaDiscordWebhook") || "";

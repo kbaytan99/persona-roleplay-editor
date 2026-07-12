@@ -157,6 +157,11 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
   ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,
   `canvasToPngBlob`)*
+- **Sahneyi Kopyala** — tum katmanlari birlestirip PNG'yi hicbir yere
+  yuklemeden/paylasmadan dogrudan isletim sistemi panosuna yazar
+  (`ClipboardItem`); baska bir uygulamaya (sohbet, yapay zeka araci, gorsel
+  duzenleyici) direkt yapistirmak icin. Tarayici desteklemiyorsa acik bir
+  hata mesaji gosterir. *(`handleCopyScene`, `buildCompositeCanvas`)*
 - **Cikti Piksel Butcesi** — `buildCompositeCanvas` (PNG indirme ve ImgBB
   yukleme, ikisi de) cikti genisligi x yuksekligi 40 milyon pikseli
   asarsa oranini koruyarak otomatik kucultur; kullaniciya durum
