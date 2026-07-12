@@ -17,6 +17,7 @@ const tr = {
   "menu.scene": "Sahne",
   "menu.settings": "Ayarlar",
   "menu.view": "Görünüm",
+  "menu.idea": "Fikir",
   "menu.help": "Yardım",
 
   "file.downloadPng": "Tek PNG indir",
@@ -61,6 +62,12 @@ const tr = {
   "view.zoomFit": "Sığdır",
   "view.zoomIn": "Yakınlaştır",
   "view.zoomOut": "Uzaklaştır",
+
+  "idea.groupLegal": "Legal",
+  "idea.groupIllegal": "İllegal",
+  "idea.newButton": "Yeni fikir",
+  "idea.placeholder": "Bir kategori seç, sonra \"Yeni fikir\"e tıkla.",
+  "idea.categoryLabel": "Kategori",
 
   "help.toggleShortcuts": "Kısayolları göster/gizle",
   "about.version": "Sürüm {version}",
@@ -240,6 +247,7 @@ const en = {
   "menu.scene": "Scene",
   "menu.settings": "Settings",
   "menu.view": "View",
+  "menu.idea": "Idea",
   "menu.help": "Help",
 
   "file.downloadPng": "Download single PNG",
@@ -284,6 +292,12 @@ const en = {
   "view.zoomFit": "Fit",
   "view.zoomIn": "Zoom in",
   "view.zoomOut": "Zoom out",
+
+  "idea.groupLegal": "Legal",
+  "idea.groupIllegal": "Illegal",
+  "idea.newButton": "New idea",
+  "idea.placeholder": "Pick a category, then click \"New idea\".",
+  "idea.categoryLabel": "Category",
 
   "help.toggleShortcuts": "Show/hide shortcuts",
   "about.version": "Version {version}",

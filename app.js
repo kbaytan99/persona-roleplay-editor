@@ -2,12 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.10.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.10.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.10.0";
+import { clampNumber } from "./scripts/utils.js?v=3.11.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.11.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.11.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.11.0";
 
-const appVersion = "3.10.0";
+const appVersion = "3.11.0";
 const appChangelog = [
+  {
+    version: "3.11.0",
+    date: "2026-07-12",
+    title: "Yeni: Fikir menusu (rol yapma senaryo onerileri)",
+    notes: [
+      "Menu cubuguna yeni bir 'Fikir' menusu eklendi: Legal (PD, MD, Diger) ve Illegal (Ceteler, Kartel, Soygun) kategorilerinden birini secip 'Yeni fikir' ile kisa bir rol yapma senaryosu onerisi gorebilirsin. Sadece esinlenme icin - hicbir katmani/sahneyi degistirmiyor, secilen fikri otomatik yazi katmanina eklemiyor.",
+      "Kucuk, elle secilmis bir baslangic listesi (6 kategori, kategori basina 6 fikir); zamanla genisletilebilir.",
+    ],
+  },
   {
     version: "3.10.0",
     date: "2026-07-12",
@@ -457,6 +467,9 @@ const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
 const languageSelect = document.querySelector("#languageSelect");
+const ideaCategorySelect = document.querySelector("#ideaCategorySelect");
+const ideaNewBtn = document.querySelector("#ideaNewBtn");
+const ideaDisplay = document.querySelector("#ideaDisplay");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
@@ -1089,6 +1102,39 @@ function renderAboutPanel() {
   });
   block.append(list);
   listEl.append(block);
+}
+
+// "Fikir" menu: a small, static, hand-picked list of RP scenario prompts
+// (see scripts/rp-ideas.js) grouped Legal/Illegal - purely inspirational,
+// does not touch scenes/layers at all.
+function renderIdeaCategoryOptions() {
+  const previousValue = ideaCategorySelect.value;
+  ideaCategorySelect.replaceChildren();
+
+  const legalGroup = document.createElement("optgroup");
+  legalGroup.label = t("idea.groupLegal");
+  const illegalGroup = document.createElement("optgroup");
+  illegalGroup.label = t("idea.groupIllegal");
+
+  rpIdeaCategories.forEach((category) => {
+    const option = document.createElement("option");
+    option.value = category.id;
+    option.textContent = category.label[getLanguage()] || category.label.tr;
+    (category.group === "illegal" ? illegalGroup : legalGroup).append(option);
+  });
+
+  ideaCategorySelect.append(legalGroup, illegalGroup);
+  if ([...ideaCategorySelect.options].some((option) => option.value === previousValue)) {
+    ideaCategorySelect.value = previousValue;
+  }
+}
+
+function showRandomIdea() {
+  const category = rpIdeaCategories.find((entry) => entry.id === ideaCategorySelect.value);
+  if (!category || !category.ideas.length) return;
+  const idea = category.ideas[Math.floor(Math.random() * category.ideas.length)];
+  ideaDisplay.textContent = idea[getLanguage()] || idea.tr;
+  ideaDisplay.removeAttribute("data-i18n");
 }
 
 function initMenuBar() {
@@ -4605,7 +4651,11 @@ onLanguageChange(() => {
   translateStaticDom();
   renderAboutPanel();
   renderScenes();
+  renderIdeaCategoryOptions();
 });
+
+renderIdeaCategoryOptions();
+ideaNewBtn.addEventListener("click", showRandomIdea);
 
 initMenuBar();
 renderAboutPanel();

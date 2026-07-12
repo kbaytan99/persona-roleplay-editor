@@ -9,7 +9,7 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 1. Ana Yerlesim
 
-- **Menu Cubugu** — ust barda Dosya/Duzen/Sahne/Ayarlar/Gorunum/Yardim
+- **Menu Cubugu** — ust barda Dosya/Duzen/Sahne/Fikir/Ayarlar/Gorunum/Yardim
   basliklarindan olusan acilir-menu sistemi. *(`initMenuBar`, `.menu-bar`)*
 - **Marka Simgesi** — camgobegi-mor gecisli, tiyatro maskesi bicimli logo;
   favicon ve menu cubugu/Yardim panelindeki ikon. *(`icon.svg`)*
@@ -236,7 +236,18 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   metin yanlislikla "SİNGLE" gibi noktali I ile buyuyebiliyordu.
   *(`getLanguage`, `setLanguage`, `t`, `translateStaticDom`, `onLanguageChange`)*
 
-## 11. Yardim Menusu
+## 11. Fikir Menusu
+
+- **RP Senaryo Onerileri** — Legal (PD, MD, Diger: Mekanik/Taksi/Hukumet) ve
+  Illegal (Ceteler, Kartel, Soygun) kategorilerinden birini secip
+  "Yeni fikir" ile o kategoriden rastgele kisa bir rol yapma senaryosu
+  onerisi gosterir. Kucuk, elle secilmis bir baslangic listesi (kategori
+  basina 6 fikir); sadece esinlenme icindir - hicbir sahne/katmani
+  degistirmez, secilen fikri otomatik bir yazi katmanina eklemez. Icerik
+  `scripts/rp-ideas.js`'de, her fikir kendi tr/en metniyle birlikte tutulur.
+  *(`renderIdeaCategoryOptions`, `showRandomIdea`, `rpIdeaCategories`)*
+
+## 12. Yardim Menusu
 
 - **Kisayollari Goster/Gizle** — Kisayollar Kutusu'nu ac/kapat, artik Yardim
   menusunde. *(`showShortcuts`, `hideShortcuts`)*

@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Persona</title>
-    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.10.0" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.11.0" />
     <!-- Split from one 3600-line style.css into files by era/area for
          readability. Order matters: later files can intentionally override
          earlier ones (same cascade behavior as the original single file). -->
@@ -13,18 +13,18 @@
          for up to 10 minutes even after a hard refresh. Bump this to match
          appVersion (app.js) on every release so old cached copies are never
          reused. -->
-    <link rel="stylesheet" href="./styles/base.css?v=3.10.0" />
-    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.10.0" />
-    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.10.0" />
-    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.10.0" />
-    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.10.0" />
-    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.10.0" />
+    <link rel="stylesheet" href="./styles/base.css?v=3.11.0" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.11.0" />
+    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.11.0" />
+    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.11.0" />
+    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.11.0" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.11.0" />
   </head>
   <body>
     <main class="app-shell scene-mode">
       <header class="menu-bar" id="menuBar" aria-label="Menu cubugu">
         <div class="menu-bar-brand">
-          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.10.0" alt="" /></span>
+          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.11.0" alt="" /></span>
           <h1 id="appTitle" data-i18n="app.title">Persona</h1>
           <p id="appSubtitle" data-i18n="app.subtitle" hidden>Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
         </div>
@@ -65,6 +65,18 @@
                 <input id="sceneImageInput" type="file" accept="image/*" multiple />
               </label>
               <button id="clearScenesBtn" type="button" class="menu-dropdown-item danger-action"><i data-lucide="trash-2"></i><span data-i18n="scene.clearAll">Sahneleri sil</span></button>
+            </div>
+          </div>
+
+          <div class="menu-item" data-menu="fikir">
+            <button type="button" class="menu-trigger" data-i18n="menu.idea">Fikir</button>
+            <div class="menu-dropdown menu-dropdown-panel idea-panel">
+              <label class="wide-field">
+                <span data-i18n="idea.categoryLabel">Kategori</span>
+                <select id="ideaCategorySelect"></select>
+              </label>
+              <button id="ideaNewBtn" type="button" class="menu-dropdown-item"><i data-lucide="dice-5"></i><span data-i18n="idea.newButton">Yeni fikir</span></button>
+              <div id="ideaDisplay" class="idea-display" data-i18n="idea.placeholder">Bir kategori sec, sonra "Yeni fikir"e tikla.</div>
             </div>
           </div>
 
@@ -136,7 +148,7 @@
             <div class="menu-dropdown menu-dropdown-panel about-panel">
               <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="help.toggleShortcuts">Kisayollari goster/gizle</span></button>
               <div class="about-header">
-                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.10.0" alt="" /></span>
+                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.11.0" alt="" /></span>
                 <div class="about-header-text">
                   <strong data-i18n="app.title">Persona</strong>
                   <div id="aboutVersion" class="about-version"></div>
@@ -191,6 +203,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script type="module" src="./app.js?v=3.10.0"></script>
+    <script type="module" src="./app.js?v=3.11.0"></script>
   </body>
 </html>
