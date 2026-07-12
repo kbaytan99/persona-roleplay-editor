@@ -2,11 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.7.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.1";
+import { clampNumber } from "./scripts/utils.js?v=3.7.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.2";
 
-const appVersion = "3.7.1";
+const appVersion = "3.7.2";
 const appChangelog = [
+  {
+    version: "3.7.2",
+    date: "2026-07-12",
+    title: "ImgBB yukleme kilidi ve yayin dogrulama korumasi",
+    notes: [
+      "ImgBB yuklemesi artik tek seferde yalnizca bir kez calisiyor. Ctrl+Shift+U tusuna basili tutmak veya menu ogesine art arda tiklamak paralel yuklemeler baslatip kotayi gereksiz tuketemiyor; islem sirasinda menu ogesi devre disi ve mesgul olarak isaretleniyor.",
+      "Gorsel cozme, PNG uretme, ImgBB istegi ve pano yazma asamalarinin ayri zaman asimlari var. API JSON olmayan/gecersiz ya da guvenli ve beklenen ImgBB alan adinda bir gorsel adresi icermeyen yanit verirse anlasilir hata gosteriliyor; 32 MB'yi asan PNG dosyalari da gonderilmeden durduruluyor.",
+      "Tek PNG indirme artik buyuk base64 URL uretmek yerine gecici Blob URL kullaniyor; render/PNG hatalari yakalanip arayuzde bildiriliyor ve art arda indirme engelleniyor.",
+      "Yayin oncesinde uygulama surumu, changelog, tum CSS/JS/SVG cache-buster degerleri ve yerel asset yollarinin uyumunu denetleyen scripts/verify-release.mjs eklendi.",
+    ],
+  },
   {
     version: "3.7.1",
     date: "2026-07-11",
@@ -655,8 +666,18 @@ function switchMode() {
   renderScenes();
 }
 
-function handleMainDownload() {
-  downloadCompositeScene();
+async function handleMainDownload() {
+  if (downloadBtn.disabled) return;
+  downloadBtn.disabled = true;
+  downloadBtn.setAttribute("aria-busy", "true");
+  try {
+    await downloadCompositeScene();
+  } catch (error) {
+    setSceneStatus(`PNG indirilemedi: ${error?.message || "Bilinmeyen hata."}`);
+  } finally {
+    downloadBtn.disabled = false;
+    downloadBtn.removeAttribute("aria-busy");
+  }
 }
 
 function closeLayersPanel() {
@@ -1292,7 +1313,7 @@ function handleSceneKeyDown(event) {
 
   if (!isTextEntryTarget(event.target) && isSceneUploadShortcut(event)) {
     event.preventDefault();
-    uploadCompositeSceneToImgbb();
+    if (!event.repeat) uploadCompositeSceneToImgbb();
     return;
   }
 
@@ -2750,7 +2771,11 @@ function isSceneDuplicateShortcut(event) {
 }
 
 function isSceneUploadShortcut(event) {
-  return (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "u";
+  return (event.ctrlKey || event.metaKey)
+    && event.shiftKey
+    && !event.altKey
+    && !event.isComposing
+    && event.key.toLowerCase() === "u";
 }
 
 function isScenePasteShortcut(event) {
@@ -3644,9 +3669,12 @@ async function buildCompositeCanvas() {
 
 async function downloadCompositeScene() {
   const canvas = await buildCompositeCanvas();
+  const blob = await canvasToPngBlob(canvas);
   const link = document.createElement("a");
+  const objectUrl = URL.createObjectURL(blob);
   link.download = `sahne-kompozit-${Date.now()}.png`;
-  link.href = canvas.toDataURL("image/png");
+  link.href = objectUrl;
+  window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   link.click();
   setSceneStatus("Tek PNG indirildi.");
 }
@@ -3655,29 +3683,88 @@ async function downloadCompositeScene() {
 // see README) - anyone viewing source can see it, but it only grants upload
 // access to this account's ImgBB quota, nothing more sensitive.
 const imgbbApiKey = "0f89bd300a14fa3bef8baa0bbb70416b";
+const imgbbUploadTimeoutMs = 45_000;
+const imgbbMaxUploadBytes = 32 * 1024 * 1024;
+const imageLoadTimeoutMs = 20_000;
+const pngEncodeTimeoutMs = 30_000;
+const clipboardWriteTimeoutMs = 5_000;
+let isImgbbUploadInFlight = false;
+
+function promiseWithTimeout(promise, timeoutMs, message) {
+  let timeoutId;
+  const timeout = new Promise((_, reject) => {
+    timeoutId = window.setTimeout(() => reject(new Error(message)), timeoutMs);
+  });
+  return Promise.race([promise, timeout]).finally(() => window.clearTimeout(timeoutId));
+}
+
+function canvasToPngBlob(canvas) {
+  const encodePromise = new Promise((resolve, reject) => {
+    canvas.toBlob((blob) => {
+      if (blob) resolve(blob);
+      else reject(new Error("PNG olusturulamadi."));
+    }, "image/png");
+  });
+  return promiseWithTimeout(encodePromise, pngEncodeTimeoutMs, "PNG olusturma zaman asimina ugradi.");
+}
+
+function normalizeImgbbResultUrl(value) {
+  if (typeof value !== "string" || !value.trim()) throw new Error("ImgBB gorsel adresi dondurmedi.");
+  if (/[\[\]]/.test(value)) throw new Error("ImgBB gecersiz bir gorsel adresi dondurdu.");
+  let url;
+  try {
+    url = new URL(value);
+  } catch {
+    throw new Error("ImgBB gecersiz bir gorsel adresi dondurdu.");
+  }
+  if (url.protocol !== "https:") throw new Error("ImgBB guvenli olmayan bir gorsel adresi dondurdu.");
+  const hostname = url.hostname.toLowerCase();
+  if (hostname !== "ibb.co" && !hostname.endsWith(".ibb.co")) {
+    throw new Error("ImgBB beklenmeyen bir alan adinda gorsel adresi dondurdu.");
+  }
+  return url.href;
+}
 
 async function uploadCompositeSceneToImgbb() {
+  if (isImgbbUploadInFlight) {
+    setSceneStatus("ImgBB yuklemesi zaten devam ediyor...");
+    return;
+  }
+
+  isImgbbUploadInFlight = true;
+  uploadImgbbBtn.disabled = true;
+  uploadImgbbBtn.setAttribute("aria-busy", "true");
   setSceneStatus("ImgBB'ye yukleniyor...");
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), imgbbUploadTimeoutMs);
+
   try {
     const canvas = await buildCompositeCanvas();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!blob) throw new Error("PNG olusturulamadi.");
+    const blob = await canvasToPngBlob(canvas);
+    if (blob.size > imgbbMaxUploadBytes) {
+      throw new Error("PNG 32 MB ImgBB sinirini asiyor; canvas boyutunu veya katmanlari kucult.");
+    }
 
     const form = new FormData();
     form.append("image", blob, `sahne-kompozit-${Date.now()}.png`);
     const response = await fetch(`https://api.imgbb.com/1/upload?key=${imgbbApiKey}`, {
       method: "POST",
       body: form,
+      signal: controller.signal,
     });
-    const result = await response.json();
+    const result = await response.json().catch(() => null);
     if (!response.ok || !result?.success) {
-      throw new Error(result?.error?.message || `Sunucu hatasi (${response.status})`);
+      throw new Error(result?.error?.message || (response.ok ? "ImgBB gecersiz yanit verdi." : `Sunucu hatasi (${response.status})`));
     }
 
-    const url = result.data.url;
+    const url = normalizeImgbbResultUrl(result.data?.url);
     const bbcode = `[url=${url}][img]${url}[/img][/url]`;
     try {
-      await navigator.clipboard.writeText(bbcode);
+      await promiseWithTimeout(
+        navigator.clipboard.writeText(bbcode),
+        clipboardWriteTimeoutMs,
+        "Panoya yazma zaman asimina ugradi.",
+      );
       setSceneStatus("Yuklendi, BBCode panoya kopyalandi.");
     } catch {
       // Upload itself succeeded - a clipboard permission issue shouldn't
@@ -3685,7 +3772,15 @@ async function uploadCompositeSceneToImgbb() {
       setSceneStatus(`Yuklendi ama panoya kopyalanamadi: ${bbcode}`);
     }
   } catch (error) {
-    setSceneStatus(`Yukleme basarisiz: ${error.message}`);
+    const message = error?.name === "AbortError"
+      ? "ImgBB istegi zaman asimina ugradi; yeniden deneyebilirsin."
+      : error?.message || "Bilinmeyen hata.";
+    setSceneStatus(`Yukleme basarisiz: ${message}`);
+  } finally {
+    window.clearTimeout(timeoutId);
+    isImgbbUploadInFlight = false;
+    uploadImgbbBtn.disabled = false;
+    uploadImgbbBtn.removeAttribute("aria-busy");
   }
 }
 
@@ -4052,12 +4147,13 @@ function readFileAsDataUrl(file) {
 }
 
 function loadImage(src) {
-  return new Promise((resolve, reject) => {
+  const loadPromise = new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = reject;
     image.src = src;
   });
+  return promiseWithTimeout(loadPromise, imageLoadTimeoutMs, "Gorsel yukleme zaman asimina ugradi.");
 }
 
 function safeFilePart(value) {

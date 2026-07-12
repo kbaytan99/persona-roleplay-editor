@@ -134,12 +134,16 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   tek `.rse` dosyasina kaydetme/geri yukleme. *(`exportSceneProject`,
   `importSceneProject`)*
 - **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
-  indirme. *(`downloadCompositeScene`)*
+  gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
+  ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,
+  `canvasToPngBlob`)*
 - **ImgBB'ye Yukle + BBCode Kopyala** — tum katmanlari birlestirip PNG
   olarak dogrudan ImgBB'ye yukler, donen linki forum BBCode'una
   (`[url=...][img]...[/img][/url]`) sarip panoya kopyalar. Backend
   olmadigi icin dogrudan tarayicidan (CORS ile) yukleniyor. Kisayolu:
-  `Ctrl+Shift+U`. *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`)*
+  `Ctrl+Shift+U`. Ayni anda tek yukleme calisir; istek 45 saniyede zaman
+  asimina ugrar ve 32 MB'yi asan PNG gonderilmeden durdurulur.
+  *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*

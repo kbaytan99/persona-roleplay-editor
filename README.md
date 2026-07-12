@@ -15,6 +15,21 @@ node server.js
 
 Sonra `http://127.0.0.1:8765/` adresini ac. Uygulama web uzerinden client-side calisir; kayitlar kullanicinin kendi tarayici profilinde `localStorage` ve `IndexedDB` icinde tutulur.
 
+## Yayin oncesi kontrol
+
+Ilk komut surum numarasi, changelog, CSS/JS/SVG cache-buster degerleri ve
+yerel asset yollarini; ardindaki komutlar JavaScript sozdizimini kontrol eder:
+
+```powershell
+node scripts/verify-release.mjs
+node --check app.js
+node --check scripts/rp-text.js
+node --check scripts/utils.js
+node --check server.js
+```
+
+Bu kontroller gecmeden `main` veya `gh-pages` guncellenmemelidir.
+
 ## Kullanim
 
 - `Resim ekle` ile bir veya daha fazla gorsel sec.
