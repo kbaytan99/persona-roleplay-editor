@@ -72,6 +72,16 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   kilitli olmayan tum secili katmanlari ayni miktarda birlikte tasir -
   katman listesindeki surukle-siralamanin canvas karsiligi.
   *(`getGroupDragSceneIds`, `applyGroupDragDelta`)*
+- **Coklu Secimde Birlikte Ayar Degistirme** — birden fazla ayni turden
+  katman (hepsi resim veya hepsi yazi) seciliyken, katman kartindaki
+  hemen hemen her ayari (resimde Boyut/Genislik/Yukseklik/X/Y, Filtreler,
+  Filtre sifirlama, Gecis efekti; yazida font boyutu, yazi stili, harf/
+  satir bosluğu) degistirmek sadece o karti degil, secili tum ayni turdeki
+  katmanlari birlikte gunceller - grup surukleme'nin ayarlar icin
+  karsiligi. Kilitli katmanlar ve farkli turdeki (resim/yazi) katmanlar
+  bundan etkilenmez; yazi icerigi (metnin kendisi) senkronize edilmez,
+  sadece stil ayarlari. *(`applyToSelectedSiblings`,
+  `withSelectedSiblings`)*
 - **Cetvel** (Sahne menusu) — acikken, yeni eklenen/yapistirilan her resim
   otomatik olarak bir referans resimle (secili resim varsa o, yoksa
   listedeki en ustteki resim) ayni Boyut/Genislik/Yukseklik/X degerlerini

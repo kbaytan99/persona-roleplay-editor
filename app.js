@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.16.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.16.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.16.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.16.0";
+import { clampNumber } from "./scripts/utils.js?v=3.17.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.17.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.17.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.17.0";
 
-const appVersion = "3.16.0";
+const appVersion = "3.17.0";
 const appChangelog = [
+  {
+    version: "3.17.0",
+    date: "2026-07-12",
+    title: "Coklu secimde ayarlar birlikte degisiyor",
+    notes: [
+      "Birden fazla ayni turden katman (hepsi resim veya hepsi yazi) seciliyken, katman kartindaki neredeyse her ayari degistirmek artik hepsini birlikte gunceller: resimde Boyut/Genislik/Yukseklik/X/Y buyutme-kucultme, Filtreler (Parlaklik/Kontrast/Doygunluk/Sicaklik/Blur) ve sifirlama, Gecis efekti; yazida font boyutu, yazi stili, harf ve satir bosluğu. Kilitli katmanlar ve farkli turdeki katmanlar etkilenmez, yazi icerigi senkronize edilmez - sadece stil/boyut ayarlari.",
+    ],
+  },
   {
     version: "3.16.0",
     date: "2026-07-12",
@@ -2446,6 +2454,11 @@ function createTextLayerControls(scene, stage) {
   fontInput.value = scene.fontSize || getSceneFontSize();
   fontInput.title = t("layer.fontSizeTitle");
   prepareSceneHistoryControl(fontInput);
+  const applyLiveFontSize = (target, liveValue) => {
+    target.fontSize = liveValue;
+    const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(target.id)}"]`);
+    if (block) block.style.fontSize = `${liveValue}px`;
+  };
   fontInput.addEventListener("input", () => {
     const val = parseInt(fontInput.value, 10);
     if (!isNaN(val) && val > 0) {
@@ -2456,15 +2469,15 @@ function createTextLayerControls(scene, stage) {
       // size; the "change" handler below enforces the full 10-48 range once
       // typing is done.
       const liveValue = Math.min(48, val);
-      scene.fontSize = liveValue;
-      const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-      if (block) block.style.fontSize = `${liveValue}px`;
+      applyLiveFontSize(scene, liveValue);
+      applyToSelectedSiblings(scene, (other) => applyLiveFontSize(other, liveValue));
     }
   });
   fontInput.addEventListener("change", () => {
     scene.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
     fontInput.value = scene.fontSize;
     rememberTextLayerDefaults(scene);
+    applyToSelectedSiblings(scene, (other) => { other.fontSize = scene.fontSize; });
     saveState();
     renderScenes();
   });
@@ -2483,9 +2496,13 @@ function createTextLayerControls(scene, stage) {
   styleSelect.value = scene.textStyle || "box";
   prepareSceneHistoryControl(styleSelect);
   styleSelect.addEventListener("change", () => {
-    scene.textStyle = styleSelect.value;
-    const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
-    if (block) block.dataset.textStyle = scene.textStyle;
+    const applyStyle = (target) => {
+      target.textStyle = styleSelect.value;
+      const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(target.id)}"]`);
+      if (block) block.dataset.textStyle = target.textStyle;
+    };
+    applyStyle(scene);
+    applyToSelectedSiblings(scene, applyStyle);
     rememberTextLayerDefaults(scene);
   });
 
@@ -2495,13 +2512,11 @@ function createTextLayerControls(scene, stage) {
   spacingControls.className = "block-editor-spacing";
   spacingControls.append(
     createRangeControl(t("control.letterSpacing"), scene.letterSpacing || 0, -5, 20, 1, (value) => {
-      scene.letterSpacing = value;
-      updateSceneTextStyle(scene);
+      withSelectedSiblings(scene, "letterSpacing", updateSceneTextStyle)(value);
       rememberTextLayerDefaults(scene);
     }, "move-horizontal"),
     createRangeControl(t("control.lineHeight"), scene.lineHeight ?? 1.18, 0.8, 2.5, 0.05, (value) => {
-      scene.lineHeight = value;
-      updateSceneTextStyle(scene);
+      withSelectedSiblings(scene, "lineHeight", updateSceneTextStyle)(value);
       rememberTextLayerDefaults(scene);
     }, "move-vertical"),
   );
@@ -2530,56 +2545,67 @@ function updateSceneTextStyle(scene) {
   scheduleSceneAutosave();
 }
 
+// When 2+ layers are selected, a change made through one layer's card (zoom,
+// filters, transition, font size, text style, spacing...) applies to every
+// other selected layer of the SAME type too, not just the one being edited -
+// so resizing/restyling a multi-selection works the same way group-dragging
+// already does for position. Locked siblings and the edited layer itself
+// are skipped; a text control never touches an image layer or vice versa.
+function applyToSelectedSiblings(scene, updater) {
+  if (selectedSceneIds.length < 2 || !selectedSceneIds.includes(scene.id)) return;
+  const isText = scene.type === "text";
+  scenes.forEach((other) => {
+    if (other.id === scene.id || other.isLocked || !selectedSceneIds.includes(other.id)) return;
+    const otherIsText = other.type === "text";
+    if (otherIsText !== isText) return;
+    if (!isText && !other.dataUrl) return;
+    updater(other);
+  });
+}
+
+// Wraps the common "set scene[prop], live-update the DOM, sync it to the
+// rest of the selection" sequence so each control below stays one line.
+function withSelectedSiblings(scene, propName, liveUpdateFn) {
+  return (value) => {
+    scene[propName] = value;
+    liveUpdateFn(scene);
+    applyToSelectedSiblings(scene, (other) => {
+      other[propName] = value;
+      liveUpdateFn(other);
+    });
+  };
+}
+
 function createImageLayerControls(scene) {
   const nodes = [];
 
   const posSection = createLayerSection(`${scene.id}:pos`, t("section.position"), false);
   posSection.body.append(
-    createRangeControl(t("control.size"), scene.imageZoom || 100, 5, 1200, 1, (value) => {
-      scene.imageZoom = value;
-      updateSceneImageTransform(scene);
-    }, "maximize-2"),
-    createRangeControl(t("control.width"), scene.imageScaleX || 100, 5, 1200, 1, (value) => {
-      scene.imageScaleX = value;
-      updateSceneImageTransform(scene);
-    }, "unfold-horizontal"),
-    createRangeControl(t("control.height"), scene.imageScaleY || 100, 5, 1200, 1, (value) => {
-      scene.imageScaleY = value;
-      updateSceneImageTransform(scene);
-    }, "unfold-vertical"),
-    createRangeControl(t("control.x"), scene.imageX || 0, -1000, 1000, 0.5, (value) => {
-      scene.imageX = value;
-      updateSceneImageTransform(scene);
-    }, "move-horizontal"),
-    createRangeControl(t("control.y"), scene.imageY || 0, -1000, 1000, 0.5, (value) => {
-      scene.imageY = value;
-      updateSceneImageTransform(scene);
-    }, "move-vertical"),
+    createRangeControl(t("control.size"), scene.imageZoom || 100, 5, 1200, 1,
+      withSelectedSiblings(scene, "imageZoom", updateSceneImageTransform), "maximize-2"),
+    createRangeControl(t("control.width"), scene.imageScaleX || 100, 5, 1200, 1,
+      withSelectedSiblings(scene, "imageScaleX", updateSceneImageTransform), "unfold-horizontal"),
+    createRangeControl(t("control.height"), scene.imageScaleY || 100, 5, 1200, 1,
+      withSelectedSiblings(scene, "imageScaleY", updateSceneImageTransform), "unfold-vertical"),
+    createRangeControl(t("control.x"), scene.imageX || 0, -1000, 1000, 0.5,
+      withSelectedSiblings(scene, "imageX", updateSceneImageTransform), "move-horizontal"),
+    createRangeControl(t("control.y"), scene.imageY || 0, -1000, 1000, 0.5,
+      withSelectedSiblings(scene, "imageY", updateSceneImageTransform), "move-vertical"),
   );
   nodes.push(posSection.el);
 
   const filterSection = createLayerSection(`${scene.id}:filter`, t("section.filters"), false);
   filterSection.body.append(
-    createRangeControl(t("control.brightness"), scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
-      scene.filterBrightness = value;
-      updateSceneImageTransform(scene);
-    }, "sun"),
-    createRangeControl(t("control.contrast"), scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
-      scene.filterContrast = value;
-      updateSceneImageTransform(scene);
-    }, "contrast"),
-    createRangeControl(t("control.saturation"), scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
-      scene.filterSaturate = value;
-      updateSceneImageTransform(scene);
-    }, "droplets"),
-    createRangeControl(t("control.warmth"), scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
-      scene.filterSepia = value;
-      updateSceneImageTransform(scene);
-    }, "thermometer"),
-    createRangeControl(t("control.blur"), scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
-      scene.filterBlur = value;
-      updateSceneImageTransform(scene);
-    }, "scan-eye"),
+    createRangeControl(t("control.brightness"), scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1,
+      withSelectedSiblings(scene, "filterBrightness", updateSceneImageTransform), "sun"),
+    createRangeControl(t("control.contrast"), scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1,
+      withSelectedSiblings(scene, "filterContrast", updateSceneImageTransform), "contrast"),
+    createRangeControl(t("control.saturation"), scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1,
+      withSelectedSiblings(scene, "filterSaturate", updateSceneImageTransform), "droplets"),
+    createRangeControl(t("control.warmth"), scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1,
+      withSelectedSiblings(scene, "filterSepia", updateSceneImageTransform), "thermometer"),
+    createRangeControl(t("control.blur"), scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1,
+      withSelectedSiblings(scene, "filterBlur", updateSceneImageTransform), "scan-eye"),
   );
   const resetFilterButton = document.createElement("button");
   resetFilterButton.type = "button";
@@ -2599,10 +2625,12 @@ function createImageLayerControls(scene) {
     ], (value) => {
       pushSceneHistory();
       scene.transitionStyle = value;
+      applyToSelectedSiblings(scene, (other) => { other.transitionStyle = value; });
       renderScenes();
     }, "palette"),
     createRangeControl(t("control.size"), scene.transitionSize ?? 150, 0, 600, 10, (value) => {
       scene.transitionSize = value;
+      applyToSelectedSiblings(scene, (other) => { other.transitionSize = value; });
       renderScenes();
     }, "ruler"),
     createSelectControl(t("control.direction"), scene.transitionSides || "both", [
@@ -2612,6 +2640,7 @@ function createImageLayerControls(scene) {
     ], (value) => {
       pushSceneHistory();
       scene.transitionSides = value;
+      applyToSelectedSiblings(scene, (other) => { other.transitionSides = value; });
       renderScenes();
     }, "compass"),
   );
@@ -3782,11 +3811,15 @@ function reorderScenesByDrag(draggedIds, targetId, placement) {
 
 function resetSceneFilter(scene) {
   pushSceneHistory();
-  scene.filterBrightness = sceneImageFilterDefaults.brightness;
-  scene.filterContrast = sceneImageFilterDefaults.contrast;
-  scene.filterSaturate = sceneImageFilterDefaults.saturate;
-  scene.filterSepia = sceneImageFilterDefaults.sepia;
-  scene.filterBlur = sceneImageFilterDefaults.blur;
+  const reset = (target) => {
+    target.filterBrightness = sceneImageFilterDefaults.brightness;
+    target.filterContrast = sceneImageFilterDefaults.contrast;
+    target.filterSaturate = sceneImageFilterDefaults.saturate;
+    target.filterSepia = sceneImageFilterDefaults.sepia;
+    target.filterBlur = sceneImageFilterDefaults.blur;
+  };
+  reset(scene);
+  applyToSelectedSiblings(scene, reset);
   renderScenes();
   setSceneStatus(t("status.filterReset"));
 }
