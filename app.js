@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.14.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.14.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.14.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.14.0";
+import { clampNumber } from "./scripts/utils.js?v=3.14.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.14.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.14.1";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.14.1";
 
-const appVersion = "3.14.0";
+const appVersion = "3.14.1";
 const appChangelog = [
+  {
+    version: "3.14.1",
+    date: "2026-07-12",
+    title: "Yapistirilan katman tekrar en basa (1. sira) gelsin",
+    notes: [
+      "Onceki surumde panodan yapistirilan bir katman (gorsel veya metin) listenin sonuna ekleniyordu. Bu geri alindi: yapistirilan katman artik yine 'Yazi ekle'/'Resim ekle' butonlari gibi listenin basina (1. sira, en one) geliyor - onceki degisiklik yanlis yonde bir duzeltmeydi.",
+    ],
+  },
   {
     version: "3.14.0",
     date: "2026-07-12",
@@ -1741,7 +1749,7 @@ function hasActiveTextSelection(target) {
   return !!selection && selection.toString().length > 0;
 }
 
-async function addSceneImages(files, { toFront = true } = {}) {
+async function addSceneImages(files) {
   const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
   if (!imageFiles.length) {
     setSceneStatus(t("status.noImageSelected"));
@@ -1771,8 +1779,7 @@ async function addSceneImages(files, { toFront = true } = {}) {
       blocks: [],
     });
   }
-  if (toFront) scenes.unshift(...newScenes);
-  else scenes.push(...newScenes);
+  scenes.unshift(...newScenes);
   selectedSceneIds = newScenes.map((scene) => scene.id);
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
@@ -1815,9 +1822,9 @@ function addBlankScene() {
   setSceneStatus(t("status.blankSceneAdded"));
 }
 
-function addSceneImageBlobs(blobs, options) {
+function addSceneImageBlobs(blobs) {
   const files = blobs.map((blob, index) => new File([blob], `pasted-scene-${Date.now()}-${index + 1}.png`, { type: blob.type || "image/png" }));
-  return addSceneImages(files, options);
+  return addSceneImages(files);
 }
 
 function handlePaste(event) {
@@ -1830,16 +1837,15 @@ function handlePaste(event) {
   // left: pasting an actual image from the OS clipboard (e.g. a
   // screenshot), and pasting plain text with nothing focused to receive
   // it - both need the real clipboardData a keydown event can't provide.
-  // Pasted layers land at the END of the list/stack (toFront: false), not
-  // the top - unlike the explicit "Yazi ekle"/"Resim ekle" buttons, which
-  // still jump their new layer to the front so it's immediately visible.
-  // A paste is adding to existing work, not starting fresh, so it shouldn't
-  // silently become layer #1 and jump in front of everything else.
+  // Pasted layers land at the FRONT of the list/stack (layer #1), same as
+  // the explicit "Yazi ekle"/"Resim ekle" buttons - a brief experiment with
+  // sending pasted layers to the back instead just meant they'd land
+  // underneath everything and be hard to find.
   const imageItems = [...(event.clipboardData?.items || [])].filter((item) => item.type.startsWith("image/"));
   const blobs = imageItems.map((item) => item.getAsFile()).filter(Boolean);
   if (blobs.length) {
     event.preventDefault();
-    addSceneImageBlobs(blobs, { toFront: false });
+    addSceneImageBlobs(blobs);
     return;
   }
 
@@ -1852,7 +1858,7 @@ function handlePaste(event) {
   if (!text) return;
 
   event.preventDefault();
-  addTextLayer(text, { toFront: false });
+  addTextLayer(text);
 }
 
 function renderScenes() {
@@ -3666,14 +3672,13 @@ function resetSceneFilter(scene) {
   setSceneStatus(t("status.filterReset"));
 }
 
-function addTextLayer(initialText = "", { toFront = true } = {}) {
+function addTextLayer(initialText = "") {
   pushSceneHistory();
   const layer = createSceneBlock(initialText);
   layer.type = "text";
   layer.isLocked = false;
   layer.name = t("layer.defaultTextLayerName", { n: scenes.length + 1 });
-  if (toFront) scenes.unshift(layer);
-  else scenes.push(layer);
+  scenes.unshift(layer);
   selectedSceneId = layer.id;
   selectedSceneIds = [layer.id];
   hoveredSceneId = "";
