@@ -4,7 +4,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Persona</title>
-    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.12.0" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.13.0" />
     <!-- Split from one 3600-line style.css into files by era/area for
          readability. Order matters: later files can intentionally override
          earlier ones (same cascade behavior as the original single file). -->
@@ -13,18 +13,18 @@
          for up to 10 minutes even after a hard refresh. Bump this to match
          appVersion (app.js) on every release so old cached copies are never
          reused. -->
-    <link rel="stylesheet" href="./styles/base.css?v=3.12.0" />
-    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.12.0" />
-    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.12.0" />
-    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.12.0" />
-    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.12.0" />
-    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.12.0" />
+    <link rel="stylesheet" href="./styles/base.css?v=3.13.0" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.13.0" />
+    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.13.0" />
+    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.13.0" />
+    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.13.0" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.13.0" />
   </head>
   <body>
     <main class="app-shell scene-mode">
       <header class="menu-bar" id="menuBar" aria-label="Menu cubugu">
         <div class="menu-bar-brand">
-          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.12.0" alt="" /></span>
+          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.13.0" alt="" /></span>
           <h1 id="appTitle" data-i18n="app.title">Persona</h1>
           <p id="appSubtitle" data-i18n="app.subtitle" hidden>Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
         </div>
@@ -34,7 +34,11 @@
             <button type="button" class="menu-trigger" data-i18n="menu.file">Dosya</button>
             <div class="menu-dropdown">
               <button id="downloadBtn" type="button" class="menu-dropdown-item"><i data-lucide="download"></i><span data-i18n="file.downloadPng">Tek PNG indir</span></button>
-              <button id="uploadImgbbBtn" type="button" class="menu-dropdown-item"><i data-lucide="cloud-upload"></i><span data-i18n="file.uploadImgbb">Yukle ve BBCode kopyala</span><kbd>Ctrl+Shift+U</kbd></button>
+              <div class="menu-dropdown-item-row">
+                <button id="uploadImgbbBtn" type="button" class="menu-dropdown-item"><i data-lucide="cloud-upload"></i><span data-i18n="file.uploadImgbb">Yukle ve BBCode kopyala</span><kbd>Ctrl+Shift+U</kbd></button>
+                <button id="uploadHistoryBtn" type="button" class="layer-icon-btn" data-i18n-title="history.button" title="Yukleme gecmisi"><i data-lucide="history"></i></button>
+              </div>
+              <button id="discordShareBtn" type="button" class="menu-dropdown-item"><i data-lucide="send"></i><span data-i18n="file.shareDiscord">Discord'a paylas</span></button>
               <button id="exportSceneProjectBtn" type="button" class="menu-dropdown-item"><i data-lucide="save"></i><span data-i18n="file.exportRse">RSE indir</span></button>
               <label class="menu-dropdown-item file-button">
                 <i data-lucide="upload"></i><span data-i18n="file.importRse">RSE yukle</span>
@@ -131,6 +135,11 @@
                   </select>
                 </label>
                 <p class="wide-field settings-hint" data-i18n="settings.transitionHint">Gecis ayarlari degistikce tum katmanlara otomatik uygulanir.</p>
+                <label class="wide-field">
+                  <span data-i18n="settings.discordWebhook">Discord Webhook URL</span>
+                  <input id="discordWebhookInput" type="text" autocomplete="off" spellcheck="false" placeholder="https://discord.com/api/webhooks/..." />
+                </label>
+                <p class="wide-field settings-hint" data-i18n="settings.discordWebhookHint">Sadece bu tarayicida saklanir, baska hicbir yere gonderilmez.</p>
               </div>
             </div>
           </div>
@@ -150,7 +159,7 @@
             <div class="menu-dropdown menu-dropdown-panel about-panel">
               <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="help.toggleShortcuts">Kisayollari goster/gizle</span></button>
               <div class="about-header">
-                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.12.0" alt="" /></span>
+                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.13.0" alt="" /></span>
                 <div class="about-header-text">
                   <strong data-i18n="app.title">Persona</strong>
                   <div id="aboutVersion" class="about-version"></div>
@@ -205,6 +214,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script type="module" src="./app.js?v=3.12.0"></script>
+    <script type="module" src="./app.js?v=3.13.0"></script>
   </body>
 </html>

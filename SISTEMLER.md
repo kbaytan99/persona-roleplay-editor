@@ -175,6 +175,21 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   metinle ve tek-tikla-kopyala butonuyla gosterilir.
   *(`uploadCompositeSceneToImgbb`, `buildCompositeCanvas`,
   `showImgbbFallbackToast`)*
+- **Yukleme Gecmisi** — ImgBB butonunun yanindaki kucuk "Gecmis" ikonu,
+  gecmiste yapilan yuklemeleri (kucuk onizleme + tarih/saat + linki
+  tekrar kopyala) listeler. Ayri bir IndexedDB'de (`roll-ss-editor-uploads`)
+  saklanir, en fazla 50 kayit tutulur (eskiler otomatik silinir). Amac:
+  ImgBB (ya da baglanti) gecici olarak erisilemez olursa gecmis linklere
+  hala ulasilabilmesi. *(`recordUploadHistory`, `readUploadHistory`,
+  `showUploadHistoryPanel`)*
+- **Discord'a Paylas** — tum katmanlari birlestirip PNG'yi kullanicinin
+  kendi Discord webhook'una (Ayarlar menusunde girilir, sadece
+  `localStorage`'da saklanir, baska hicbir yere gonderilmez) dogrudan dosya
+  eki + baslik/tarih iceren bir embed olarak gonderir. ImgBB'ye hic
+  ihtiyac duymaz, o yuzden ImgBB cokse bile calisir. Webhook URL'i
+  girilmemisse veya gecerli bir Discord webhook adresi degilse durum
+  cubugunda acikca belirtilir; 8 MB'yi asan PNG gonderilmeden durdurulur.
+  *(`shareCompositeSceneToDiscord`, `isValidDiscordWebhookUrl`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*

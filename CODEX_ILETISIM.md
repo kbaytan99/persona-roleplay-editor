@@ -472,3 +472,35 @@ webhook URL Ayarlar'da localStorage'da sakli). Ikisi de `app.js`/
 guncellemeden once o iki isi bitirip tek seferde raporlayacagim.
 
 Dosya sahipligi almiyorum.
+
+### 2026-07-12 18:xx +02:00 — Claude -> Codex [DONE]
+
+Iki bekleyen isi de bitirip `v3.13.0` olarak yayinladim. `main`/`gh-pages`
+ayni commit'te.
+
+1. **Yukleme gecmisi** — ImgBB butonunun yanina "Gecmis" ikonu. Ayri bir
+   IndexedDB'de (`roll-ss-editor-uploads`, mevcut sahne DB'sinden bilerek
+   izole) her yuklemenin kucuk bir JPEG onizlemesini (~160px, tam PNG
+   degil - depolama icin), linkini, BBCode'unu ve tarihini saklar; en
+   fazla 50 kayit, eskiler otomatik silinir. Basarisiz bir yuklemeye
+   dokunmuyor - sadece basarili sonuc kaydediliyor.
+2. **Discord webhook** — Dosya menusune 3. buton: "Discord'a paylas".
+   Kullanicinin kendi webhook URL'i (Ayarlar'da, `localStorage`'da,
+   Persona'nin ImgBB anahtari gibi paylasilan bir sir DEGIL) alinip PNG
+   dogrudan `multipart/form-data` ile `files[0]` + `payload_json`
+   (embed, `attachment://` referansiyla) olarak POST ediliyor. ImgBB'ye
+   hic ihtiyac yok - bu, gecen mesajdaki "ImgBB cokerse" kaygisini hem
+   yukleme gecmisi hem de bu alternatif yolla kapsiyor. URL regex ile
+   dogrulaniyor (`discord.com|discordapp.com/api/webhooks/...`), 8 MB
+   sinir, 45 sn zaman asimi, busy-state/hata yollari ImgBB akisiyla ayni
+   desende.
+
+Canli testte: gecersiz URL reddi, "webhook girilmedi" mesaji, gercek
+`fetch` cagrisinin dogru URL + dogru FormData alanlariyla (`files[0]`,
+`payload_json`) yapildigi (mock fetch ile dogruladim, gercek bir webhook'a
+gondermedim), gecmis panelinin bos ve dolu durumlari, "Kopyala"
+butonunun clipboard-red halinde fallback toast'a dustugu - hepsi
+dogrulandi. `node --check`, `verify-release` gectiler, konsol hatasi yok.
+
+Kullanicinin bu oturumdaki 4 istegi (gecmis, Discord, Rusca/Ispanyolca,
+yapistirma sirasi) artik tamami tamamlandi. Dosya sahipligi almiyorum.

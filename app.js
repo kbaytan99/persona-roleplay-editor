@@ -2,13 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.12.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.12.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.12.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.12.0";
+import { clampNumber } from "./scripts/utils.js?v=3.13.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.0";
 
-const appVersion = "3.12.0";
+const appVersion = "3.13.0";
 const appChangelog = [
+  {
+    version: "3.13.0",
+    date: "2026-07-12",
+    title: "Yukleme gecmisi + Discord'a paylas",
+    notes: [
+      "ImgBB butonunun yanina bir 'Gecmis' ikonu eklendi: gecmiste yapilan yuklemeleri (kucuk onizleme, tarih/saat, linki tekrar kopyala) listeler. Ayri bir IndexedDB'de saklanir, son 50 yukleme tutulur - amac ImgBB gecici erisilemez olursa eski linklere hala ulasilabilmesi.",
+      "Dosya menusune 'Discord'a paylas' eklendi: PNG'yi Ayarlar'da girilen kendi Discord webhook'una dogrudan dosya eki + basit bir embed olarak gonderir. ImgBB'ye ihtiyac duymaz. Webhook URL'i sadece bu tarayicida saklanir.",
+    ],
+  },
   {
     version: "3.12.0",
     date: "2026-07-12",
@@ -467,6 +476,9 @@ const appChangelog = [
 const appShell = document.querySelector(".app-shell");
 const downloadBtn = document.querySelector("#downloadBtn");
 const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
+const uploadHistoryBtn = document.querySelector("#uploadHistoryBtn");
+const discordShareBtn = document.querySelector("#discordShareBtn");
+const discordWebhookInput = document.querySelector("#discordWebhookInput");
 const sceneImageInput = document.querySelector("#sceneImageInput");
 const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
 const sceneBackgroundHeight = document.querySelector("#sceneBackgroundHeight");
@@ -658,6 +670,89 @@ function openSceneDb() {
     };
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
+  });
+}
+
+// Separate DB from the scene autosave one on purpose - upload history is
+// unrelated data (a log of past ImgBB links, kept as a fallback in case
+// ImgBB itself goes down) and keeping it isolated means a bug in one never
+// risks corrupting or version-migrating the other.
+const uploadHistoryLimit = 50;
+
+function openUploadHistoryDb() {
+  return new Promise((resolve, reject) => {
+    const request = indexedDB.open("roll-ss-editor-uploads", 1);
+    request.onupgradeneeded = () => {
+      request.result.createObjectStore("uploads", { keyPath: "id" });
+    };
+    request.onsuccess = () => resolve(request.result);
+    request.onerror = () => reject(request.error);
+  });
+}
+
+// Small (~160px-wide) JPEG thumbnail, not the full composite - at up to 50
+// stored entries, keeping each one small matters for IndexedDB/quota use.
+// JPEG (not PNG) is fine here since the composite is always drawn onto an
+// opaque background (sceneCanvasBackground), so there's no transparency to
+// preserve, and JPEG compresses a photo-like composite far smaller than PNG.
+function createUploadThumbnail(canvas) {
+  const scale = Math.min(1, 160 / canvas.width);
+  const thumbCanvas = document.createElement("canvas");
+  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
+  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
+  const ctx = thumbCanvas.getContext("2d");
+  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
+  return thumbCanvas.toDataURL("image/jpeg", 0.7);
+}
+
+async function recordUploadHistory(entry) {
+  try {
+    const db = await openUploadHistoryDb();
+    await new Promise((resolve, reject) => {
+      const tx = db.transaction("uploads", "readwrite");
+      tx.objectStore("uploads").put(entry);
+      tx.oncomplete = resolve;
+      tx.onerror = () => reject(tx.error);
+    });
+    await pruneUploadHistory(db);
+    db.close();
+  } catch {
+    // History is a convenience/backup, not core functionality - a failure
+    // here (quota, private browsing, etc.) must never break the upload
+    // flow itself.
+  }
+}
+
+function pruneUploadHistory(db) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction("uploads", "readwrite");
+    const store = tx.objectStore("uploads");
+    const request = store.getAllKeys();
+    request.onsuccess = () => {
+      const keys = request.result.sort((a, b) => a - b);
+      const excess = keys.length - uploadHistoryLimit;
+      for (let i = 0; i < excess; i++) store.delete(keys[i]);
+    };
+    request.onerror = () => reject(request.error);
+    tx.oncomplete = resolve;
+    tx.onerror = () => reject(tx.error);
+  });
+}
+
+function readUploadHistory() {
+  return new Promise((resolve, reject) => {
+    openUploadHistoryDb().then((db) => {
+      const tx = db.transaction("uploads", "readonly");
+      const request = tx.objectStore("uploads").getAll();
+      request.onsuccess = () => {
+        resolve(request.result.sort((a, b) => b.id - a.id));
+        db.close();
+      };
+      request.onerror = () => {
+        reject(request.error);
+        db.close();
+      };
+    }, reject);
   });
 }
 
@@ -4087,6 +4182,84 @@ function showImgbbFallbackToast(bbcode) {
   input.select();
 }
 
+async function showUploadHistoryPanel() {
+  document.querySelector(".imgbb-fallback-toast")?.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "imgbb-fallback-toast upload-history-toast";
+
+  const header = document.createElement("div");
+  header.className = "imgbb-fallback-toast-header";
+  const title = document.createElement("span");
+  title.textContent = t("history.title");
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "layer-icon-btn";
+  closeBtn.title = t("shortcuts.close");
+  closeBtn.innerHTML = `<i data-lucide="x"></i>`;
+  closeBtn.addEventListener("click", () => toast.remove());
+  header.append(title, closeBtn);
+  toast.append(header);
+
+  document.body.append(toast);
+  if (window.lucide) window.lucide.createIcons();
+
+  let entries = [];
+  try {
+    entries = await readUploadHistory();
+  } catch {
+    entries = [];
+  }
+  if (!toast.isConnected) return; // closed while loading
+
+  if (!entries.length) {
+    const empty = document.createElement("div");
+    empty.className = "upload-history-empty";
+    empty.textContent = t("history.empty");
+    toast.append(empty);
+    return;
+  }
+
+  entries.forEach((entry) => {
+    const row = document.createElement("div");
+    row.className = "upload-history-item";
+
+    const thumb = document.createElement("img");
+    thumb.className = "upload-history-thumb";
+    thumb.src = entry.thumbnailDataUrl;
+    thumb.alt = "";
+    row.append(thumb);
+
+    const meta = document.createElement("div");
+    meta.className = "upload-history-meta";
+    const link = document.createElement("a");
+    link.href = entry.url;
+    link.target = "_blank";
+    link.rel = "noopener noreferrer";
+    link.textContent = entry.url;
+    const dateLine = document.createElement("div");
+    dateLine.textContent = new Date(entry.createdAt).toLocaleString();
+    meta.append(link, dateLine);
+    row.append(meta);
+
+    const copyBtn = document.createElement("button");
+    copyBtn.type = "button";
+    copyBtn.className = "layer-mini-btn";
+    copyBtn.textContent = t("history.copy");
+    copyBtn.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(entry.bbcode);
+        setSceneStatus(t("history.copiedStatus"));
+      } catch {
+        showImgbbFallbackToast(entry.bbcode);
+      }
+    });
+    row.append(copyBtn);
+
+    toast.append(row);
+  });
+}
+
 // Free-tier key, meant to live in client-side code (Persona has no backend -
 // see README) - anyone viewing source can see it, but it only grants upload
 // access to this account's ImgBB quota, nothing more sensitive.
@@ -4167,6 +4340,13 @@ async function uploadCompositeSceneToImgbb() {
 
     const url = normalizeImgbbResultUrl(result.data?.url);
     const bbcode = `[url=${url}][img]${url}[/img][/url]`;
+    recordUploadHistory({
+      id: Date.now(),
+      url,
+      bbcode,
+      thumbnailDataUrl: createUploadThumbnail(canvas),
+      createdAt: Date.now(),
+    });
     const budgetNote = canvas.budgetClamped
       ? ` ${t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })}`
       : "";
@@ -4197,6 +4377,83 @@ async function uploadCompositeSceneToImgbb() {
     isImgbbUploadInFlight = false;
     uploadImgbbBtn.disabled = false;
     uploadImgbbBtn.removeAttribute("aria-busy");
+  }
+}
+
+const discordShareTimeoutMs = 45_000;
+const discordMaxUploadBytes = 8 * 1024 * 1024;
+let isDiscordShareInFlight = false;
+
+function isValidDiscordWebhookUrl(url) {
+  return /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+/i.test(url);
+}
+
+// Sends the PNG directly to the user's own webhook as a file attachment,
+// wrapped in an embed for a title/timestamp - no ImgBB involved, so this
+// still works even if ImgBB itself is down. The webhook URL is the user's
+// own (entered in Ayarlar, kept in localStorage) - Persona has no shared
+// Discord credential the way it has a shared ImgBB key.
+async function shareCompositeSceneToDiscord() {
+  if (isDiscordShareInFlight) return;
+  const webhookUrl = discordWebhookInput.value.trim();
+  if (!webhookUrl) {
+    setSceneStatus(t("status.discordNotConfigured"));
+    return;
+  }
+  if (!isValidDiscordWebhookUrl(webhookUrl)) {
+    setSceneStatus(t("status.discordShareFailed", { error: t("error.discordInvalidUrl") }));
+    return;
+  }
+
+  isDiscordShareInFlight = true;
+  discordShareBtn.disabled = true;
+  discordShareBtn.setAttribute("aria-busy", "true");
+  setSceneStatus(t("status.discordSharing"));
+  const controller = new AbortController();
+  const timeoutId = window.setTimeout(() => controller.abort(), discordShareTimeoutMs);
+
+  try {
+    const canvas = await buildCompositeCanvas();
+    const blob = await canvasToPngBlob(canvas);
+    if (blob.size > discordMaxUploadBytes) {
+      throw new Error(t("error.discordSizeLimit"));
+    }
+
+    const fileName = `sahne-kompozit-${Date.now()}.png`;
+    const form = new FormData();
+    form.append("payload_json", JSON.stringify({
+      embeds: [{
+        title: "Persona",
+        timestamp: new Date().toISOString(),
+        image: { url: `attachment://${fileName}` },
+      }],
+    }));
+    form.append("files[0]", blob, fileName);
+
+    const response = await fetch(webhookUrl, {
+      method: "POST",
+      body: form,
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const errorBody = await response.json().catch(() => null);
+      throw new Error(errorBody?.message || t("error.serverError", { status: response.status }));
+    }
+
+    const budgetNote = canvas.budgetClamped
+      ? ` ${t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })}`
+      : "";
+    setSceneStatus(t("status.discordShared") + budgetNote);
+  } catch (error) {
+    const message = error?.name === "AbortError"
+      ? t("error.discordTimeout")
+      : error?.message || t("error.unknown");
+    setSceneStatus(t("status.discordShareFailed", { error: message }));
+  } finally {
+    window.clearTimeout(timeoutId);
+    isDiscordShareInFlight = false;
+    discordShareBtn.disabled = false;
+    discordShareBtn.removeAttribute("aria-busy");
   }
 }
 
@@ -4649,6 +4906,12 @@ window.addEventListener("resize", () => {
 });
 downloadBtn.addEventListener("click", handleMainDownload);
 uploadImgbbBtn.addEventListener("click", uploadCompositeSceneToImgbb);
+uploadHistoryBtn.addEventListener("click", showUploadHistoryPanel);
+discordShareBtn.addEventListener("click", shareCompositeSceneToDiscord);
+discordWebhookInput.value = localStorage.getItem("personaDiscordWebhook") || "";
+discordWebhookInput.addEventListener("change", () => {
+  localStorage.setItem("personaDiscordWebhook", discordWebhookInput.value.trim());
+});
 sceneImageInput.addEventListener("change", () => addSceneImages(sceneImageInput.files));
 blankSceneBtn.addEventListener("click", addBlankScene);
 exportSceneProjectBtn.addEventListener("click", exportSceneProject);
