@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.13.2";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.2";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.2";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.2";
+import { clampNumber } from "./scripts/utils.js?v=3.13.3";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.3";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.3";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.3";
 
-const appVersion = "3.13.2";
+const appVersion = "3.13.3";
 const appChangelog = [
+  {
+    version: "3.13.3",
+    date: "2026-07-12",
+    title: "Hata: Discord mesaji ayni gorseli iki kez onizliyordu",
+    notes: [
+      "BBCode metni ayni linki iki kez icerdigi icin ([url=X][img]X[/img][/url]) Discord her yuklemede ayni resmi alt alta iki kez onizliyordu. BBCode artik bir kod blogu icinde gonderiliyor - Discord kod bloklarindaki linkleri onizlemedigi icin artik sadece tek bir onizleme cikiyor, BBCode metni de eskisi gibi tam ve kopyalanabilir kaliyor.",
+    ],
+  },
   {
     version: "3.13.2",
     date: "2026-07-12",
@@ -4421,10 +4429,18 @@ async function sendDiscordLinkMessage(url, bbcode) {
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), discordMessageTimeoutMs);
   try {
+    // The bbcode wraps the same URL twice ([url=X][img]X[/img][/url]) -
+    // Discord doesn't dedupe repeated links, it unfurls a separate preview
+    // per occurrence, so sending url + bbcode as plain text produced two
+    // stacked image embeds for one upload. A fenced code block is exempt
+    // from Discord's link-unfurling, so the bbcode line still renders as
+    // exact, copy-pasteable text but no longer triggers its own preview(s) -
+    // only the single bare url line above it does.
+    const content = `${url}\n\`\`\`\n${bbcode}\n\`\`\``;
     const response = await fetch(webhookUrl, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ content: `${url}\n${bbcode}` }),
+      body: JSON.stringify({ content }),
       signal: controller.signal,
     });
     if (!response.ok) {
