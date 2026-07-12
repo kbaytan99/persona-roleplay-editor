@@ -76,6 +76,16 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   kutu, Kontur, Soft golge, Efektsiz, Yari saydam kutu, Kalin kontur, Neon
   parlama. Listede en cok onerilen iki stil (Siyah kutu, Soft golge) yildiz
   (★) ile isaretli. *(`textBlock.textStyle`, `drawStyledText`)*
+- **Yapiskan Yazi Varsayilanlari** — bir yazi katmaninin font boyutu/stili/
+  harf-satir bosluguna yapilan her degisiklik hatirlanir (`localStorage`'da
+  kalici) ve bir sonraki yeni yazi katmani (buton veya yapistirma ile)
+  otomatik olarak ayni degerlerle baslar - her seferinde varsayilana
+  sifirlanmaz. *(`rememberTextLayerDefaults`, `lastTextLayerDefaults`,
+  `createSceneBlock`)*
+- **Imlecte Yeni Yazi Katmani** — "Yazi ekle" veya panodan yapistirma ile
+  eklenen yeni bir yazi katmani, fare o an canvas'in uzerindeyse farenin
+  bulundugu noktada belirir; degilse sahnenin tam ortasinda.
+  *(`getTextLayerSpawnPosition`)*
 
 ## 4. Secim Sistemi
 

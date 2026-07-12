@@ -2,13 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.14.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.14.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.14.1";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.14.1";
+import { clampNumber } from "./scripts/utils.js?v=3.15.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.15.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.15.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.15.0";
 
-const appVersion = "3.14.1";
+const appVersion = "3.15.0";
 const appChangelog = [
+  {
+    version: "3.15.0",
+    date: "2026-07-12",
+    title: "Yazi katmanlarinda yapiskan varsayilanlar + imlecte spawn",
+    notes: [
+      "Bir yazi katmaninin font boyutu/stili/harf-satir bosluguna yaptigin son degisiklik artik hatirlaniyor ve bir sonraki yeni yazi katmani (buton veya yapistirma ile) otomatik olarak ayni ayarlarla geliyor - her seferinde varsayilana sifirlanmiyor. Tercih tarayicida kalici.",
+      "Yeni bir yazi katmani eklerken (Yazi ekle veya panodan yapistirma) fare o an canvas'in uzerindeyse katman farenin bulundugu yerde beliriyor; degilse sahnenin tam ortasinda - eskiden hep sabit bir noktada (sol ust) beliriyordu.",
+    ],
+  },
   {
     version: "3.14.1",
     date: "2026-07-12",
@@ -609,6 +618,39 @@ let hoveredSceneId = "";
 let shouldAutoFitSceneViewport = true;
 let currentUserId = localClientId;
 let sceneSaveTimer = 0;
+// Last pointer position over the composite stage, so a new text layer can
+// spawn where the mouse actually is instead of a fixed spot. Tracked with a
+// plain document-level pointermove (cheap - just two numbers) rather than
+// only inside the stage, since the pointer needs to be checked against
+// whichever stage element exists at layer-creation time anyway.
+let lastPointerClientX = null;
+let lastPointerClientY = null;
+// "Sticky" text layer defaults: whatever font size/style/spacing the user
+// last set on any text layer becomes the starting point for the next new
+// one (button-added or pasted), instead of always resetting to a fixed
+// factory default. Persisted so it survives a reload too.
+const textLayerDefaultsStorageKey = "personaLastTextLayerStyle";
+let lastTextLayerDefaults = loadLastTextLayerDefaults();
+
+function loadLastTextLayerDefaults() {
+  try {
+    const stored = JSON.parse(localStorage.getItem(textLayerDefaultsStorageKey) || "null");
+    if (stored && typeof stored === "object") return stored;
+  } catch {
+    // Corrupt/foreign localStorage value - fall through to defaults.
+  }
+  return { fontSize: 18, textStyle: "box", letterSpacing: 0, lineHeight: 1.18 };
+}
+
+function rememberTextLayerDefaults(scene) {
+  lastTextLayerDefaults = {
+    fontSize: scene.fontSize ?? lastTextLayerDefaults.fontSize,
+    textStyle: scene.textStyle ?? lastTextLayerDefaults.textStyle,
+    letterSpacing: scene.letterSpacing ?? lastTextLayerDefaults.letterSpacing,
+    lineHeight: scene.lineHeight ?? lastTextLayerDefaults.lineHeight,
+  };
+  localStorage.setItem(textLayerDefaultsStorageKey, JSON.stringify(lastTextLayerDefaults));
+}
 
 restoreState();
 
@@ -2351,6 +2393,7 @@ function createTextLayerControls(scene, stage) {
   fontInput.addEventListener("change", () => {
     scene.fontSize = clampNumber(fontInput.value, 10, 48, getSceneFontSize());
     fontInput.value = scene.fontSize;
+    rememberTextLayerDefaults(scene);
     saveState();
     renderScenes();
   });
@@ -2372,6 +2415,7 @@ function createTextLayerControls(scene, stage) {
     scene.textStyle = styleSelect.value;
     const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(scene.id)}"]`);
     if (block) block.dataset.textStyle = scene.textStyle;
+    rememberTextLayerDefaults(scene);
   });
 
   textControls.append(fontInput, styleSelect);
@@ -2382,10 +2426,12 @@ function createTextLayerControls(scene, stage) {
     createRangeControl(t("control.letterSpacing"), scene.letterSpacing || 0, -5, 20, 1, (value) => {
       scene.letterSpacing = value;
       updateSceneTextStyle(scene);
+      rememberTextLayerDefaults(scene);
     }, "move-horizontal"),
     createRangeControl(t("control.lineHeight"), scene.lineHeight ?? 1.18, 0.8, 2.5, 0.05, (value) => {
       scene.lineHeight = value;
       updateSceneTextStyle(scene);
+      rememberTextLayerDefaults(scene);
     }, "move-vertical"),
   );
 
@@ -3462,8 +3508,10 @@ function createSceneBlock(text = "") {
     x: 2,
     y: 72,
     width: 88,
-    fontSize: getSceneFontSize(),
-    textStyle: "box",
+    fontSize: lastTextLayerDefaults.fontSize,
+    textStyle: lastTextLayerDefaults.textStyle,
+    letterSpacing: lastTextLayerDefaults.letterSpacing,
+    lineHeight: lastTextLayerDefaults.lineHeight,
   };
 }
 
@@ -3672,12 +3720,34 @@ function resetSceneFilter(scene) {
   setSceneStatus(t("status.filterReset"));
 }
 
+// Where a brand-new text layer should appear: at the mouse if it's
+// currently over the canvas (so a pasted/added layer lands right where the
+// user is working, not off-screen in the layer list), centered otherwise.
+function getTextLayerSpawnPosition(width) {
+  const stage = document.querySelector(".composite-stage");
+  if (stage && lastPointerClientX !== null && lastPointerClientY !== null) {
+    const rect = stage.getBoundingClientRect();
+    const withinStage = lastPointerClientX >= rect.left && lastPointerClientX <= rect.right
+      && lastPointerClientY >= rect.top && lastPointerClientY <= rect.bottom;
+    if (withinStage && rect.width > 0 && rect.height > 0) {
+      const percentX = ((lastPointerClientX - rect.left) / rect.width) * 100;
+      const percentY = ((lastPointerClientY - rect.top) / rect.height) * 100;
+      return {
+        x: clampNumber(percentX - width / 2, 0, Math.max(0, 100 - width), (100 - width) / 2),
+        y: clampNumber(percentY - 5, 0, 90, 50),
+      };
+    }
+  }
+  return { x: Math.max(0, (100 - width) / 2), y: 50 };
+}
+
 function addTextLayer(initialText = "") {
   pushSceneHistory();
   const layer = createSceneBlock(initialText);
   layer.type = "text";
   layer.isLocked = false;
   layer.name = t("layer.defaultTextLayerName", { n: scenes.length + 1 });
+  Object.assign(layer, getTextLayerSpawnPosition(layer.width));
   scenes.unshift(layer);
   selectedSceneId = layer.id;
   selectedSceneIds = [layer.id];
@@ -4988,6 +5058,10 @@ document.querySelector("#aboutChangelogNext").addEventListener("click", (event) 
   renderAboutPanel();
 });
 document.addEventListener("paste", handlePaste);
+document.addEventListener("pointermove", (event) => {
+  lastPointerClientX = event.clientX;
+  lastPointerClientY = event.clientY;
+});
 window.addEventListener("wheel", handleSceneWheel, { passive: false, capture: true });
 window.addEventListener("keydown", handleSceneKeyDown);
 window.addEventListener("keyup", handleSceneKeyUp);
