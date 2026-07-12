@@ -2,11 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.7.3";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.3";
+import { clampNumber } from "./scripts/utils.js?v=3.8.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.8.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.8.0";
 
-const appVersion = "3.7.3";
+const appVersion = "3.8.0";
 const appChangelog = [
+  {
+    version: "3.8.0",
+    date: "2026-07-12",
+    title: "Dil sistemi: Turkce ve Ingilizce",
+    notes: [
+      "Uygulama artik iki dilde calisiyor: Turkce ve Ingilizce. Dil, Ayarlar menusundeki acilir listeden degistirilebilir; secim tarayicida hatirlanir. Ilk acilista tarayici diline gore otomatik secilir (Turkce degilse Ingilizce).",
+      "Turkce metinlerdeki eksik/Ingilizce klavye uyumlu karakterler (i, s, g, u, o, c) duzeltildi; menuler, katman yoneticisi, kisayollar kutusu, Hakkinda paneli ve durum cubugu mesajlari artik dogru Turkce karakterlerle gosteriliyor.",
+    ],
+  },
   {
     version: "3.7.3",
     date: "2026-07-12",
@@ -409,6 +419,7 @@ const scenePadding = document.querySelector("#scenePadding");
 const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
 const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
 const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
+const languageSelect = document.querySelector("#languageSelect");
 const blankSceneBtn = document.querySelector("#blankSceneBtn");
 const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
 const sceneProjectInput = document.querySelector("#sceneProjectInput");
@@ -651,7 +662,7 @@ async function readLegacySceneRecord(db) {
 function scheduleSceneAutosave() {
   clearTimeout(sceneSaveTimer);
   sceneSaveTimer = window.setTimeout(() => {
-    saveLocalScenesNow().catch(() => setSceneStatus("Sahne lokal kaydedilemedi."));
+    saveLocalScenesNow().catch(() => setSceneStatus(t("status.localSaveFailed")));
   }, 450);
 }
 
@@ -668,10 +679,10 @@ function setIconButtonContent(button, icon, label) {
 function switchMode() {
   appShell.classList.add("scene-mode");
   scenePreviewPane.classList.add("active");
-  setIconButtonContent(downloadBtn, "download", "Tek PNG indir");
-  appTitle.textContent = "Persona";
-  appSubtitle.textContent = "Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici";
-  document.title = "Persona";
+  setIconButtonContent(downloadBtn, "download", t("file.downloadPng"));
+  appTitle.textContent = t("app.title");
+  appSubtitle.textContent = t("app.subtitle");
+  document.title = t("app.docTitle");
   renderScenes();
 }
 
@@ -682,7 +693,7 @@ async function handleMainDownload() {
   try {
     await downloadCompositeScene();
   } catch (error) {
-    setSceneStatus(`PNG indirilemedi: ${error?.message || "Bilinmeyen hata."}`);
+    setSceneStatus(t("status.pngDownloadFailed", { error: error?.message || (getLanguage() === "tr" ? "Bilinmeyen hata." : "Unknown error.") }));
   } finally {
     downloadBtn.disabled = false;
     downloadBtn.removeAttribute("aria-busy");
@@ -746,18 +757,18 @@ function showSceneContextMenu(clientX, clientY, scene) {
     menu.append(button);
   };
 
-  addItem("Kopyala", copySelectedScenes, "Ctrl+C", "copy");
-  addItem("Kes", cutSelectedScenes, "Ctrl+X", "cut");
-  addItem("Yapistir", pasteSceneClipboard, "Ctrl+V", "paste");
-  addItem("Cogalt", duplicateSelectedScenes, "Ctrl+D", "duplicate");
-  addItem("Sil", () => {
+  addItem(t("edit.copy"), copySelectedScenes, "Ctrl+C", "copy");
+  addItem(t("edit.cut"), cutSelectedScenes, "Ctrl+X", "cut");
+  addItem(t("edit.paste"), pasteSceneClipboard, "Ctrl+V", "paste");
+  addItem(t("edit.duplicate"), duplicateSelectedScenes, "Ctrl+D", "duplicate");
+  addItem(t("edit.delete"), () => {
     const ids = getSceneDeleteTargets();
     if (!ids.length) return;
     if (ids.length === 1) removeScene(ids[0]);
     else removeScenes(ids);
   }, "Del", "delete");
-  addItem("RSE indir", exportSceneProject);
-  addItem("RSE yukle", () => sceneProjectInput.click());
+  addItem(t("file.exportRse"), exportSceneProject);
+  addItem(t("file.importRse"), () => sceneProjectInput.click());
 
   // Right-clicking directly on an unlocked image layer also offers its
   // Pozisyon/Filtreler controls inline, so boyut/parlaklik/vs. can be
@@ -772,34 +783,34 @@ function showSceneContextMenu(clientX, clientY, scene) {
     divider.className = "menu-dropdown-divider";
     menu.append(divider);
 
-    const posSection = createLayerSection(`${scene.id}:ctxPos`, "Pozisyon", false);
+    const posSection = createLayerSection(`${scene.id}:ctxPos`, t("section.position"), false);
     posSection.body.append(
-      createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
+      createRangeControl(t("control.size"), scene.imageZoom || 100, 5, 1200, 1, (value) => {
         scene.imageZoom = value;
         updateSceneImageTransform(scene);
       }, "maximize-2"),
-      createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
+      createRangeControl(t("control.width"), scene.imageScaleX || 100, 5, 1200, 1, (value) => {
         scene.imageScaleX = value;
         updateSceneImageTransform(scene);
       }, "unfold-horizontal"),
-      createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
+      createRangeControl(t("control.height"), scene.imageScaleY || 100, 5, 1200, 1, (value) => {
         scene.imageScaleY = value;
         updateSceneImageTransform(scene);
       }, "unfold-vertical"),
     );
     menu.append(posSection.el);
 
-    const filterSection = createLayerSection(`${scene.id}:ctxFilter`, "Filtreler", false);
+    const filterSection = createLayerSection(`${scene.id}:ctxFilter`, t("section.filters"), false);
     filterSection.body.append(
-      createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
+      createRangeControl(t("control.brightness"), scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
         scene.filterBrightness = value;
         updateSceneImageTransform(scene);
       }, "sun"),
-      createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
+      createRangeControl(t("control.contrast"), scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
         scene.filterContrast = value;
         updateSceneImageTransform(scene);
       }, "contrast"),
-      createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
+      createRangeControl(t("control.saturation"), scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
         scene.filterSaturate = value;
         updateSceneImageTransform(scene);
       }, "droplets"),
@@ -880,7 +891,7 @@ function startSceneMarqueeSelect(event, stage) {
     selectedSceneIds = hitIds;
     selectedSceneId = hitIds[0] || "";
     refreshSceneSelection();
-    if (hitIds.length) setSceneStatus(`${hitIds.length} katman secildi.`);
+    if (hitIds.length) setSceneStatus(t("status.layersSelected", { count: hitIds.length }));
   };
 
   document.addEventListener("pointermove", onMove);
@@ -966,7 +977,7 @@ function startLayerListMarqueeSelect(event, listContainer) {
     selectedSceneIds = hitIds;
     selectedSceneId = hitIds[0] || "";
     refreshSceneSelection();
-    if (hitIds.length) setSceneStatus(`${hitIds.length} katman secildi.`);
+    if (hitIds.length) setSceneStatus(t("status.layersSelected", { count: hitIds.length }));
   };
 
   document.addEventListener("pointermove", onMove);
@@ -991,7 +1002,7 @@ let aboutChangelogPage = 0;
 
 function renderAboutPanel() {
   const versionEl = document.querySelector("#aboutVersion");
-  if (versionEl) versionEl.textContent = `Surum ${appVersion}`;
+  if (versionEl) versionEl.textContent = t("about.version", { version: appVersion });
   const listEl = document.querySelector("#aboutChangelog");
   if (!listEl) return;
 
@@ -999,7 +1010,7 @@ function renderAboutPanel() {
   const entry = appChangelog[aboutChangelogPage];
 
   const pageEl = document.querySelector("#aboutChangelogPage");
-  if (pageEl) pageEl.textContent = `${aboutChangelogPage + 1} / ${appChangelog.length}`;
+  if (pageEl) pageEl.textContent = t("about.pagerPage", { page: aboutChangelogPage + 1, total: appChangelog.length });
   const prevBtn = document.querySelector("#aboutChangelogPrev");
   if (prevBtn) prevBtn.disabled = aboutChangelogPage === 0;
   const nextBtn = document.querySelector("#aboutChangelogNext");
@@ -1138,7 +1149,7 @@ function applySceneViewportZoom() {
   shell.style.height = `${Math.ceil(baseHeight * sceneViewportZoom)}px`;
   stage.style.transform = `scale(${sceneViewportZoom})`;
   document.querySelectorAll(".zoom-readout").forEach((node) => {
-    node.textContent = `${Math.round(sceneViewportZoom * 100)}%`;
+    node.textContent = t("canvas.zoomReadout", { value: Math.round(sceneViewportZoom * 100) });
   });
 }
 
@@ -1474,7 +1485,7 @@ function hasActiveTextSelection(target) {
 async function addSceneImages(files) {
   const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
   if (!imageFiles.length) {
-    setSceneStatus("Resim dosyasi secilmedi.");
+    setSceneStatus(t("status.noImageSelected"));
     return;
   }
 
@@ -1509,7 +1520,7 @@ async function addSceneImages(files) {
 
   if (wasEmpty) shouldAutoFitSceneViewport = true;
   renderScenes();
-  setSceneStatus(`${imageFiles.length} katman eklendi. Hepsi ayni sahne canvasinda.`);
+  setSceneStatus(t("status.imagesAdded", { count: imageFiles.length }));
   sceneImageInput.value = "";
   switchMode();
 }
@@ -1541,7 +1552,7 @@ function addBlankScene() {
   shouldAutoFitSceneViewport = true;
   renderScenes();
   switchMode();
-  setSceneStatus("Bos sahne katmani eklendi. Yaziyi elle ekleyebilirsin.");
+  setSceneStatus(t("status.blankSceneAdded"));
 }
 
 function addSceneImageBlobs(blobs) {
@@ -1582,11 +1593,11 @@ function renderScenes() {
 
   const title = document.createElement("div");
   title.className = "scene-title";
-  title.textContent = scenes.length ? `${scenes.length} katman - tek sahne / tek PNG` : "Bos sahne - tek PNG";
+  title.textContent = scenes.length ? t("canvas.summaryMulti", { count: scenes.length }) : t("canvas.summaryEmpty");
 
   const zoomReadout = document.createElement("div");
   zoomReadout.className = "zoom-readout";
-  zoomReadout.textContent = `${Math.round(sceneViewportZoom * 100)}%`;
+  zoomReadout.textContent = t("canvas.zoomReadout", { value: Math.round(sceneViewportZoom * 100) });
 
   toolbar.append(title, zoomReadout);
 
@@ -1623,7 +1634,7 @@ function renderScenes() {
       block.style.left = `${scene.x}%`;
       block.style.top = `${scene.y}%`;
       block.style.width = `${scene.width}%`;
-      block.title = scene.isLocked ? "Katman kilitli" : "Surukleyerek konumlandir";
+      block.title = scene.isLocked ? t("canvas.blockLocked") : t("canvas.blockDrag");
       const content = document.createElement("div");
       content.className = "scene-text-content";
       renderSceneTextBlock(content, scene.text);
@@ -1631,7 +1642,7 @@ function renderScenes() {
       block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, scene));
       const resizeHandle = document.createElement("span");
       resizeHandle.className = "scene-resize-handle";
-      resizeHandle.title = "Genisligi ayarla";
+      resizeHandle.title = t("canvas.resizeWidthOnly");
       resizeHandle.addEventListener("pointerdown", (event) => startSceneTextResize(event, scene));
       block.append(resizeHandle);
       textOverlay.append(block);
@@ -1773,14 +1784,15 @@ function renderScenes() {
 
   const layersTitle = document.createElement("div");
   layersTitle.className = "layers-title panel-drag-handle";
-  layersTitle.title = "Surukleyerek tasi";
+  layersTitle.title = t("layer.dragMove");
   const layersTitleText = document.createElement("span");
-  layersTitleText.textContent = "Katman Yoneticisi";
+  layersTitleText.textContent = t("layer.managerTitle");
   const addTextLayerButton = document.createElement("button");
   addTextLayerButton.className = "layer-window-button accent";
   addTextLayerButton.type = "button";
-  addTextLayerButton.innerHTML = `<i data-lucide="type"></i><span>Yazi ekle</span>`;
-  addTextLayerButton.title = "Yeni yazi katmani ekle";
+  addTextLayerButton.innerHTML = `<i data-lucide="type"></i><span></span>`;
+  addTextLayerButton.querySelector("span").textContent = t("layer.addTextShort");
+  addTextLayerButton.title = t("layer.addText");
   addTextLayerButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   addTextLayerButton.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1790,7 +1802,7 @@ function renderScenes() {
   layersCloseButton.className = "layer-window-button";
   layersCloseButton.type = "button";
   layersCloseButton.innerHTML = `<i data-lucide="x"></i>`;
-  layersCloseButton.title = "Katman yoneticisini kapat";
+  layersCloseButton.title = t("layer.closeManager");
   layersCloseButton.addEventListener("pointerdown", (event) => event.stopPropagation());
   layersCloseButton.addEventListener("click", (event) => {
     event.stopPropagation();
@@ -1802,7 +1814,7 @@ function renderScenes() {
   if (!scenes.length) {
     const empty = document.createElement("div");
     empty.className = "empty-layers";
-    empty.textContent = "Bos canvas hazir. Resim ekle veya bos sahne olustur.";
+    empty.textContent = t("layer.emptyCanvas");
     listContainer.append(empty);
   }
 
@@ -1865,7 +1877,7 @@ function createLayerCard(scene, index, stage, listContainer) {
 function createLayerDragGrip(scene, listContainer) {
   const dragGrip = document.createElement("div");
   dragGrip.className = "layer-drag-grip";
-  dragGrip.title = "Surukleyerek sahne sirasini degistir";
+  dragGrip.title = t("layer.dragReorder");
   dragGrip.innerHTML = `<svg width="6" height="20" viewBox="0 0 6 20" fill="currentColor"><circle cx="1.5" cy="2" r="1.2"/><circle cx="4.5" cy="2" r="1.2"/><circle cx="1.5" cy="6" r="1.2"/><circle cx="4.5" cy="6" r="1.2"/><circle cx="1.5" cy="10" r="1.2"/><circle cx="4.5" cy="10" r="1.2"/><circle cx="1.5" cy="14" r="1.2"/><circle cx="4.5" cy="14" r="1.2"/><circle cx="1.5" cy="18" r="1.2"/><circle cx="4.5" cy="18" r="1.2"/></svg>`;
   dragGrip.addEventListener("pointerdown", (event) => {
     if (event.button !== 0) return;
@@ -1895,14 +1907,14 @@ function createLayerThumb(scene) {
   const layerThumb = document.createElement(scene.type === "text" ? "span" : "img");
   if (scene.type === "text") {
     layerThumb.className = "layer-type-badge";
-    layerThumb.textContent = "T";
-    layerThumb.title = "Yazi katmani";
+    layerThumb.textContent = t("layer.textBadge");
+    layerThumb.title = t("layer.textBadgeTitle");
   } else {
     layerThumb.className = "layer-thumb";
     if (scene.dataUrl) layerThumb.src = scene.dataUrl;
     layerThumb.alt = "";
     layerThumb.draggable = false;
-    layerThumb.title = "Resim katmani";
+    layerThumb.title = t("layer.imageBadgeTitle");
   }
   return layerThumb;
 }
@@ -1911,13 +1923,13 @@ function createLayerNameInput(scene, index) {
   const nameInput = document.createElement("input");
   nameInput.className = "scene-name-input";
   nameInput.type = "text";
-  nameInput.value = scene.name || `Katman ${index + 1}`;
-  nameInput.placeholder = "Katman adi";
-  nameInput.title = scene.isLocked ? "Kilitli katman yeniden adlandirilamaz" : "Katman ismi";
+  nameInput.value = scene.name || t("layer.defaultName", { n: index + 1 });
+  nameInput.placeholder = t("layer.namePlaceholder");
+  nameInput.title = scene.isLocked ? t("layer.nameLockedTitle") : t("layer.nameTitle");
   nameInput.disabled = scene.isLocked;
   prepareSceneHistoryControl(nameInput);
   nameInput.addEventListener("input", () => {
-    scene.name = nameInput.value.trim() || `Katman ${index + 1}`;
+    scene.name = nameInput.value.trim() || t("layer.defaultName", { n: index + 1 });
     const image = document.querySelector(`[data-scene-image-id="${CSS.escape(scene.id)}"]`);
     if (image) image.alt = scene.name;
     scheduleSceneAutosave();
@@ -1933,7 +1945,7 @@ function createLayerHeaderActions(scene, isExpanded) {
   expandButton.type = "button";
   expandButton.className = "layer-icon-btn layer-expand-btn" + (isExpanded ? " active" : "");
   expandButton.innerHTML = isExpanded ? `<i data-lucide="chevron-down"></i>` : `<i data-lucide="chevron-right"></i>`;
-  expandButton.title = isExpanded ? "Daralt" : "Genislet";
+  expandButton.title = isExpanded ? t("layer.collapse") : t("layer.expand");
   expandButton.addEventListener("click", () => {
     if (expandedLayerIds.has(scene.id)) expandedLayerIds.delete(scene.id);
     else expandedLayerIds.add(scene.id);
@@ -1944,7 +1956,7 @@ function createLayerHeaderActions(scene, isExpanded) {
   lockButton.type = "button";
   lockButton.className = "layer-icon-btn" + (scene.isLocked ? " active" : "");
   lockButton.innerHTML = scene.isLocked ? `<i data-lucide="lock"></i>` : `<i data-lucide="lock-open"></i>`;
-  lockButton.title = scene.isLocked ? "Kilidi ac" : "Kilitle";
+  lockButton.title = scene.isLocked ? t("layer.unlock") : t("layer.lock");
   lockButton.addEventListener("click", () => {
     pushSceneHistory();
     scene.isLocked = !scene.isLocked;
@@ -1956,7 +1968,7 @@ function createLayerHeaderActions(scene, isExpanded) {
   removeButton.className = "layer-icon-btn danger";
   removeButton.innerHTML = `<i data-lucide="trash-2"></i>`;
   removeButton.disabled = scene.isLocked;
-  removeButton.title = scene.isLocked ? "Kilitli katman silinemez" : "Katmani sil";
+  removeButton.title = scene.isLocked ? t("layer.removeLockedTitle") : t("layer.removeTitle");
   removeButton.addEventListener("click", () => {
     if (scene.isLocked) return;
     removeScene(scene.id);
@@ -1974,13 +1986,13 @@ function createLayerPreviewLine(scene) {
     if (trimmed) {
       previewLine.textContent = trimmed.length > 60 ? `${trimmed.slice(0, 60)}…` : trimmed;
     } else {
-      previewLine.textContent = "Bos yazi katmani";
+      previewLine.textContent = t("layer.emptyTextPreview");
       previewLine.classList.add("empty");
     }
   } else if (scene.dataUrl) {
-    previewLine.textContent = `Boyut %${scene.imageZoom || 100}`;
+    previewLine.textContent = t("layer.sizePreview", { value: scene.imageZoom || 100 });
   } else {
-    previewLine.textContent = "Bos katman";
+    previewLine.textContent = t("layer.emptyLayerPreview");
     previewLine.classList.add("empty");
   }
   return previewLine;
@@ -1990,10 +2002,10 @@ function createLayerOrderRow(scene, index) {
   const orderRow = document.createElement("div");
   orderRow.className = "layer-order-row";
   orderRow.append(
-    createSceneOrderButton("En ust", "chevrons-up", scene.id, "top", index === 0),
-    createSceneOrderButton("Uste", "chevron-up", scene.id, "up", index === 0),
-    createSceneOrderButton("Alta", "chevron-down", scene.id, "down", index === scenes.length - 1),
-    createSceneOrderButton("En alt", "chevrons-down", scene.id, "bottom", index === scenes.length - 1),
+    createSceneOrderButton(t("layer.orderTop"), "chevrons-up", scene.id, "top", index === 0),
+    createSceneOrderButton(t("layer.orderUp"), "chevron-up", scene.id, "up", index === 0),
+    createSceneOrderButton(t("layer.orderDown"), "chevron-down", scene.id, "down", index === scenes.length - 1),
+    createSceneOrderButton(t("layer.orderBottom"), "chevrons-down", scene.id, "bottom", index === scenes.length - 1),
   );
   return orderRow;
 }
@@ -2008,7 +2020,7 @@ function createLayerCardBody(scene, stage) {
   } else {
     const blankNote = document.createElement("div");
     blankNote.className = "blank-layer-note";
-    blankNote.textContent = "Bos katman. Yazi ekleyebilirsin.";
+    blankNote.textContent = t("layer.blankNote");
     scrollableBody.append(blankNote);
   }
   if (scene.isLocked) {
@@ -2029,7 +2041,7 @@ function createTextLayerControls(scene, stage) {
   fontInput.type = "text";
   fontInput.inputMode = "numeric";
   fontInput.value = scene.fontSize || getSceneFontSize();
-  fontInput.title = "Bu yazinin font boyutu";
+  fontInput.title = t("layer.fontSizeTitle");
   prepareSceneHistoryControl(fontInput);
   fontInput.addEventListener("input", () => {
     const val = parseInt(fontInput.value, 10);
@@ -2054,15 +2066,15 @@ function createTextLayerControls(scene, stage) {
   });
 
   const styleSelect = document.createElement("select");
-  styleSelect.title = "Bu yazinin arka plan/efekt stili";
+  styleSelect.title = t("layer.styleTitle");
   styleSelect.innerHTML = `
-    <option value="box">★ Siyah kutu</option>
-    <option value="soft">★ Soft golge</option>
-    <option value="outline">Kontur</option>
-    <option value="plain">Efektsiz</option>
-    <option value="boxSoft">Yari saydam kutu</option>
-    <option value="outlineThick">Kalin kontur</option>
-    <option value="neon">Neon parlama</option>
+    <option value="box">${t("textStyle.box")}</option>
+    <option value="soft">${t("textStyle.soft")}</option>
+    <option value="outline">${t("textStyle.outline")}</option>
+    <option value="plain">${t("textStyle.plain")}</option>
+    <option value="boxSoft">${t("textStyle.boxSoft")}</option>
+    <option value="outlineThick">${t("textStyle.outlineThick")}</option>
+    <option value="neon">${t("textStyle.neon")}</option>
   `;
   styleSelect.value = scene.textStyle || "box";
   prepareSceneHistoryControl(styleSelect);
@@ -2076,7 +2088,7 @@ function createTextLayerControls(scene, stage) {
 
   const textarea = document.createElement("textarea");
   textarea.className = "scene-text";
-  textarea.placeholder = "Bu yaziyi sahneye ekle...";
+  textarea.placeholder = t("layer.textPlaceholder");
   textarea.spellcheck = false;
   textarea.value = scene.text;
   prepareSceneHistoryControl(textarea);
@@ -2093,50 +2105,50 @@ function createTextLayerControls(scene, stage) {
 function createImageLayerControls(scene) {
   const nodes = [];
 
-  const posSection = createLayerSection(`${scene.id}:pos`, "Pozisyon", false);
+  const posSection = createLayerSection(`${scene.id}:pos`, t("section.position"), false);
   posSection.body.append(
-    createRangeControl("Boyut", scene.imageZoom || 100, 5, 1200, 1, (value) => {
+    createRangeControl(t("control.size"), scene.imageZoom || 100, 5, 1200, 1, (value) => {
       scene.imageZoom = value;
       updateSceneImageTransform(scene);
     }, "maximize-2"),
-    createRangeControl("Genislik", scene.imageScaleX || 100, 5, 1200, 1, (value) => {
+    createRangeControl(t("control.width"), scene.imageScaleX || 100, 5, 1200, 1, (value) => {
       scene.imageScaleX = value;
       updateSceneImageTransform(scene);
     }, "unfold-horizontal"),
-    createRangeControl("Yukseklik", scene.imageScaleY || 100, 5, 1200, 1, (value) => {
+    createRangeControl(t("control.height"), scene.imageScaleY || 100, 5, 1200, 1, (value) => {
       scene.imageScaleY = value;
       updateSceneImageTransform(scene);
     }, "unfold-vertical"),
-    createRangeControl("X", scene.imageX || 0, -1000, 1000, 0.5, (value) => {
+    createRangeControl(t("control.x"), scene.imageX || 0, -1000, 1000, 0.5, (value) => {
       scene.imageX = value;
       updateSceneImageTransform(scene);
     }, "move-horizontal"),
-    createRangeControl("Y", scene.imageY || 0, -1000, 1000, 0.5, (value) => {
+    createRangeControl(t("control.y"), scene.imageY || 0, -1000, 1000, 0.5, (value) => {
       scene.imageY = value;
       updateSceneImageTransform(scene);
     }, "move-vertical"),
   );
   nodes.push(posSection.el);
 
-  const filterSection = createLayerSection(`${scene.id}:filter`, "Filtreler", false);
+  const filterSection = createLayerSection(`${scene.id}:filter`, t("section.filters"), false);
   filterSection.body.append(
-    createRangeControl("Parlaklik", scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
+    createRangeControl(t("control.brightness"), scene.filterBrightness ?? sceneImageFilterDefaults.brightness, 70, 145, 1, (value) => {
       scene.filterBrightness = value;
       updateSceneImageTransform(scene);
     }, "sun"),
-    createRangeControl("Kontrast", scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
+    createRangeControl(t("control.contrast"), scene.filterContrast ?? sceneImageFilterDefaults.contrast, 70, 150, 1, (value) => {
       scene.filterContrast = value;
       updateSceneImageTransform(scene);
     }, "contrast"),
-    createRangeControl("Doygunluk", scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
+    createRangeControl(t("control.saturation"), scene.filterSaturate ?? sceneImageFilterDefaults.saturate, 60, 180, 1, (value) => {
       scene.filterSaturate = value;
       updateSceneImageTransform(scene);
     }, "droplets"),
-    createRangeControl("Sicaklik", scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
+    createRangeControl(t("control.warmth"), scene.filterSepia ?? sceneImageFilterDefaults.sepia, 0, 18, 1, (value) => {
       scene.filterSepia = value;
       updateSceneImageTransform(scene);
     }, "thermometer"),
-    createRangeControl("Blur", scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
+    createRangeControl(t("control.blur"), scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1, (value) => {
       scene.filterBlur = value;
       updateSceneImageTransform(scene);
     }, "scan-eye"),
@@ -2144,31 +2156,31 @@ function createImageLayerControls(scene) {
   const resetFilterButton = document.createElement("button");
   resetFilterButton.type = "button";
   resetFilterButton.className = "layer-mini-btn";
-  resetFilterButton.textContent = "Sifirla";
+  resetFilterButton.textContent = t("control.reset");
   resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
   filterSection.body.append(resetFilterButton);
   nodes.push(filterSection.el);
 
-  const transSection = createLayerSection(`${scene.id}:trans`, "Gecis efekti", false);
+  const transSection = createLayerSection(`${scene.id}:trans`, t("section.transition"), false);
   transSection.body.append(
-    createSelectControl("Stil", scene.transitionStyle || "none", [
-      { value: "soft", text: "Soft fade" },
-      { value: "cinematic", text: "Sinematik" },
-      { value: "blur", text: "Blur gecis" },
-      { value: "none", text: "Keskin" }
+    createSelectControl(t("control.style"), scene.transitionStyle || "none", [
+      { value: "soft", text: t("transitionShort.soft") },
+      { value: "cinematic", text: t("transitionShort.cinematic") },
+      { value: "blur", text: t("transitionShort.blur") },
+      { value: "none", text: t("transitionShort.none") }
     ], (value) => {
       pushSceneHistory();
       scene.transitionStyle = value;
       renderScenes();
     }, "palette"),
-    createRangeControl("Boyut", scene.transitionSize ?? 150, 0, 600, 10, (value) => {
+    createRangeControl(t("control.size"), scene.transitionSize ?? 150, 0, 600, 10, (value) => {
       scene.transitionSize = value;
       renderScenes();
     }, "ruler"),
-    createSelectControl("Yon", scene.transitionSides || "both", [
-      { value: "both", text: "Ust & Alt" },
-      { value: "top", text: "Sadece Ust" },
-      { value: "bottom", text: "Sadece Alt" }
+    createSelectControl(t("control.direction"), scene.transitionSides || "both", [
+      { value: "both", text: t("sideShort.both") },
+      { value: "top", text: t("sideShort.top") },
+      { value: "bottom", text: t("sideShort.bottom") }
     ], (value) => {
       pushSceneHistory();
       scene.transitionSides = value;
@@ -2184,17 +2196,17 @@ function removeScene(id) {
   const index = scenes.findIndex((scene) => scene.id === id);
   if (index === -1) return;
   if (scenes[index].isLocked) {
-    setSceneStatus("Kilitli katman silinemez, once kilidi ac.");
+    setSceneStatus(t("status.lockedCannotDelete"));
     return;
   }
-  if (!confirm(`Sahne ${index + 1} silinsin mi? Bu islem sadece bu sahneyi kaldirir.`)) return;
+  if (!confirm(t("confirm.deleteScene", { n: index + 1 }))) return;
   pushSceneHistory();
   scenes.splice(index, 1);
   hoveredSceneId = "";
   selectedSceneId = scenes[Math.min(index, scenes.length - 1)]?.id || "";
   selectedSceneIds = selectedSceneId ? [selectedSceneId] : [];
   renderScenes();
-  setSceneStatus("Sahne silindi.");
+  setSceneStatus(t("status.sceneDeleted"));
 }
 
 function removeScenes(ids) {
@@ -2202,10 +2214,10 @@ function removeScenes(ids) {
   const lockedCount = requestedIds.filter((id) => scenes.find((scene) => scene.id === id)?.isLocked).length;
   const targetIds = requestedIds.filter((id) => !scenes.find((scene) => scene.id === id)?.isLocked);
   if (!targetIds.length) {
-    if (lockedCount) setSceneStatus("Kilitli katman(lar) silinemez, once kilidi ac.");
+    if (lockedCount) setSceneStatus(t("status.lockedLayersCannotDelete"));
     return;
   }
-  if (!confirm(`Secili ${targetIds.length} sahne silinsin mi?`)) return;
+  if (!confirm(t("confirm.deleteSelected", { count: targetIds.length }))) return;
 
   pushSceneHistory();
   const firstIndex = scenes.findIndex((scene) => targetIds.includes(scene.id));
@@ -2215,33 +2227,33 @@ function removeScenes(ids) {
   selectedSceneIds = selectedSceneId ? [selectedSceneId] : [];
   renderScenes();
   setSceneStatus(lockedCount
-    ? `${targetIds.length} sahne silindi (${lockedCount} kilitli katman atlandi).`
-    : `${targetIds.length} sahne silindi.`);
+    ? t("status.scenesDeletedWithLocked", { count: targetIds.length, lockedCount })
+    : t("status.scenesDeletedPlain", { count: targetIds.length }));
 }
 
 function copySelectedScenes() {
   const targetIds = getSceneClipboardTargets();
   if (!targetIds.length) {
-    setSceneStatus("Kopyalanacak sahne yok.");
+    setSceneStatus(t("status.noSceneToCopy"));
     return;
   }
 
   const targetSet = new Set(targetIds);
   sceneClipboardScenes = scenes.filter((scene) => targetSet.has(scene.id)).map(cloneSceneSnapshot);
   sceneClipboardPasteCount = 0;
-  setSceneStatus(`${targetIds.length} sahne kopyalandi. Ctrl+V ile yapistir.`);
+  setSceneStatus(t("status.scenesCopied", { count: targetIds.length }));
 }
 
 function cutSelectedScenes() {
   const requestedIds = getSceneClipboardTargets();
   if (!requestedIds.length) {
-    setSceneStatus("Kesilecek sahne yok.");
+    setSceneStatus(t("status.noSceneToCut"));
     return;
   }
   const lockedCount = requestedIds.filter((id) => scenes.find((scene) => scene.id === id)?.isLocked).length;
   const targetIds = requestedIds.filter((id) => !scenes.find((scene) => scene.id === id)?.isLocked);
   if (!targetIds.length) {
-    setSceneStatus("Kilitli katman(lar) kesilemez, once kilidi ac.");
+    setSceneStatus(t("status.lockedCannotCut"));
     return;
   }
 
@@ -2256,8 +2268,8 @@ function cutSelectedScenes() {
   selectedSceneIds = selectedSceneId ? [selectedSceneId] : [];
   renderScenes();
   setSceneStatus(lockedCount
-    ? `${targetIds.length} sahne kesildi (${lockedCount} kilitli katman atlandi). Ctrl+V ile yapistir.`
-    : `${targetIds.length} sahne kesildi. Ctrl+V ile yapistir.`);
+    ? t("status.scenesCutWithLocked", { count: targetIds.length, lockedCount })
+    : t("status.scenesCutPlain", { count: targetIds.length }));
 }
 
 function pasteSceneClipboard() {
@@ -2284,14 +2296,14 @@ function pasteSceneClipboard() {
   clones.forEach((clone) => expandedLayerIds.add(clone.id));
   renderScenes();
   switchMode();
-  setSceneStatus(`${clones.length} sahne yapistirildi.`);
+  setSceneStatus(t("status.scenesPasted", { count: clones.length }));
   clones.forEach((clone) => flashSceneEditorItem(clone.id));
 }
 
 function duplicateSelectedScenes() {
   const targetIds = getSceneClipboardTargets();
   if (!targetIds.length) {
-    setSceneStatus("Cogaltilacak katman yok.");
+    setSceneStatus(t("status.noLayerToDuplicate"));
     return;
   }
 
@@ -2310,7 +2322,7 @@ function duplicateSelectedScenes() {
   hoveredSceneId = "";
   clones.forEach((clone) => expandedLayerIds.add(clone.id));
   renderScenes();
-  setSceneStatus(`${clones.length} katman cogaltildi.`);
+  setSceneStatus(t("status.layersDuplicated", { count: clones.length }));
   clones.forEach((clone) => flashSceneEditorItem(clone.id));
 }
 
@@ -2429,10 +2441,10 @@ function clearScenes() {
   if (!scenes.length) return;
   const lockedCount = scenes.filter((scene) => scene.isLocked).length;
   if (lockedCount === scenes.length) {
-    setSceneStatus("Kilitli katman(lar) silinemez, once kilidi ac.");
+    setSceneStatus(t("status.lockedLayersCannotDelete"));
     return;
   }
-  if (!confirm("Tum sahneler silinsin mi?")) return;
+  if (!confirm(t("confirm.clearAll"))) return;
   pushSceneHistory();
   scenes.splice(0, scenes.length, ...scenes.filter((scene) => scene.isLocked));
   selectedSceneId = "";
@@ -2440,14 +2452,14 @@ function clearScenes() {
   hoveredSceneId = "";
   renderScenes();
   setSceneStatus(lockedCount
-    ? `Sahneler silindi (${lockedCount} kilitli katman atlandi).`
-    : "Tum sahneler silindi.");
+    ? t("status.allScenesDeletedWithLocked", { lockedCount })
+    : t("status.allScenesDeletedPlain"));
 }
 
 function exportSceneProject() {
   ensureSceneModel();
   if (!scenes.length) {
-    setSceneStatus("RSE icin once en az bir sahne/katman olustur.");
+    setSceneStatus(t("status.rseNeedsScene"));
     return;
   }
 
@@ -2460,7 +2472,7 @@ function exportSceneProject() {
   link.href = URL.createObjectURL(blob);
   link.click();
   window.setTimeout(() => URL.revokeObjectURL(link.href), 1000);
-  setSceneStatus(`RSE indirildi: ${payload.scenes.length} katman kaydedildi.`);
+  setSceneStatus(t("status.rseExported", { count: payload.scenes.length }));
 }
 
 function createSceneProjectPayload() {
@@ -2501,11 +2513,11 @@ async function importSceneProject(event) {
     const payload = JSON.parse(await file.text());
     const project = normalizeSceneProjectPayload(payload);
     if (!project) {
-      setSceneStatus("RSE yuklenemedi: dosya bu programa ait degil.");
+      setSceneStatus(t("status.rseInvalidFile"));
       return;
     }
 
-    if (scenes.length && !confirm("Mevcut sahne projesi RSE dosyasi ile degistirilsin mi?")) return;
+    if (scenes.length && !confirm(t("confirm.overwriteRse"))) return;
 
     pushSceneHistory();
     applySceneProjectPayload(project);
@@ -2513,9 +2525,9 @@ async function importSceneProject(event) {
     scheduleSceneAutosave();
     switchMode();
     renderScenes();
-    setSceneStatus(`RSE yuklendi: ${scenes.length} katman geri getirildi.`);
+    setSceneStatus(t("status.rseImported", { count: scenes.length }));
   } catch (error) {
-    setSceneStatus(`RSE yuklenemedi: ${error.message || "gecersiz dosya"}.`);
+    setSceneStatus(t("status.rseImportFailed", { error: error.message || (getLanguage() === "tr" ? "gecersiz dosya" : "invalid file") }));
   } finally {
     sceneProjectInput.value = "";
   }
@@ -2549,7 +2561,7 @@ function normalizeImportedScene(scene, index) {
   if (!scene || typeof scene !== "object") return null;
   const clone = JSON.parse(JSON.stringify(scene));
   clone.id = typeof clone.id === "string" && clone.id ? clone.id : createId();
-  clone.name = typeof clone.name === "string" && clone.name ? clone.name : `Katman ${index + 1}`;
+  clone.name = typeof clone.name === "string" && clone.name ? clone.name : t("layer.defaultName", { n: index + 1 });
   clone.type = clone.type === "text" ? "text" : "image";
   clone.isLocked = clone.isLocked === true;
   if (clone.type === "text") {
@@ -2666,7 +2678,7 @@ function selectAllScenes() {
   selectedSceneId = selectedSceneIds[0] || "";
   hoveredSceneId = "";
   refreshSceneSelection();
-  setSceneStatus(`${selectedSceneIds.length} sahne secildi.`);
+  setSceneStatus(t("status.scenesSelected", { count: selectedSceneIds.length }));
 }
 
 function isSceneSelected(id) {
@@ -2734,7 +2746,7 @@ function pushSceneHistory() {
 
 function undoSceneHistory() {
   if (!sceneUndoStack.length) {
-    setSceneStatus("Geri alinacak islem yok.");
+    setSceneStatus(t("status.noUndoAction"));
     return;
   }
 
@@ -2745,7 +2757,7 @@ function undoSceneHistory() {
 
 function redoSceneHistory() {
   if (!sceneRedoStack.length) {
-    setSceneStatus("Ileri alinacak islem yok.");
+    setSceneStatus(t("status.noRedoAction"));
     return;
   }
 
@@ -2902,7 +2914,7 @@ function renderSceneTextBlock(container, text) {
   if (!lines.length) {
     const empty = document.createElement("p");
     empty.className = "scene-caption-line muted-line";
-    empty.textContent = "Yaziyi buraya surukleyebilirsin";
+    empty.textContent = t("canvas.emptyDragText");
     container.append(empty);
     return;
   }
@@ -2921,7 +2933,7 @@ function createSceneImageTransformBox(scene) {
   if (isSceneSelected(scene.id)) box.classList.add("selected");
   box.dataset.sceneTransformId = scene.id;
   box.style.transform = getSceneImageTransform(scene);
-  box.title = "Resmi tasimak icin surukle; koseden orantili, kenardan yatay/dikey esnet";
+  box.title = t("canvas.imageDragTitle");
   box.addEventListener("pointerdown", (event) => startSceneImagePan(event, scene));
 
   const ghostImage = document.createElement("img");
@@ -2946,7 +2958,7 @@ function createSceneImageTransformBox(scene) {
 function createStageResizeFrame() {
   const frame = document.createElement("div");
   frame.className = "stage-resize-frame";
-  frame.title = "Siyah canvas alanini kenardan veya koseden buyut/kucult";
+  frame.title = t("canvas.resizeFrameTitle");
 
   const sizeBadge = document.createElement("span");
   sizeBadge.className = "stage-size-badge";
@@ -2957,7 +2969,7 @@ function createStageResizeFrame() {
     const handle = document.createElement("span");
     handle.className = `stage-resize-handle ${direction}`;
     handle.dataset.direction = direction;
-    handle.title = direction === "e" ? "Genisligi ayarla" : direction === "s" ? "Yuksekligi ayarla" : "Genislik ve yuksekligi ayarla";
+    handle.title = direction === "e" ? t("canvas.resizeWidthOnly") : direction === "s" ? t("canvas.resizeHeightOnly") : t("canvas.resizeBoth");
     handle.addEventListener("pointerdown", (event) => startStageResize(event, direction));
     frame.append(handle);
   });
@@ -3129,7 +3141,11 @@ function reorderScene(sceneId, placement) {
   selectedSceneIds = [sceneId];
   hoveredSceneId = "";
   renderScenes();
-  setSceneStatus(`Sahne ${placement === "top" ? "en uste" : placement === "bottom" ? "en alta" : placement === "up" ? "uste" : "alta"} tasindi.`);
+  const moveKey = placement === "top" ? "status.sceneMovedTop"
+    : placement === "bottom" ? "status.sceneMovedBottom"
+    : placement === "up" ? "status.sceneMovedUp"
+    : "status.sceneMovedDown";
+  setSceneStatus(t(moveKey));
   flashSceneEditorItem(sceneId);
 }
 
@@ -3265,7 +3281,7 @@ function resetSceneFilter(scene) {
   scene.filterSepia = sceneImageFilterDefaults.sepia;
   scene.filterBlur = sceneImageFilterDefaults.blur;
   renderScenes();
-  setSceneStatus("Sahne filtresi sifirlandi.");
+  setSceneStatus(t("status.filterReset"));
 }
 
 function addTextLayer() {
@@ -3281,7 +3297,7 @@ function addTextLayer() {
   expandedLayerIds.add(layer.id);
   renderScenes();
   switchMode();
-  setSceneStatus("Yeni yazi katmani eklendi.");
+  setSceneStatus(t("status.textLayerAdded"));
 }
 
 // Which per-scene sections (Pozisyon/Filtreler/Gecis efekti) the user has
@@ -3490,7 +3506,7 @@ function startStageResize(event, direction) {
     handle.removeEventListener("pointerup", onUp);
     handle.removeEventListener("pointercancel", onUp);
     renderScenes();
-    setSceneStatus(`Canvas ${getSceneOutputWidth()} x ${getSceneBackgroundHeight()} olarak ayarlandi.`);
+    setSceneStatus(t("status.canvasResized", { width: getSceneOutputWidth(), height: getSceneBackgroundHeight() }));
   };
 
   handle.addEventListener("pointermove", onMove);
@@ -3766,7 +3782,7 @@ async function downloadCompositeScene() {
   link.href = objectUrl;
   window.setTimeout(() => URL.revokeObjectURL(objectUrl), 1000);
   link.click();
-  setSceneStatus("Tek PNG indirildi.");
+  setSceneStatus(t("status.pngDownloaded"));
 }
 
 // Free-tier key, meant to live in client-side code (Persona has no backend -
@@ -3810,21 +3826,21 @@ function normalizeImgbbResultUrl(value) {
   if (url.protocol !== "https:") throw new Error("ImgBB guvenli olmayan bir gorsel adresi dondurdu.");
   const hostname = url.hostname.toLowerCase();
   if (hostname !== "ibb.co" && !hostname.endsWith(".ibb.co")) {
-    throw new Error("ImgBB beklenmeyen bir alan adinda gorsel adresi dondurdu.");
+    throw new Error(t("error.imgbbUnexpectedHost"));
   }
   return url.href;
 }
 
 async function uploadCompositeSceneToImgbb() {
   if (isImgbbUploadInFlight) {
-    setSceneStatus("ImgBB yuklemesi zaten devam ediyor...");
+    setSceneStatus(t("status.imgbbInProgress"));
     return;
   }
 
   isImgbbUploadInFlight = true;
   uploadImgbbBtn.disabled = true;
   uploadImgbbBtn.setAttribute("aria-busy", "true");
-  setSceneStatus("ImgBB'ye yukleniyor...");
+  setSceneStatus(t("status.imgbbUploading"));
   const controller = new AbortController();
   const timeoutId = window.setTimeout(() => controller.abort(), imgbbUploadTimeoutMs);
 
@@ -3832,7 +3848,7 @@ async function uploadCompositeSceneToImgbb() {
     const canvas = await buildCompositeCanvas();
     const blob = await canvasToPngBlob(canvas);
     if (blob.size > imgbbMaxUploadBytes) {
-      throw new Error("PNG 32 MB ImgBB sinirini asiyor; canvas boyutunu veya katmanlari kucult.");
+      throw new Error(t("error.imgbbSizeLimit"));
     }
 
     const form = new FormData();
@@ -3844,7 +3860,7 @@ async function uploadCompositeSceneToImgbb() {
     });
     const result = await response.json().catch(() => null);
     if (!response.ok || !result?.success) {
-      throw new Error(result?.error?.message || (response.ok ? "ImgBB gecersiz yanit verdi." : `Sunucu hatasi (${response.status})`));
+      throw new Error(result?.error?.message || (response.ok ? t("error.imgbbInvalidResponse") : t("error.serverError", { status: response.status })));
     }
 
     const url = normalizeImgbbResultUrl(result.data?.url);
@@ -3853,19 +3869,19 @@ async function uploadCompositeSceneToImgbb() {
       await promiseWithTimeout(
         navigator.clipboard.writeText(bbcode),
         clipboardWriteTimeoutMs,
-        "Panoya yazma zaman asimina ugradi.",
+        t("error.clipboardTimeout"),
       );
-      setSceneStatus("Yuklendi, BBCode panoya kopyalandi.");
+      setSceneStatus(t("status.imgbbUploadedCopied"));
     } catch {
       // Upload itself succeeded - a clipboard permission issue shouldn't
       // strand the user without the link, so fall back to showing it.
-      setSceneStatus(`Yuklendi ama panoya kopyalanamadi: ${bbcode}`);
+      setSceneStatus(t("status.imgbbUploadedNoCopy", { bbcode }));
     }
   } catch (error) {
     const message = error?.name === "AbortError"
-      ? "ImgBB istegi zaman asimina ugradi; yeniden deneyebilirsin."
-      : error?.message || "Bilinmeyen hata.";
-    setSceneStatus(`Yukleme basarisiz: ${message}`);
+      ? t("error.imgbbTimeout")
+      : error?.message || t("error.unknown");
+    setSceneStatus(t("status.imgbbUploadFailed", { error: message }));
   } finally {
     window.clearTimeout(timeoutId);
     isImgbbUploadInFlight = false;
@@ -4162,7 +4178,7 @@ function createPanelResizeHandles() {
     const handle = document.createElement("span");
     handle.className = `panel-resize-handle ${direction}`;
     handle.dataset.resizeDirection = direction;
-    handle.title = "Panel boyutunu ayarla";
+    handle.title = t("canvas.panelResizeTitle");
     handle.addEventListener("pointerdown", startFloatingPanelResize);
     return handle;
   });
@@ -4303,13 +4319,13 @@ sceneTransitionStyle.addEventListener("change", () => {
   applyGlobalTransitionToAllScenes();
   saveState();
   renderScenes();
-  setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
+  setSceneStatus(t("status.transitionApplied"));
 });
 sceneTransitionSides.addEventListener("change", () => {
   applyGlobalTransitionToAllScenes();
   saveState();
   renderScenes();
-  setSceneStatus("Gecis ayarlari tum katmanlara uygulandi.");
+  setSceneStatus(t("status.transitionApplied"));
 });
 prepareSceneHistoryControl(sceneFontSize);
 sceneFontSize.addEventListener("input", () => {
@@ -4330,6 +4346,18 @@ clearScenesBtn.addEventListener("click", clearScenes);
 hideShortcutsBtn.addEventListener("click", hideShortcuts);
 showShortcutsBtn.addEventListener("click", showShortcuts);
 document.querySelector(".preview-panel").addEventListener("pointerdown", startLayersPanelResize);
+
+languageSelect.value = getLanguage();
+translateStaticDom();
+languageSelect.addEventListener("change", () => {
+  setLanguage(languageSelect.value);
+});
+onLanguageChange(() => {
+  translateStaticDom();
+  renderAboutPanel();
+  renderScenes();
+});
+
 initMenuBar();
 renderAboutPanel();
 document.querySelector("#aboutChangelogPrev").addEventListener("click", (event) => {
@@ -4353,7 +4381,7 @@ window.addEventListener("beforeunload", () => {
 document.addEventListener("pointerdown", startSceneViewportPan);
 
 switchMode();
-loadLocalScenes().catch(() => setSceneStatus("Lokal sahneler yuklenemedi."));
+loadLocalScenes().catch(() => setSceneStatus(t("status.localLoadFailed")));
 if (window.lucide) window.lucide.createIcons();
 
 /* ── Window Manager (Dock & Float) ── */

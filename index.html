@@ -1,10 +1,10 @@
 <!doctype html>
-<html lang="tr">
+  <html lang="tr">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Persona</title>
-    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.7.3" />
+    <link rel="icon" type="image/svg+xml" href="./icon.svg?v=3.8.0" />
     <!-- Split from one 3600-line style.css into files by era/area for
          readability. Order matters: later files can intentionally override
          earlier ones (same cascade behavior as the original single file). -->
@@ -13,134 +13,141 @@
          for up to 10 minutes even after a hard refresh. Bump this to match
          appVersion (app.js) on every release so old cached copies are never
          reused. -->
-    <link rel="stylesheet" href="./styles/base.css?v=3.7.3" />
-    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.7.3" />
-    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.7.3" />
-    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.7.3" />
-    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.7.3" />
-    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.7.3" />
+    <link rel="stylesheet" href="./styles/base.css?v=3.8.0" />
+    <link rel="stylesheet" href="./styles/canvas-stage.css?v=3.8.0" />
+    <link rel="stylesheet" href="./styles/layer-manager.css?v=3.8.0" />
+    <link rel="stylesheet" href="./styles/scene-skin.css?v=3.8.0" />
+    <link rel="stylesheet" href="./styles/theme-skin.css?v=3.8.0" />
+    <link rel="stylesheet" href="./styles/layer-manager-polish.css?v=3.8.0" />
   </head>
   <body>
     <main class="app-shell scene-mode">
       <header class="menu-bar" id="menuBar" aria-label="Menu cubugu">
         <div class="menu-bar-brand">
-          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.7.3" alt="" /></span>
-          <h1 id="appTitle">Persona</h1>
-          <p id="appSubtitle" hidden>Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
+          <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.8.0" alt="" /></span>
+          <h1 id="appTitle" data-i18n="app.title">Persona</h1>
+          <p id="appSubtitle" data-i18n="app.subtitle" hidden>Tek canvas uzerinde sahne, resim ve rol yazisi duzenleyici</p>
         </div>
 
         <nav class="menu-bar-nav">
           <div class="menu-item" data-menu="dosya">
-            <button type="button" class="menu-trigger">Dosya</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.file">Dosya</button>
             <div class="menu-dropdown">
-              <button id="downloadBtn" type="button" class="menu-dropdown-item"><i data-lucide="download"></i><span>Tek PNG indir</span></button>
-              <button id="uploadImgbbBtn" type="button" class="menu-dropdown-item"><i data-lucide="cloud-upload"></i><span>Yukle ve BBCode kopyala</span><kbd>Ctrl+Shift+U</kbd></button>
-              <button id="exportSceneProjectBtn" type="button" class="menu-dropdown-item"><i data-lucide="save"></i><span>RSE indir</span></button>
+              <button id="downloadBtn" type="button" class="menu-dropdown-item"><i data-lucide="download"></i><span data-i18n="file.downloadPng">Tek PNG indir</span></button>
+              <button id="uploadImgbbBtn" type="button" class="menu-dropdown-item"><i data-lucide="cloud-upload"></i><span data-i18n="file.uploadImgbb">Yukle ve BBCode kopyala</span><kbd>Ctrl+Shift+U</kbd></button>
+              <button id="exportSceneProjectBtn" type="button" class="menu-dropdown-item"><i data-lucide="save"></i><span data-i18n="file.exportRse">RSE indir</span></button>
               <label class="menu-dropdown-item file-button">
-                <i data-lucide="upload"></i><span>RSE yukle</span>
+                <i data-lucide="upload"></i><span data-i18n="file.importRse">RSE yukle</span>
                 <input id="sceneProjectInput" type="file" accept=".rse,application/json" />
               </label>
             </div>
           </div>
 
           <div class="menu-item" data-menu="duzen">
-            <button type="button" class="menu-trigger">Duzen</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.edit">Duzen</button>
             <div class="menu-dropdown">
-              <button id="undoMenuBtn" type="button" class="menu-dropdown-item"><span>Geri al</span><kbd>Ctrl+Z</kbd></button>
-              <button id="redoMenuBtn" type="button" class="menu-dropdown-item"><span>Ileri al</span><kbd>Ctrl+Y</kbd></button>
-              <button id="copyMenuBtn" type="button" class="menu-dropdown-item"><span>Kopyala</span><kbd>Ctrl+C</kbd></button>
-              <button id="cutMenuBtn" type="button" class="menu-dropdown-item"><span>Kes</span><kbd>Ctrl+X</kbd></button>
-              <button id="pasteMenuBtn" type="button" class="menu-dropdown-item"><span>Yapistir</span><kbd>Ctrl+V</kbd></button>
-              <button id="duplicateMenuBtn" type="button" class="menu-dropdown-item"><span>Cogalt</span><kbd>Ctrl+D</kbd></button>
-              <button id="selectAllMenuBtn" type="button" class="menu-dropdown-item"><span>Tumunu sec</span><kbd>Ctrl+A</kbd></button>
+              <button id="undoMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.undo">Geri al</span><kbd>Ctrl+Z</kbd></button>
+              <button id="redoMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.redo">Ileri al</span><kbd>Ctrl+Y</kbd></button>
+              <button id="copyMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.copy">Kopyala</span><kbd>Ctrl+C</kbd></button>
+              <button id="cutMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.cut">Kes</span><kbd>Ctrl+X</kbd></button>
+              <button id="pasteMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.paste">Yapistir</span><kbd>Ctrl+V</kbd></button>
+              <button id="duplicateMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.duplicate">Cogalt</span><kbd>Ctrl+D</kbd></button>
+              <button id="selectAllMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="edit.selectAll">Tumunu sec</span><kbd>Ctrl+A</kbd></button>
             </div>
           </div>
 
           <div class="menu-item" data-menu="sahne">
-            <button type="button" class="menu-trigger">Sahne</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.scene">Sahne</button>
             <div class="menu-dropdown">
-              <button id="blankSceneBtn" type="button" class="menu-dropdown-item"><i data-lucide="square-plus"></i><span>Bos sahne</span></button>
-              <label class="menu-dropdown-item file-button" title="Resim sec veya panodaki gorseli Ctrl+V ile yapistir.">
-                <i data-lucide="image-plus"></i><span>Resim ekle</span>
+              <button id="blankSceneBtn" type="button" class="menu-dropdown-item"><i data-lucide="square-plus"></i><span data-i18n="scene.blank">Bos sahne</span></button>
+              <label class="menu-dropdown-item file-button" data-i18n-title="scene.addImageHint" title="Resim sec veya panodaki gorseli Ctrl+V ile yapistir.">
+                <i data-lucide="image-plus"></i><span data-i18n="scene.addImage">Resim ekle</span>
                 <input id="sceneImageInput" type="file" accept="image/*" multiple />
               </label>
-              <button id="clearScenesBtn" type="button" class="menu-dropdown-item danger-action"><i data-lucide="trash-2"></i><span>Sahneleri sil</span></button>
+              <button id="clearScenesBtn" type="button" class="menu-dropdown-item danger-action"><i data-lucide="trash-2"></i><span data-i18n="scene.clearAll">Sahneleri sil</span></button>
             </div>
           </div>
 
           <div class="menu-item" data-menu="ayarlar">
-            <button type="button" class="menu-trigger">Ayarlar</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.settings">Ayarlar</button>
             <div class="menu-dropdown menu-dropdown-panel">
               <div class="controls-grid compact-grid">
                 <label>
-                  <span>Cikti genisligi</span>
+                  <span data-i18n="settings.outputWidth">Cikti genisligi</span>
                   <input id="sceneOutputWidth" type="number" min="640" max="32767" step="20" value="1200" />
                 </label>
                 <label>
-                  <span>Arka plan yuksekligi</span>
+                  <span data-i18n="settings.backgroundHeight">Arka plan yuksekligi</span>
                   <input id="sceneBackgroundHeight" type="number" min="300" max="32767" step="20" value="800" />
                 </label>
                 <label>
-                  <span>Sahne font</span>
+                  <span data-i18n="settings.fontSize">Sahne font</span>
                   <input id="sceneFontSize" type="number" min="10" max="42" step="1" value="18" />
                 </label>
                 <label>
-                  <span>Sahne bosluk</span>
+                  <span data-i18n="settings.padding">Sahne bosluk</span>
                   <input id="scenePadding" type="number" min="4" max="80" step="1" value="18" />
                 </label>
                 <label>
-                  <span>Gecis boyutu</span>
+                  <span data-i18n="settings.transitionSize">Gecis boyutu</span>
                   <input id="sceneTransitionSize" type="number" min="0" max="600" step="10" value="150" />
                 </label>
                 <label>
-                  <span>Gecis filtresi</span>
+                  <span data-i18n="settings.transitionStyle">Gecis filtresi</span>
                   <select id="sceneTransitionStyle">
-                    <option value="soft" selected>Soft fade</option>
-                    <option value="cinematic">Sinematik kararma</option>
-                    <option value="blur">Blur gecis</option>
-                    <option value="none">Keskin</option>
+                    <option value="soft" selected data-i18n="settings.transitionStyleSoft">Soft fade</option>
+                    <option value="cinematic" data-i18n="settings.transitionStyleCinematic">Sinematik kararma</option>
+                    <option value="blur" data-i18n="settings.transitionStyleBlur">Blur gecis</option>
+                    <option value="none" data-i18n="settings.transitionStyleNone">Keskin</option>
                   </select>
                 </label>
                 <label class="wide-field">
-                  <span>Gecis yonu</span>
+                  <span data-i18n="settings.transitionSides">Gecis yonu</span>
                   <select id="sceneTransitionSides">
-                    <option value="both" selected>Her iki taraf (Ust & Alt)</option>
-                    <option value="top">Sadece Ust (Baslangic)</option>
-                    <option value="bottom">Sadece Alt (Bitis)</option>
+                    <option value="both" selected data-i18n="settings.transitionSidesBoth">Her iki taraf (Ust & Alt)</option>
+                    <option value="top" data-i18n="settings.transitionSidesTop">Sadece Ust (Baslangic)</option>
+                    <option value="bottom" data-i18n="settings.transitionSidesBottom">Sadece Alt (Bitis)</option>
                   </select>
                 </label>
-                <p class="wide-field settings-hint">Gecis ayarlari degistikce tum katmanlara otomatik uygulanir.</p>
+                <label class="wide-field">
+                  <span data-i18n="settings.language">Dil</span>
+                  <select id="languageSelect">
+                    <option value="tr" data-i18n="settings.languageTr">Turkce</option>
+                    <option value="en" data-i18n="settings.languageEn">Ingilizce</option>
+                  </select>
+                </label>
+                <p class="wide-field settings-hint" data-i18n="settings.transitionHint">Gecis ayarlari degistikce tum katmanlara otomatik uygulanir.</p>
               </div>
             </div>
           </div>
 
           <div class="menu-item" data-menu="gorunum">
-            <button type="button" class="menu-trigger">Gorunum</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.view">Gorunum</button>
             <div class="menu-dropdown">
-              <button id="toggleLayersMenuBtn" type="button" class="menu-dropdown-item"><span>Katman panelini goster/gizle</span><kbd>L</kbd></button>
-              <button id="zoomFitMenuBtn" type="button" class="menu-dropdown-item"><span>Sigdir</span><kbd>Ctrl+0</kbd></button>
-              <button id="zoomInMenuBtn" type="button" class="menu-dropdown-item"><span>Yakinlastir</span><kbd>Ctrl++</kbd></button>
-              <button id="zoomOutMenuBtn" type="button" class="menu-dropdown-item"><span>Uzaklastir</span><kbd>Ctrl+-</kbd></button>
+              <button id="toggleLayersMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="view.toggleLayers">Katman panelini goster/gizle</span><kbd>L</kbd></button>
+              <button id="zoomFitMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="view.zoomFit">Sigdir</span><kbd>Ctrl+0</kbd></button>
+              <button id="zoomInMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="view.zoomIn">Yakinlastir</span><kbd>Ctrl++</kbd></button>
+              <button id="zoomOutMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="view.zoomOut">Uzaklastir</span><kbd>Ctrl+-</kbd></button>
             </div>
           </div>
 
           <div class="menu-item" data-menu="yardim">
-            <button type="button" class="menu-trigger">Yardim</button>
+            <button type="button" class="menu-trigger" data-i18n="menu.help">Yardim</button>
             <div class="menu-dropdown menu-dropdown-panel about-panel">
-              <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span>Kisayollari goster/gizle</span></button>
+              <button id="toggleShortcutsMenuBtn" type="button" class="menu-dropdown-item"><span data-i18n="help.toggleShortcuts">Kisayollari goster/gizle</span></button>
               <div class="about-header">
-                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.7.3" alt="" /></span>
+                <span class="brand-mark" aria-hidden="true"><img src="./icon.svg?v=3.8.0" alt="" /></span>
                 <div class="about-header-text">
-                  <strong>Persona</strong>
+                  <strong data-i18n="app.title">Persona</strong>
                   <div id="aboutVersion" class="about-version"></div>
                 </div>
               </div>
               <div class="about-section-title-row">
-                <div class="about-section-title">Son guncellemeler</div>
+                <div class="about-section-title" data-i18n="about.changelogTitle">Son guncellemeler</div>
                 <div class="about-changelog-pager">
-                  <button id="aboutChangelogPrev" type="button" class="layer-icon-btn" title="Daha yeni"><i data-lucide="chevron-left"></i></button>
+                  <button id="aboutChangelogPrev" type="button" class="layer-icon-btn" data-i18n-title="about.pagerPrev" title="Daha yeni"><i data-lucide="chevron-left"></i></button>
                   <span id="aboutChangelogPage" class="about-changelog-page"></span>
-                  <button id="aboutChangelogNext" type="button" class="layer-icon-btn" title="Daha eski"><i data-lucide="chevron-right"></i></button>
+                  <button id="aboutChangelogNext" type="button" class="layer-icon-btn" data-i18n-title="about.pagerNext" title="Daha eski"><i data-lucide="chevron-right"></i></button>
                 </div>
               </div>
               <div id="aboutChangelog" class="about-changelog"></div>
@@ -157,26 +164,26 @@
           <div id="sceneLayersPanel" class="scene-layers-panel" aria-label="Sahne katmanlari"></div>
           <aside class="shortcut-hud" aria-label="Sahne kisayollari">
             <div class="shortcut-hud-header">
-              <strong>Kisayollar</strong>
-              <button id="hideShortcutsBtn" class="shortcut-hide-button" type="button" title="Kapat"><i data-lucide="x"></i></button>
+              <strong data-i18n="shortcuts.title">Kisayollar</strong>
+              <button id="hideShortcutsBtn" class="shortcut-hide-button" type="button" data-i18n-title="shortcuts.close" title="Kapat"><i data-lucide="x"></i></button>
             </div>
-            <div class="shortcut-group-title">Duzenleme</div>
-            <div><kbd>Ctrl</kbd><kbd>V</kbd><span>Yapistir</span></div>
-            <div><kbd>Ctrl</kbd><kbd>C</kbd><span>Kopyala</span></div>
-            <div><kbd>Ctrl</kbd><kbd>X</kbd><span>Kes</span></div>
-            <div><kbd>Ctrl</kbd><kbd>D</kbd><span>Cogalt</span></div>
-            <div><kbd>Ctrl</kbd><kbd>A</kbd><span>Tumunu sec</span></div>
-            <div><kbd>Del</kbd><span>Sil</span></div>
-            <div><kbd>Ctrl</kbd><kbd>Z</kbd><span>Geri al</span></div>
-            <div><kbd>Ctrl</kbd><kbd>Y</kbd><span>Ileri al</span></div>
-            <div class="shortcut-group-title">Gorunum</div>
-            <div><kbd>Ctrl</kbd><kbd>Scroll</kbd><span>Yakinlastir</span></div>
-            <div><kbd>Space</kbd><kbd>Surukle</kbd><span>Kaydir</span></div>
-            <div><kbd>Kenar</kbd><kbd>Surukle</kbd><span>Canvas</span></div>
-            <div><kbd>Alt</kbd><kbd>Surukle</kbd><span>Snap kapat</span></div>
-            <div><kbd>Alt</kbd><kbd>Yukari/Asagi</kbd><span>Sira</span></div>
-            <div><kbd>Ctrl</kbd><kbd>0</kbd><span>Sigdir</span></div>
-            <div><kbd>L</kbd><span>Katman paneli</span></div>
+            <div class="shortcut-group-title" data-i18n="shortcuts.groupEdit">Duzenleme</div>
+            <div><kbd>Ctrl</kbd><kbd>V</kbd><span data-i18n="edit.paste">Yapistir</span></div>
+            <div><kbd>Ctrl</kbd><kbd>C</kbd><span data-i18n="edit.copy">Kopyala</span></div>
+            <div><kbd>Ctrl</kbd><kbd>X</kbd><span data-i18n="edit.cut">Kes</span></div>
+            <div><kbd>Ctrl</kbd><kbd>D</kbd><span data-i18n="edit.duplicate">Cogalt</span></div>
+            <div><kbd>Ctrl</kbd><kbd>A</kbd><span data-i18n="edit.selectAll">Tumunu sec</span></div>
+            <div><kbd>Del</kbd><span data-i18n="edit.delete">Sil</span></div>
+            <div><kbd>Ctrl</kbd><kbd>Z</kbd><span data-i18n="edit.undo">Geri al</span></div>
+            <div><kbd>Ctrl</kbd><kbd>Y</kbd><span data-i18n="edit.redo">Ileri al</span></div>
+            <div class="shortcut-group-title" data-i18n="shortcuts.groupView">Gorunum</div>
+            <div><kbd>Ctrl</kbd><kbd>Scroll</kbd><span data-i18n="view.zoomIn">Yakinlastir</span></div>
+            <div><kbd>Space</kbd><kbd data-i18n="shortcuts.dragKey">Surukle</kbd><span data-i18n="shortcuts.scroll">Kaydir</span></div>
+            <div><kbd data-i18n="shortcuts.edgeKey">Kenar</kbd><kbd data-i18n="shortcuts.dragKey">Surukle</kbd><span data-i18n="shortcuts.canvas">Canvas</span></div>
+            <div><kbd>Alt</kbd><kbd data-i18n="shortcuts.dragKey">Surukle</kbd><span data-i18n="shortcuts.snapOff">Snap kapat</span></div>
+            <div><kbd>Alt</kbd><kbd data-i18n="shortcuts.altUpDown">Yukari/Asagi</kbd><span data-i18n="shortcuts.order">Sira</span></div>
+            <div><kbd>Ctrl</kbd><kbd>0</kbd><span data-i18n="view.zoomFit">Sigdir</span></div>
+            <div><kbd>L</kbd><span data-i18n="shortcuts.layerPanel">Katman paneli</span></div>
           </aside>
         </section>
       </section>
@@ -184,6 +191,6 @@
     </main>
 
     <script src="https://unpkg.com/lucide@0.468.0/dist/umd/lucide.min.js"></script>
-    <script type="module" src="./app.js?v=3.7.3"></script>
+    <script type="module" src="./app.js?v=3.8.0"></script>
   </body>
 </html>
