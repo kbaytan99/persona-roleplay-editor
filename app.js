@@ -2,13 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.13.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.0";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.0";
+import { clampNumber } from "./scripts/utils.js?v=3.13.1";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.13.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.13.1";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.13.1";
 
-const appVersion = "3.13.0";
+const appVersion = "3.13.1";
 const appChangelog = [
+  {
+    version: "3.13.1",
+    date: "2026-07-12",
+    title: "Discord paylasimi ayri buton olmaktan cikti, ImgBB yuklemesine tasindi",
+    notes: [
+      "Ayri 'Discord'a paylas' butonu kaldirildi. Ayarlar'da bir Discord webhook URL'i girilmisse, 'Yukle ve BBCode kopyala' ile yapilan her ImgBB yuklemesi artik ayni link ve BBCode'u otomatik olarak Discord'a da (duz metin mesaj olarak) gonderiyor - PNG ikinci kez yuklenmiyor, Discord linkten kendi onizlemesini cikariyor. Webhook girilmemisse hicbir sey degismiyor.",
+    ],
+  },
   {
     version: "3.13.0",
     date: "2026-07-12",
@@ -477,7 +485,6 @@ const appShell = document.querySelector(".app-shell");
 const downloadBtn = document.querySelector("#downloadBtn");
 const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
 const uploadHistoryBtn = document.querySelector("#uploadHistoryBtn");
-const discordShareBtn = document.querySelector("#discordShareBtn");
 const discordWebhookInput = document.querySelector("#discordWebhookInput");
 const sceneImageInput = document.querySelector("#sceneImageInput");
 const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
@@ -4350,13 +4357,17 @@ async function uploadCompositeSceneToImgbb() {
     const budgetNote = canvas.budgetClamped
       ? ` ${t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })}`
       : "";
+    const discordResult = await sendDiscordLinkMessage(url, bbcode);
+    const discordNote = discordResult
+      ? ` ${discordResult.ok ? t("status.discordShared") : t("status.discordShareFailed", { error: discordResult.error })}`
+      : "";
     try {
       await promiseWithTimeout(
         navigator.clipboard.writeText(bbcode),
         clipboardWriteTimeoutMs,
         t("error.clipboardTimeout"),
       );
-      setSceneStatus(t("status.imgbbUploadedCopied") + budgetNote);
+      setSceneStatus(t("status.imgbbUploadedCopied") + budgetNote + discordNote);
     } catch {
       // Upload itself succeeded - a clipboard permission issue shouldn't
       // strand the user without the link, so fall back to showing it. The
@@ -4364,7 +4375,7 @@ async function uploadCompositeSceneToImgbb() {
       // .menu-bar-status), so the BBCode itself would be unreadable there -
       // show it in a small fixed toast with a readonly, pre-selected input
       // instead, which the user can read in full and copy manually.
-      setSceneStatus(t("status.imgbbUploadedNoCopy") + budgetNote);
+      setSceneStatus(t("status.imgbbUploadedNoCopy") + budgetNote + discordNote);
       showImgbbFallbackToast(bbcode);
     }
   } catch (error) {
@@ -4380,80 +4391,44 @@ async function uploadCompositeSceneToImgbb() {
   }
 }
 
-const discordShareTimeoutMs = 45_000;
-const discordMaxUploadBytes = 8 * 1024 * 1024;
-let isDiscordShareInFlight = false;
+const discordMessageTimeoutMs = 15_000;
 
 function isValidDiscordWebhookUrl(url) {
   return /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+/i.test(url);
 }
 
-// Sends the PNG directly to the user's own webhook as a file attachment,
-// wrapped in an embed for a title/timestamp - no ImgBB involved, so this
-// still works even if ImgBB itself is down. The webhook URL is the user's
-// own (entered in Ayarlar, kept in localStorage) - Persona has no shared
-// Discord credential the way it has a shared ImgBB key.
-async function shareCompositeSceneToDiscord() {
-  if (isDiscordShareInFlight) return;
+// No separate "share to Discord" action anymore - if a webhook is
+// configured, every successful ImgBB upload also drops the link + BBCode
+// into that channel as a plain text message (no PNG re-upload needed;
+// Discord auto-embeds a preview from the raw image URL). Returns a
+// {ok, error} result instead of touching setSceneStatus itself, so the
+// caller can fold it into the main upload's own status message.
+async function sendDiscordLinkMessage(url, bbcode) {
   const webhookUrl = discordWebhookInput.value.trim();
-  if (!webhookUrl) {
-    setSceneStatus(t("status.discordNotConfigured"));
-    return;
-  }
+  if (!webhookUrl) return null;
   if (!isValidDiscordWebhookUrl(webhookUrl)) {
-    setSceneStatus(t("status.discordShareFailed", { error: t("error.discordInvalidUrl") }));
-    return;
+    return { ok: false, error: t("error.discordInvalidUrl") };
   }
 
-  isDiscordShareInFlight = true;
-  discordShareBtn.disabled = true;
-  discordShareBtn.setAttribute("aria-busy", "true");
-  setSceneStatus(t("status.discordSharing"));
   const controller = new AbortController();
-  const timeoutId = window.setTimeout(() => controller.abort(), discordShareTimeoutMs);
-
+  const timeoutId = window.setTimeout(() => controller.abort(), discordMessageTimeoutMs);
   try {
-    const canvas = await buildCompositeCanvas();
-    const blob = await canvasToPngBlob(canvas);
-    if (blob.size > discordMaxUploadBytes) {
-      throw new Error(t("error.discordSizeLimit"));
-    }
-
-    const fileName = `sahne-kompozit-${Date.now()}.png`;
-    const form = new FormData();
-    form.append("payload_json", JSON.stringify({
-      embeds: [{
-        title: "Persona",
-        timestamp: new Date().toISOString(),
-        image: { url: `attachment://${fileName}` },
-      }],
-    }));
-    form.append("files[0]", blob, fileName);
-
     const response = await fetch(webhookUrl, {
       method: "POST",
-      body: form,
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: `${url}\n${bbcode}` }),
       signal: controller.signal,
     });
     if (!response.ok) {
       const errorBody = await response.json().catch(() => null);
       throw new Error(errorBody?.message || t("error.serverError", { status: response.status }));
     }
-
-    const budgetNote = canvas.budgetClamped
-      ? ` ${t("status.canvasBudgetClamped", { width: canvas.width, height: canvas.height })}`
-      : "";
-    setSceneStatus(t("status.discordShared") + budgetNote);
+    return { ok: true };
   } catch (error) {
-    const message = error?.name === "AbortError"
-      ? t("error.discordTimeout")
-      : error?.message || t("error.unknown");
-    setSceneStatus(t("status.discordShareFailed", { error: message }));
+    const message = error?.name === "AbortError" ? t("error.discordTimeout") : error?.message || t("error.unknown");
+    return { ok: false, error: message };
   } finally {
     window.clearTimeout(timeoutId);
-    isDiscordShareInFlight = false;
-    discordShareBtn.disabled = false;
-    discordShareBtn.removeAttribute("aria-busy");
   }
 }
 
@@ -4907,7 +4882,6 @@ window.addEventListener("resize", () => {
 downloadBtn.addEventListener("click", handleMainDownload);
 uploadImgbbBtn.addEventListener("click", uploadCompositeSceneToImgbb);
 uploadHistoryBtn.addEventListener("click", showUploadHistoryPanel);
-discordShareBtn.addEventListener("click", shareCompositeSceneToDiscord);
 discordWebhookInput.value = localStorage.getItem("personaDiscordWebhook") || "";
 discordWebhookInput.addEventListener("change", () => {
   localStorage.setItem("personaDiscordWebhook", discordWebhookInput.value.trim());

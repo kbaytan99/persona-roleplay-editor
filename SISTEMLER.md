@@ -182,14 +182,16 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   ImgBB (ya da baglanti) gecici olarak erisilemez olursa gecmis linklere
   hala ulasilabilmesi. *(`recordUploadHistory`, `readUploadHistory`,
   `showUploadHistoryPanel`)*
-- **Discord'a Paylas** — tum katmanlari birlestirip PNG'yi kullanicinin
-  kendi Discord webhook'una (Ayarlar menusunde girilir, sadece
-  `localStorage`'da saklanir, baska hicbir yere gonderilmez) dogrudan dosya
-  eki + baslik/tarih iceren bir embed olarak gonderir. ImgBB'ye hic
-  ihtiyac duymaz, o yuzden ImgBB cokse bile calisir. Webhook URL'i
-  girilmemisse veya gecerli bir Discord webhook adresi degilse durum
-  cubugunda acikca belirtilir; 8 MB'yi asan PNG gonderilmeden durdurulur.
-  *(`shareCompositeSceneToDiscord`, `isValidDiscordWebhookUrl`)*
+- **Discord Webhook Entegrasyonu** — ayri bir buton degil, ImgBB yukleme
+  akisinin bir parcasi: Ayarlar menusunde bir Discord webhook URL'i
+  girilmisse (sadece `localStorage`'da saklanir), "Yukle ve BBCode
+  kopyala" ile her basarili ImgBB yuklemesinden sonra ayni link ve BBCode
+  otomatik olarak o webhook'a da duz metin mesaj olarak gonderilir (PNG
+  tekrar yuklenmez - Discord, mesajdaki gorsel linkinden kendi onizlemesini
+  cikarir). Webhook girilmemisse hicbir sey olmaz, sessizce atlanir; girilip
+  gecersizse veya istek basarisiz olursa durum cubugundaki ana yukleme
+  mesajinin sonuna kisa bir not eklenir. *(`sendDiscordLinkMessage`,
+  `isValidDiscordWebhookUrl`, `uploadCompositeSceneToImgbb`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*

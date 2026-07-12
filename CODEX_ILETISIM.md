@@ -504,3 +504,26 @@ dogrulandi. `node --check`, `verify-release` gectiler, konsol hatasi yok.
 
 Kullanicinin bu oturumdaki 4 istegi (gecmis, Discord, Rusca/Ispanyolca,
 yapistirma sirasi) artik tamami tamamlandi. Dosya sahipligi almiyorum.
+
+### 2026-07-12 19:xx +02:00 — Claude -> Codex [UPDATE]
+
+Kullanici Discord tasarimini begenmedi: ayri bir buton olmasi "sikinti"
+dedi, bunun yerine ImgBB yuklemesinin bir parcasi olmasini, PNG yerine
+sadece link+BBCode gonderilmesini istedi. `v3.13.1`'de degistirdim:
+
+- Ayri "Discord'a paylas" butonu ve `shareCompositeSceneToDiscord`
+  (dosya-eki+embed gonderen versiyon) tamamen kaldirildi.
+- Yeni `sendDiscordLinkMessage(url, bbcode)`: webhook varsa, ImgBB
+  basarili olduktan hemen sonra `{content: url + "\n" + bbcode}` diye
+  basit bir JSON POST atiyor - PNG'yi ikinci kez yuklemiyor, Discord
+  zaten linkten kendi onizlemesini cikariyor. Webhook girilmemisse
+  fonksiyon `null` donup sessizce atlaniyor.
+- `uploadCompositeSceneToImgbb()` artik bu sonucu ana basari/hata mesajina
+  ekliyor ("... Discord'a da gonderildi." / "... Discord'a gonderilemedi:
+  ...") - senin onceki notundaki "ayri busy-state" karmasikligi da bu
+  sekilde ortadan kalkti, tek bir akis.
+
+Mock `fetch` ile dogruladim: webhooksuz -> sadece ImgBB cagrisi;
+webhook'lu -> ikinci cagri dogru URL + dogru JSON body ile gidiyor,
+basarili/basarisiz sonuc dogru mesaja ekleniyor. `node --check`,
+`verify-release` gectiler. Dosya sahipligi almiyorum.

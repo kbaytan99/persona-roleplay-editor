@@ -22,7 +22,6 @@ const tr = {
 
   "file.downloadPng": "Tek PNG indir",
   "file.uploadImgbb": "Yükle ve BBCode kopyala",
-  "file.shareDiscord": "Discord'a paylaş",
   "file.exportRse": "RSE indir",
   "file.importRse": "RSE yükle",
 
@@ -33,15 +32,12 @@ const tr = {
   "history.copiedStatus": "Geçmişten BBCode panoya kopyalandı.",
 
   "settings.discordWebhook": "Discord Webhook URL",
-  "settings.discordWebhookHint": "Sadece bu tarayıcıda saklanır, başka hiçbir yere gönderilmez.",
+  "settings.discordWebhookHint": "Girilirse, \"Yükle ve BBCode kopyala\" ile ImgBB'ye her yüklemede link ve BBCode buraya da gönderilir. Sadece bu tarayıcıda saklanır, başka hiçbir yere gönderilmez.",
 
-  "status.discordNotConfigured": "Önce Ayarlar'dan bir Discord Webhook URL'i gir.",
-  "status.discordSharing": "Discord'a gönderiliyor...",
-  "status.discordShared": "Discord'a gönderildi.",
+  "status.discordShared": "Discord'a da gönderildi.",
   "status.discordShareFailed": "Discord'a gönderilemedi: {error}",
   "error.discordInvalidUrl": "Webhook URL'i geçerli bir Discord adresi değil.",
-  "error.discordSizeLimit": "PNG 8 MB Discord webhook sınırını aşıyor; canvas boyutunu veya katmanları küçült.",
-  "error.discordTimeout": "Discord isteği zaman aşımına uğradı; yeniden deneyebilirsin.",
+  "error.discordTimeout": "Discord isteği zaman aşımına uğradı.",
 
   "edit.undo": "Geri al",
   "edit.redo": "İleri al",
@@ -273,7 +269,6 @@ const en = {
 
   "file.downloadPng": "Download single PNG",
   "file.uploadImgbb": "Upload and copy BBCode",
-  "file.shareDiscord": "Share to Discord",
   "file.exportRse": "Download RSE",
   "file.importRse": "Upload RSE",
 
@@ -284,15 +279,12 @@ const en = {
   "history.copiedStatus": "BBCode from history copied to clipboard.",
 
   "settings.discordWebhook": "Discord Webhook URL",
-  "settings.discordWebhookHint": "Stored only in this browser, never sent anywhere else.",
+  "settings.discordWebhookHint": "If set, the link and BBCode are also sent here every time you upload with \"Upload and copy BBCode\". Stored only in this browser, never sent anywhere else.",
 
-  "status.discordNotConfigured": "Enter a Discord Webhook URL in Settings first.",
-  "status.discordSharing": "Sending to Discord...",
-  "status.discordShared": "Sent to Discord.",
+  "status.discordShared": "Also sent to Discord.",
   "status.discordShareFailed": "Couldn't send to Discord: {error}",
   "error.discordInvalidUrl": "The webhook URL isn't a valid Discord address.",
-  "error.discordSizeLimit": "PNG exceeds the 8 MB Discord webhook limit; shrink the canvas size or layers.",
-  "error.discordTimeout": "The Discord request timed out; you can try again.",
+  "error.discordTimeout": "The Discord request timed out.",
 
   "edit.undo": "Undo",
   "edit.redo": "Redo",
@@ -524,7 +516,6 @@ const ru = {
 
   "file.downloadPng": "Скачать PNG",
   "file.uploadImgbb": "Загрузить и скопировать BBCode",
-  "file.shareDiscord": "Отправить в Discord",
   "file.exportRse": "Скачать RSE",
   "file.importRse": "Загрузить RSE",
 
@@ -535,15 +526,12 @@ const ru = {
   "history.copiedStatus": "BBCode из истории скопирован в буфер обмена.",
 
   "settings.discordWebhook": "URL вебхука Discord",
-  "settings.discordWebhookHint": "Хранится только в этом браузере, никуда больше не отправляется.",
+  "settings.discordWebhookHint": "Если указан, ссылка и BBCode также будут отправляться сюда при каждой загрузке через «Загрузить и скопировать BBCode». Хранится только в этом браузере, никуда больше не отправляется.",
 
-  "status.discordNotConfigured": "Сначала введите URL вебхука Discord в настройках.",
-  "status.discordSharing": "Отправка в Discord...",
-  "status.discordShared": "Отправлено в Discord.",
+  "status.discordShared": "Также отправлено в Discord.",
   "status.discordShareFailed": "Не удалось отправить в Discord: {error}",
   "error.discordInvalidUrl": "URL вебхука не является корректным адресом Discord.",
-  "error.discordSizeLimit": "PNG превышает лимит вебхука Discord в 8 МБ; уменьшите размер холста или слоёв.",
-  "error.discordTimeout": "Истекло время ожидания запроса к Discord; можете попробовать снова.",
+  "error.discordTimeout": "Истекло время ожидания запроса к Discord.",
 
   "edit.undo": "Отменить",
   "edit.redo": "Повторить",
@@ -775,7 +763,6 @@ const es = {
 
   "file.downloadPng": "Descargar PNG",
   "file.uploadImgbb": "Subir y copiar BBCode",
-  "file.shareDiscord": "Compartir en Discord",
   "file.exportRse": "Descargar RSE",
   "file.importRse": "Subir RSE",
 
@@ -786,15 +773,12 @@ const es = {
   "history.copiedStatus": "BBCode del historial copiado al portapapeles.",
 
   "settings.discordWebhook": "URL del Webhook de Discord",
-  "settings.discordWebhookHint": "Se guarda solo en este navegador, nunca se envía a ningún otro lugar.",
+  "settings.discordWebhookHint": "Si se indica, el enlace y el BBCode también se enviarán aquí cada vez que subas con \"Subir y copiar BBCode\". Se guarda solo en este navegador, nunca se envía a ningún otro lugar.",
 
-  "status.discordNotConfigured": "Primero introduce una URL de Webhook de Discord en Ajustes.",
-  "status.discordSharing": "Enviando a Discord...",
-  "status.discordShared": "Enviado a Discord.",
+  "status.discordShared": "También enviado a Discord.",
   "status.discordShareFailed": "No se pudo enviar a Discord: {error}",
   "error.discordInvalidUrl": "La URL del webhook no es una dirección de Discord válida.",
-  "error.discordSizeLimit": "El PNG supera el límite de 8 MB del webhook de Discord; reduce el tamaño del lienzo o las capas.",
-  "error.discordTimeout": "Se agotó el tiempo de espera de la solicitud a Discord; puedes volver a intentarlo.",
+  "error.discordTimeout": "Se agotó el tiempo de espera de la solicitud a Discord.",
 
   "edit.undo": "Deshacer",
   "edit.redo": "Rehacer",
