@@ -2,12 +2,20 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.9.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.1";
+import { clampNumber } from "./scripts/utils.js?v=3.9.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.9.2";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.9.2";
 
-const appVersion = "3.9.1";
+const appVersion = "3.9.2";
 const appChangelog = [
+  {
+    version: "3.9.2",
+    date: "2026-07-12",
+    title: "Hata: Satir bosluğu kaydiricisi canli onizlemede etkisizdi",
+    notes: [
+      "Bir yazi katmaninin Satir bosluğu degeri degistirildiginde katman kutusunun kendisi dogru satir yuksekligini aliyordu, ama icindeki her metin satiri (<p>) global bir stil kurali (\"p { line-height: 1.35 }\") yuzunden bunu miras almiyordu - tipki daha once yazi boyutu icin cozulen ayni hatanin bir benzeri. Simdi duzeltildi; kaydirici artik gercekten canli onizlemeye yansiyor (PNG disa aktarma zaten etkilenmemisti).",
+    ],
+  },
   {
     version: "3.9.1",
     date: "2026-07-12",
