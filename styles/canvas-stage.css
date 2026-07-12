@@ -10,12 +10,6 @@
   transition: opacity 0.15s;
 }
 
-.editor-panel .panel-drag-handle {
-  margin: -16px -16px 10px;
-  border-radius: 8px 8px 0 0;
-  height: 18px;
-}
-
 .panel-drag-handle:hover {
   opacity: 1;
 }
@@ -52,40 +46,9 @@
   background: rgba(82, 209, 197, 0.15);
   border: 2px dashed var(--cyan);
   border-radius: 8px;
-  z-index: 90;
+  z-index: var(--z-canvas-drop-indicator);
   pointer-events: none;
   display: none;
-}
-
-.scene-mode .brand-row {
-  display: flex;
-  padding: 12px;
-  margin: -4px -4px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  border-radius: 8px;
-  background:
-    linear-gradient(135deg, rgba(82, 209, 197, 0.12), rgba(198, 154, 255, 0.08) 45%, rgba(255, 107, 138, 0.08));
-}
-
-.brand-row {
-  display: flex;
-  gap: 12px;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 14px;
-}
-
-.brand-row > div:first-child {
-  min-width: 0;
-}
-
-.header-actions {
-  display: flex;
-  flex: 0 0 auto;
-  gap: 8px;
-  align-items: center;
-  justify-content: flex-end;
-  flex-wrap: wrap;
 }
 
 .mode-pane {
@@ -114,48 +77,8 @@ p {
   gap: 7px;
 }
 
-.scene-tools {
-  margin-top: 0;
-  padding-top: 0;
-  border-top: 0;
-}
-
-.scene-mode .scene-tools {
-  display: flex;
-  flex-direction: column;
-  min-height: calc(100vh - 122px);
-}
-
 .scene-mode .controls-grid {
   grid-template-columns: 1fr;
-}
-
-.scene-mode .section-title {
-  align-items: stretch;
-  flex-direction: column;
-  padding: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.055);
-  border-radius: 8px;
-  background: rgba(9, 10, 13, 0.42);
-}
-
-.scene-mode .section-title .file-button {
-  justify-content: center;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.section-actions {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-  justify-content: flex-end;
 }
 
 h2 {
@@ -198,18 +121,6 @@ textarea {
   display: none;
 }
 
-.helper-text {
-  margin: -4px 0 12px;
-}
-
-.scene-mode .helper-text {
-  margin: 0 0 12px;
-  padding: 8px 10px;
-  border: 1px solid rgba(82, 209, 197, 0.12);
-  border-radius: 6px;
-  background: rgba(82, 209, 197, 0.045);
-}
-
 textarea:focus,
 input:focus,
 select:focus {
@@ -248,23 +159,6 @@ select {
 
 input[type="color"] {
   padding: 3px;
-}
-
-.actions-row {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-}
-
-.status-text {
-  min-height: 18px;
-  margin-top: 10px;
-  color: var(--muted);
-  font-size: 12px;
-}
-
-.scene-mode .status-text {
-  color: #b7c8d6;
 }
 
 button {
@@ -308,18 +202,6 @@ button:hover,
 .button-link:hover {
   border-color: rgba(82, 209, 197, 0.44);
   background: linear-gradient(180deg, #323846, #252a34);
-}
-
-.primary-action {
-  flex: 0 0 auto;
-  border-color: rgba(82, 209, 197, 0.55);
-  background: linear-gradient(135deg, #2563eb, #1b9aaa 58%, #2bb673);
-  box-shadow: 0 10px 28px rgba(37, 99, 235, 0.2);
-}
-
-.primary-action:hover {
-  border-color: rgba(242, 184, 75, 0.7);
-  background: linear-gradient(135deg, #3474f3, #22b8b0 58%, #3bd07d);
 }
 
 .render-surface {
@@ -459,6 +341,15 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
 
 .composite-stage {
   position: relative;
+  /* z-index:0 (rather than the default auto) makes this its own stacking
+     context, containing every scene layer's z-index (app.js's
+     getSceneLayerZIndex - grows with layer count, easily into the
+     thousands with enough layers) so it can never climb high enough to
+     collide with the UI chrome z-index scale in base.css's :root,
+     regardless of how many layers a scene has. Doesn't change how
+     anything inside the stage stacks against its own siblings - only
+     how the stage as a whole compares to things outside it. */
+  z-index: 0;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.018), transparent 180px),
     #10141b;

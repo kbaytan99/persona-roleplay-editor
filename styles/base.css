@@ -13,6 +13,48 @@
   --gold: #f2b84b;
   --button: #2662d9;
   --button-hover: #3474f3;
+
+  /* ── Z-index scale ──────────────────────────────────────────────────
+     This session found the same bug shape (elementFromPoint hitting the
+     wrong thing) multiple times purely because z-index values were
+     scattered across 6 files with no shared reference. One list, one
+     place, low to high:
+
+       --z-canvas-drop-indicator (90)  .dock-drop-indicator - dock-zone
+                                        preview while dragging a panel
+       --z-mobile-drawer (50)          .scene-layers-panel on <1180px
+                                        screens (fixed full-height drawer)
+       --z-floating-panel (100)        .dockable-panel.floating
+       --z-floating-panel-resize (130) that panel's own resize handle -
+                                        must beat the panel it belongs to
+       --z-marquee (150)               .scene-marquee-select - box-select
+                                        rectangle, always on top while active
+       --z-context-menu (200)          .scene-context-menu (right-click)
+       --z-menu-dropdown (500)         .menu-dropdown - only has to win
+                                        inside .menu-bar's OWN stacking
+                                        context (see .menu-bar comment),
+                                        not against this whole list
+       --z-menu-bar (600)              .menu-bar itself - must outrank
+                                        every overlay above that can
+                                        occupy the same top-of-screen
+                                        region (mobile drawer, floating
+                                        panel, context menu)
+
+     Canvas layer content (scene images/text, their transform/resize
+     handles, smart guides) is NOT in this list on purpose: .composite-
+     stage is its own isolated stacking context (see canvas-stage.css),
+     so whatever z-index app.js's getSceneLayerZIndex() computes per
+     layer - which grows with scene count and could otherwise exceed
+     values here with enough layers - is contained inside the stage and
+     can never collide with anything above, no matter how large. */
+  --z-canvas-drop-indicator: 90;
+  --z-mobile-drawer: 50;
+  --z-floating-panel: 100;
+  --z-floating-panel-resize: 130;
+  --z-marquee: 150;
+  --z-context-menu: 200;
+  --z-menu-dropdown: 500;
+  --z-menu-bar: 600;
 }
 
 * {
@@ -74,14 +116,12 @@ textarea {
   background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), transparent), #14161c;
   border-bottom: 1px solid rgba(255, 255, 255, 0.08);
   position: relative;
-  /* A child's z-index only ranks it within ITS OWN stacking-context
-     ancestor - .menu-dropdown's z-index:500 only wins against siblings
-     inside .menu-bar's stacking context, not against separate sibling
-     contexts like the mobile layers drawer (z-index:50). So .menu-bar
-     itself (the actual stacking-context boundary here) needs to outrank
-     every overlay that can occupy this same top-of-screen region: mobile
-     drawer 50, floating panel 100, scene-context-menu 200. */
-  z-index: 600;
+  /* See the z-index scale at the top of this file (:root) for the full
+     rationale - short version: a child's z-index only ranks it within
+     ITS OWN stacking-context ancestor, so .menu-bar itself (not
+     .menu-dropdown) is what has to outrank sibling overlays like the
+     mobile drawer/floating panel/context menu. */
+  z-index: var(--z-menu-bar);
 }
 
 .menu-bar-brand {
@@ -163,12 +203,11 @@ textarea {
      auto too (per spec), which clips any absolutely-positioned descendant
      to the nav's own 44px height - the dropdown would lay out with the
      right size but never actually be painted or clickable. Fixed
-     positioning escapes that ancestor clipping entirely. z-index:500 keeps
-     it above every other overlay that can occupy this same top-of-screen
-     region (mobile layers drawer: 50, floating panel: 100, context menu:
-     200) since an open menu should always be frontmost. */
+     positioning escapes that ancestor clipping entirely. See the z-index
+     scale at the top of this file (:root) for how this ranks against
+     other overlays. */
   position: fixed;
-  z-index: 500;
+  z-index: var(--z-menu-dropdown);
   min-width: 220px;
   padding: 6px;
   border: 1px solid rgba(255, 255, 255, 0.1);
@@ -184,7 +223,7 @@ textarea {
 }
 
 .scene-context-menu {
-  z-index: 200;
+  z-index: var(--z-context-menu);
   min-width: 220px;
   max-height: 80vh;
   overflow-y: auto;
@@ -202,7 +241,7 @@ textarea {
 
 .scene-marquee-select {
   position: fixed;
-  z-index: 150;
+  z-index: var(--z-marquee);
   border: 1px solid rgba(111, 152, 255, 0.85);
   background: rgba(111, 152, 255, 0.16);
   pointer-events: none;

@@ -2,11 +2,21 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.6.0";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.6.0";
+import { clampNumber } from "./scripts/utils.js?v=3.7.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.7.0";
 
-const appVersion = "3.6.0";
+const appVersion = "3.7.0";
 const appChangelog = [
+  {
+    version: "3.7.0",
+    date: "2026-07-11",
+    title: "Z-index skalasi, olu CSS temizligi, ImgBB kisayolu",
+    notes: [
+      "Bu oturumda tekrar tekrar ayni bug sinifina (yanlis elemani secen tiklamalar) rastlanmasinin sebebi z-index degerlerinin 6 dosyaya dagilmis, tek bir kaynak olmadan yonetilmesiydi. base.css'in basina belgelenmis bir z-index skalasi (--z-menu-bar, --z-floating-panel, vb.) eklendi, tum ust-katman (chrome) degerleri buna tasindi. Ayrica .composite-stage kendi izole stacking context'i haline getirildi - boylece cok sayida katmanla (yuzlerce olsa bile) katman icerigi z-index'i hicbir zaman menu/panel gibi ust katman elemanlarinin degerleriyle carpismiyor.",
+      "v1.4.0'da kaldirilan eski dikey arac kutusu arayuzunden kalma, artik hicbir yerde kullanilmayan onlarca olu CSS kurali (.editor-panel, .scene-card, .helper-text, .primary-action, .brand-row, .section-title, .actions-row vb.) 3 dosyadan temizlendi. Bu arada gercekten gorunen bir hata da bulundu: ust menudeki kucuk Persona logosu, ayni olu koddan kalma bir kuralla yanlislikla 52x52px'lik, mor kenarlikli bir kutuya sahipti ve 44px'lik menu cubugunun disina tasiyordu - artik dogru boyutunda (18x23px).",
+      "Dosya menusundeki 'Yukle ve BBCode kopyala' icin klavye kisayolu eklendi: Ctrl+Shift+U. Kisayollar Kutusu'na ve menu ogesine de eklendi.",
+    ],
+  },
   {
     version: "3.6.0",
     date: "2026-07-11",
@@ -1269,6 +1279,12 @@ function handleSceneKeyDown(event) {
   if (!isTextEntryTarget(event.target) && isSceneDuplicateShortcut(event)) {
     event.preventDefault();
     duplicateSelectedScenes();
+    return;
+  }
+
+  if (!isTextEntryTarget(event.target) && isSceneUploadShortcut(event)) {
+    event.preventDefault();
+    uploadCompositeSceneToImgbb();
     return;
   }
 
@@ -2723,6 +2739,10 @@ function isSceneCutShortcut(event) {
 
 function isSceneDuplicateShortcut(event) {
   return (event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "d";
+}
+
+function isSceneUploadShortcut(event) {
+  return (event.ctrlKey || event.metaKey) && event.shiftKey && event.key.toLowerCase() === "u";
 }
 
 function isScenePasteShortcut(event) {
