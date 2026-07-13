@@ -6,9 +6,9 @@
 // cards use. Nothing in here is a canvas pointer-interaction (see
 // scripts/canvas.js) or top menu-bar chrome (see scripts/menu-ui.js).
 
-import { clampNumber } from "./utils.js?v=3.20.1";
-import { t } from "./i18n.js?v=3.20.1";
-import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.1";
+import { clampNumber } from "./utils.js?v=3.20.2";
+import { t } from "./i18n.js?v=3.20.2";
+import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import {
   addTextLayer,
   clearSceneSelection,
@@ -23,7 +23,7 @@ import {
   selectSceneRange,
   setSelectedScene,
   toggleSceneSelection,
-} from "./scene-model.js?v=3.20.1";
+} from "./scene-model.js?v=3.20.2";
 import {
   applySceneLayerPosition,
   applySceneViewportZoom,
@@ -46,13 +46,13 @@ import {
   startSceneTextDrag,
   startSceneTextResize,
   updateSceneImageTransform,
-} from "./canvas.js?v=3.20.1";
+} from "./canvas.js?v=3.20.2";
 import {
   closeLayersPanel,
   createPanelResizeHandles,
   isNearLayersPanelResizeEdge,
   showSceneContextMenu,
-} from "./menu-ui.js?v=3.20.1";
+} from "./menu-ui.js?v=3.20.2";
 import {
   controls,
   expandedLayerIds,
@@ -68,7 +68,7 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setShouldAutoFitSceneViewport,
-} from "../app.js?v=3.20.1";
+} from "../app.js?v=3.20.2";
 
 export function startLayerListMarqueeSelect(event, listContainer) {
   const startX = event.clientX;
@@ -1028,6 +1028,18 @@ export function createLayerSection(stateKey, title, openByDefault) {
   body.className = "layer-section-body";
   section.append(summary, body);
   return { el: section, body };
+}
+
+// Called by scene-model.js whenever scene(s) are removed - stateKey is
+// "sceneId:sectionKey", so every entry belonging to a deleted scene id
+// starts with "<id>:" and would otherwise sit in this Map forever, growing
+// unbounded over a long session of adding/removing many layers.
+export function clearExpandedSectionsFor(sceneIds) {
+  if (!sceneIds.length) return;
+  const prefixes = sceneIds.map((id) => `${id}:`);
+  for (const key of expandedLayerSections.keys()) {
+    if (prefixes.some((prefix) => key.startsWith(prefix))) expandedLayerSections.delete(key);
+  }
 }
 
 export function getSceneAccent(sceneId) {

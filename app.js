@@ -2,14 +2,14 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.20.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.20.1";
+import { clampNumber } from "./scripts/utils.js?v=3.20.2";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.20.2";
 import {
   saveState,
   restoreState,
   saveLocalScenesNow,
   loadLocalScenes,
-} from "./scripts/storage.js?v=3.20.1";
+} from "./scripts/storage.js?v=3.20.2";
 import {
   cetvelEnabled,
   setCetvelEnabled,
@@ -40,7 +40,7 @@ import {
   toggleSceneSelection,
   undoSceneHistory,
   uploadCompositeSceneToImgbb,
-} from "./scripts/scene-model.js?v=3.20.1";
+} from "./scripts/scene-model.js?v=3.20.2";
 import {
   applyGlobalSceneFontSize,
   applyGlobalTransitionToAllScenes,
@@ -52,8 +52,8 @@ import {
   handleSceneWheel,
   refreshSceneStyles,
   startSceneViewportPan,
-} from "./scripts/canvas.js?v=3.20.1";
-import { renderScenes } from "./scripts/layer-panel.js?v=3.20.1";
+} from "./scripts/canvas.js?v=3.20.2";
+import { renderScenes } from "./scripts/layer-panel.js?v=3.20.2";
 import {
   hideShortcuts,
   showShortcuts,
@@ -72,9 +72,9 @@ import {
   getSavedLayersHeight,
   applyLayersDock,
   switchMode,
-} from "./scripts/menu-ui.js?v=3.20.1";
+} from "./scripts/menu-ui.js?v=3.20.2";
 
-export const appVersion = "3.20.1";
+export const appVersion = "3.20.2";
 
 export const appShell = document.querySelector(".app-shell");
 export const downloadBtn = document.querySelector("#downloadBtn");

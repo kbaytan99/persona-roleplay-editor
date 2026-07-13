@@ -7,12 +7,12 @@
 // rendering/interaction (see scripts/canvas.js), or layer-card building
 // (see scripts/layer-panel.js).
 
-import { clampNumber } from "./utils.js?v=3.20.1";
-import { t, getLanguage } from "./i18n.js?v=3.20.1";
-import { rpIdeaCategories } from "./rp-ideas.js?v=3.20.1";
-import { promptCategories } from "./prompt-library.js?v=3.20.1";
-import { appChangelog } from "./changelog.js?v=3.20.1";
-import { clientStorageKey, getClientStoredValue, storageKeys } from "./storage.js?v=3.20.1";
+import { clampNumber } from "./utils.js?v=3.20.2";
+import { t, getLanguage } from "./i18n.js?v=3.20.2";
+import { rpIdeaCategories } from "./rp-ideas.js?v=3.20.2";
+import { promptCategories } from "./prompt-library.js?v=3.20.2";
+import { appChangelog } from "./changelog.js?v=3.20.2";
+import { clientStorageKey, getClientStoredValue, storageKeys } from "./storage.js?v=3.20.2";
 import {
   copySelectedScenes,
   cutSelectedScenes,
@@ -27,14 +27,14 @@ import {
   sceneClipboardScenes,
   selectAllScenes,
   undoSceneHistory,
-} from "./scene-model.js?v=3.20.1";
+} from "./scene-model.js?v=3.20.2";
 import {
   fitSceneToViewport,
   sceneViewportZoom,
   setSceneViewportZoom,
   updateSceneImageTransform,
-} from "./canvas.js?v=3.20.1";
-import { createLayerSection, createRangeControl, renderScenes } from "./layer-panel.js?v=3.20.1";
+} from "./canvas.js?v=3.20.2";
+import { createLayerSection, createRangeControl, renderScenes } from "./layer-panel.js?v=3.20.2";
 import {
   appShell,
   appSubtitle,
@@ -52,7 +52,7 @@ import {
   sceneProjectInput,
   scenes,
   setSceneStatus,
-} from "../app.js?v=3.20.1";
+} from "../app.js?v=3.20.2";
 
 export function setIconButtonContent(button, icon, label) {
   button.replaceChildren();

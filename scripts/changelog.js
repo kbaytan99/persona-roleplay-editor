@@ -6,6 +6,14 @@
 
 export const appChangelog = [
   {
+    version: "3.20.2",
+    date: "2026-07-13",
+    title: "Hata: katman genislet/daralt durumu silinen katmanlarda birikiyordu",
+    notes: [
+      "Bir katmani genisletme (expandedLayerIds) ve kart icindeki Pozisyon/Filtreler/Gecis bolumlerinin acik-kapali durumu (expandedLayerSections) katman silindiginde hic temizlenmiyordu - uzun bir oturumda cok sayida katman ekleyip silince bu iki liste sinirsizca buyuyordu. Artik tekli silme, coklu silme ve 'Sahneleri sil' - ucu de kendi sildigi katmanlarin bu durumunu da temizliyor.",
+    ],
+  },
+  {
     version: "3.20.1",
     date: "2026-07-13",
     title: "Kucuk sertlestirme: Discord webhook dogrulamasi + olu kod temizligi",

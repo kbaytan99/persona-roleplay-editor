@@ -7,10 +7,10 @@
 // here builds layer-panel card DOM (see scripts/layer-panel.js) or menu
 // chrome (see scripts/menu-ui.js).
 
-import { clampNumber } from "./utils.js?v=3.20.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./rp-text.js?v=3.20.1";
-import { t, getLanguage } from "./i18n.js?v=3.20.1";
-import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.1";
+import { clampNumber } from "./utils.js?v=3.20.2";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./rp-text.js?v=3.20.2";
+import { t, getLanguage } from "./i18n.js?v=3.20.2";
+import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import {
   clearSceneSelection,
   refreshSceneSelection,
@@ -29,8 +29,8 @@ import {
   redoSceneHistory,
   uploadCompositeSceneToImgbb,
   sceneClipboardScenes,
-} from "./scene-model.js?v=3.20.1";
-import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.1";
+} from "./scene-model.js?v=3.20.2";
+import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.2";
 import {
   closeLayersPanel,
   showLayersPanel,
@@ -42,7 +42,7 @@ import {
   isSceneDuplicateShortcut,
   isSceneUploadShortcut,
   isScenePasteShortcut,
-} from "./menu-ui.js?v=3.20.1";
+} from "./menu-ui.js?v=3.20.2";
 import {
   scenes,
   selectedSceneId,
@@ -65,7 +65,7 @@ import {
   setSelectedSceneIdsRaw,
   setHoveredSceneIdRaw,
   setSceneStatus,
-} from "../app.js?v=3.20.1";
+} from "../app.js?v=3.20.2";
 
 export let sceneViewportZoom = 1;
 export let isSpacePanning = false;

@@ -5,15 +5,15 @@
 // IndexedDB scene autosave, and a separate IndexedDB upload-history log.
 // Nothing in here renders anything - callers re-render after loading.
 
-import { t } from "./i18n.js?v=3.20.1";
-import { normalizeSceneSelection, createExampleScenes } from "./scene-model.js?v=3.20.1";
-import { renderScenes } from "./layer-panel.js?v=3.20.1";
+import { t } from "./i18n.js?v=3.20.2";
+import { normalizeSceneSelection, createExampleScenes } from "./scene-model.js?v=3.20.2";
+import { renderScenes } from "./layer-panel.js?v=3.20.2";
 import {
   getSavedLayersWidth,
   getSavedLayersHeight,
   getSavedLayersDock,
   applyLayersDock,
-} from "./menu-ui.js?v=3.20.1";
+} from "./menu-ui.js?v=3.20.2";
 import {
   appShell,
   sceneOutputWidth,
@@ -31,7 +31,7 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setSceneStatus,
-} from "../app.js?v=3.20.1";
+} from "../app.js?v=3.20.2";
 
 export const storageKeys = {
   sceneOutputWidth: "rollSs.sceneOutputWidth",

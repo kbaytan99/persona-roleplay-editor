@@ -8,15 +8,15 @@
 // canvas pointer-interaction or layer-panel-card renderer (see
 // scripts/canvas.js and scripts/layer-panel.js for those).
 
-import { clampNumber } from "./utils.js?v=3.20.1";
-import { t, getLanguage } from "./i18n.js?v=3.20.1";
+import { clampNumber } from "./utils.js?v=3.20.2";
+import { t, getLanguage } from "./i18n.js?v=3.20.2";
 import {
   saveState,
   scheduleSceneAutosave,
   recordUploadHistory,
   readUploadHistory,
   createUploadThumbnail,
-} from "./storage.js?v=3.20.1";
+} from "./storage.js?v=3.20.2";
 import {
   isEditableTarget,
   drawSceneLayerImage,
@@ -28,9 +28,9 @@ import {
   getSceneTransitionSize,
   getSceneTransitionStyle,
   getSceneTransitionSides,
-} from "./canvas.js?v=3.20.1";
-import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.20.1";
-import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.1";
+} from "./canvas.js?v=3.20.2";
+import { renderScenes, flashSceneEditorItem, clearExpandedSectionsFor } from "./layer-panel.js?v=3.20.2";
+import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.2";
 import {
   scenes,
   selectedSceneId,
@@ -70,7 +70,7 @@ import {
   setHoveredSceneIdRaw,
   setSceneStatus,
   setShouldAutoFitSceneViewport,
-} from "../app.js?v=3.20.1";
+} from "../app.js?v=3.20.2";
 
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
 // last set on any text layer becomes the starting point for the next new
@@ -325,6 +325,8 @@ export function removeScene(id) {
   if (!confirm(t("confirm.deleteScene", { n: index + 1 }))) return;
   pushSceneHistory();
   scenes.splice(index, 1);
+  expandedLayerIds.delete(id);
+  clearExpandedSectionsFor([id]);
   setHoveredSceneIdRaw("");
   setSelectedSceneIdRaw(scenes[Math.min(index, scenes.length - 1)]?.id || "");
   setSelectedSceneIdsRaw(selectedSceneId ? [selectedSceneId] : []);
@@ -345,6 +347,8 @@ export function removeScenes(ids) {
   pushSceneHistory();
   const firstIndex = scenes.findIndex((scene) => targetIds.includes(scene.id));
   scenes.splice(0, scenes.length, ...scenes.filter((scene) => !targetIds.includes(scene.id)));
+  targetIds.forEach((id) => expandedLayerIds.delete(id));
+  clearExpandedSectionsFor(targetIds);
   setHoveredSceneIdRaw("");
   setSelectedSceneIdRaw(scenes[Math.min(Math.max(firstIndex, 0), scenes.length - 1)]?.id || "");
   setSelectedSceneIdsRaw(selectedSceneId ? [selectedSceneId] : []);
@@ -569,7 +573,10 @@ export function clearScenes() {
   }
   if (!confirm(t("confirm.clearAll"))) return;
   pushSceneHistory();
+  const removedIds = scenes.filter((scene) => !scene.isLocked).map((scene) => scene.id);
   scenes.splice(0, scenes.length, ...scenes.filter((scene) => scene.isLocked));
+  removedIds.forEach((id) => expandedLayerIds.delete(id));
+  clearExpandedSectionsFor(removedIds);
   setSelectedSceneIdRaw("");
   setSelectedSceneIdsRaw([]);
   setHoveredSceneIdRaw("");
