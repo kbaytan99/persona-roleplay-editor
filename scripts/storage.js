@@ -6,6 +6,7 @@
 // Nothing in here renders anything - callers re-render after loading.
 
 import { t } from "./i18n.js?v=3.19.0";
+import { normalizeSceneSelection, createExampleScenes } from "./scene-model.js?v=3.19.0";
 import {
   appShell,
   sceneOutputWidth,
@@ -20,10 +21,9 @@ import {
   scenes,
   selectedSceneId,
   selectedSceneIds,
-  setSceneSelectionRaw,
-  normalizeSceneSelection,
+  setSelectedSceneIdRaw,
+  setSelectedSceneIdsRaw,
   renderScenes,
-  createExampleScenes,
   setSceneStatus,
   getSavedLayersWidth,
   getSavedLayersHeight,
@@ -252,7 +252,7 @@ export async function loadLocalScenes() {
       scenes.splice(0, scenes.length, ...((record.scenes || [])));
       const restoredId = record.selectedSceneId || scenes[0]?.id || "";
       const restoredIds = Array.isArray(record.selectedSceneIds) ? record.selectedSceneIds : restoredId ? [restoredId] : [];
-      setSceneSelectionRaw(restoredIds, restoredId);
+      setSelectedSceneIdsRaw(restoredIds); setSelectedSceneIdRaw(restoredId);
       normalizeSceneSelection();
       await saveLocalScenesNow();
       db.close();
@@ -265,11 +265,11 @@ export async function loadLocalScenes() {
   scenes.splice(0, scenes.length, ...((record?.scenes || [])));
   const restoredId = record?.selectedSceneId || scenes[0]?.id || "";
   const restoredIds = Array.isArray(record?.selectedSceneIds) ? record.selectedSceneIds : restoredId ? [restoredId] : [];
-  setSceneSelectionRaw(restoredIds, restoredId);
+  setSelectedSceneIdsRaw(restoredIds); setSelectedSceneIdRaw(restoredId);
   normalizeSceneSelection();
   if (isFirstEverVisit) {
     scenes.splice(0, scenes.length, ...createExampleScenes());
-    setSceneSelectionRaw([], "");
+    setSelectedSceneIdsRaw([]); setSelectedSceneIdRaw("");
     scheduleSceneAutosave();
   }
   renderScenes();
