@@ -6,6 +6,15 @@
 
 export const appChangelog = [
   {
+    version: "3.20.1",
+    date: "2026-07-13",
+    title: "Kucuk sertlestirme: Discord webhook dogrulamasi + olu kod temizligi",
+    notes: [
+      "Discord webhook URL dogrulama deseninin sonu ankor'lu degildi - 'https://discord.com/api/webhooks/123/abc@evil.com' gibi gecerli token'in ardindan rastgele metin eklenmis bir URL de kabul ediliyordu (bir guvenlik acigi degildi, cunku istek yine gercekten discord.com'a gidiyordu, ama gereksiz gevsek bir kontroldu). Artik desen `$` ile sonlandiriliyor.",
+      "app.js icinde hicbir yerden cagirilmayan, artik var olmayan 'controls.startDate/endDate' alanlarina referans veren olu bir fonksiyon (setDateDefaults, eski bir moddan kalma) kaldirildi.",
+    ],
+  },
+  {
     version: "3.20.0",
     date: "2026-07-13",
     title: "Buyuk ic temizlik: app.js 5 dosyaya bolundu",

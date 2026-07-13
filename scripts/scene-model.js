@@ -8,15 +8,15 @@
 // canvas pointer-interaction or layer-panel-card renderer (see
 // scripts/canvas.js and scripts/layer-panel.js for those).
 
-import { clampNumber } from "./utils.js?v=3.20.0";
-import { t, getLanguage } from "./i18n.js?v=3.20.0";
+import { clampNumber } from "./utils.js?v=3.20.1";
+import { t, getLanguage } from "./i18n.js?v=3.20.1";
 import {
   saveState,
   scheduleSceneAutosave,
   recordUploadHistory,
   readUploadHistory,
   createUploadThumbnail,
-} from "./storage.js?v=3.20.0";
+} from "./storage.js?v=3.20.1";
 import {
   isEditableTarget,
   drawSceneLayerImage,
@@ -28,9 +28,9 @@ import {
   getSceneTransitionSize,
   getSceneTransitionStyle,
   getSceneTransitionSides,
-} from "./canvas.js?v=3.20.0";
-import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.20.0";
-import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.0";
+} from "./canvas.js?v=3.20.1";
+import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.20.1";
+import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.1";
 import {
   scenes,
   selectedSceneId,
@@ -70,7 +70,7 @@ import {
   setHoveredSceneIdRaw,
   setSceneStatus,
   setShouldAutoFitSceneViewport,
-} from "../app.js?v=3.20.0";
+} from "../app.js?v=3.20.1";
 
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
 // last set on any text layer becomes the starting point for the next new
@@ -1383,7 +1383,7 @@ export async function uploadCompositeSceneToImgbb() {
 const discordMessageTimeoutMs = 15_000;
 
 export function isValidDiscordWebhookUrl(url) {
-  return /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+/i.test(url);
+  return /^https:\/\/(discord\.com|discordapp\.com)\/api\/webhooks\/\d+\/[\w-]+$/i.test(url);
 }
 
 // No separate "share to Discord" action anymore - if a webhook is

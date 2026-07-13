@@ -2,14 +2,14 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.20.0";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.20.0";
+import { clampNumber } from "./scripts/utils.js?v=3.20.1";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.20.1";
 import {
   saveState,
   restoreState,
   saveLocalScenesNow,
   loadLocalScenes,
-} from "./scripts/storage.js?v=3.20.0";
+} from "./scripts/storage.js?v=3.20.1";
 import {
   cetvelEnabled,
   setCetvelEnabled,
@@ -40,7 +40,7 @@ import {
   toggleSceneSelection,
   undoSceneHistory,
   uploadCompositeSceneToImgbb,
-} from "./scripts/scene-model.js?v=3.20.0";
+} from "./scripts/scene-model.js?v=3.20.1";
 import {
   applyGlobalSceneFontSize,
   applyGlobalTransitionToAllScenes,
@@ -52,8 +52,8 @@ import {
   handleSceneWheel,
   refreshSceneStyles,
   startSceneViewportPan,
-} from "./scripts/canvas.js?v=3.20.0";
-import { renderScenes } from "./scripts/layer-panel.js?v=3.20.0";
+} from "./scripts/canvas.js?v=3.20.1";
+import { renderScenes } from "./scripts/layer-panel.js?v=3.20.1";
 import {
   hideShortcuts,
   showShortcuts,
@@ -72,9 +72,9 @@ import {
   getSavedLayersHeight,
   applyLayersDock,
   switchMode,
-} from "./scripts/menu-ui.js?v=3.20.0";
+} from "./scripts/menu-ui.js?v=3.20.1";
 
-export const appVersion = "3.20.0";
+export const appVersion = "3.20.1";
 
 export const appShell = document.querySelector(".app-shell");
 export const downloadBtn = document.querySelector("#downloadBtn");
@@ -182,12 +182,6 @@ restoreState();
 
 export function setSceneStatus(message) {
   sceneStatus.textContent = message;
-}
-
-function setDateDefaults() {
-  const today = new Date().toISOString().slice(0, 10);
-  controls.startDate.value = today;
-  controls.endDate.value = today;
 }
 
 Object.values(controls).forEach((control) => control.addEventListener("input", saveState));

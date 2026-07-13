@@ -6,9 +6,9 @@
 // cards use. Nothing in here is a canvas pointer-interaction (see
 // scripts/canvas.js) or top menu-bar chrome (see scripts/menu-ui.js).
 
-import { clampNumber } from "./utils.js?v=3.20.0";
-import { t } from "./i18n.js?v=3.20.0";
-import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.0";
+import { clampNumber } from "./utils.js?v=3.20.1";
+import { t } from "./i18n.js?v=3.20.1";
+import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.1";
 import {
   addTextLayer,
   clearSceneSelection,
@@ -23,7 +23,7 @@ import {
   selectSceneRange,
   setSelectedScene,
   toggleSceneSelection,
-} from "./scene-model.js?v=3.20.0";
+} from "./scene-model.js?v=3.20.1";
 import {
   applySceneLayerPosition,
   applySceneViewportZoom,
@@ -46,13 +46,13 @@ import {
   startSceneTextDrag,
   startSceneTextResize,
   updateSceneImageTransform,
-} from "./canvas.js?v=3.20.0";
+} from "./canvas.js?v=3.20.1";
 import {
   closeLayersPanel,
   createPanelResizeHandles,
   isNearLayersPanelResizeEdge,
   showSceneContextMenu,
-} from "./menu-ui.js?v=3.20.0";
+} from "./menu-ui.js?v=3.20.1";
 import {
   controls,
   expandedLayerIds,
@@ -68,7 +68,7 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setShouldAutoFitSceneViewport,
-} from "../app.js?v=3.20.0";
+} from "../app.js?v=3.20.1";
 
 export function startLayerListMarqueeSelect(event, listContainer) {
   const startX = event.clientX;
