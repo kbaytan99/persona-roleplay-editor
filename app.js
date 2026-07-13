@@ -8,70 +8,67 @@ import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } fro
 import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.19.0";
 import { promptCategories } from "./scripts/prompt-library.js?v=3.19.0";
 import { appChangelog } from "./scripts/changelog.js?v=3.19.0";
+import {
+  storageKeys,
+  clientStorageKey,
+  getClientStoredValue,
+  saveState,
+  restoreState,
+  scheduleSceneAutosave,
+  saveLocalScenesNow,
+  loadLocalScenes,
+  recordUploadHistory,
+  readUploadHistory,
+  createUploadThumbnail,
+} from "./scripts/storage.js?v=3.19.0";
 
 const appVersion = "3.19.0";
 
-const appShell = document.querySelector(".app-shell");
-const downloadBtn = document.querySelector("#downloadBtn");
-const copySceneBtn = document.querySelector("#copySceneBtn");
-const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
-const uploadHistoryBtn = document.querySelector("#uploadHistoryBtn");
-const discordWebhookInput = document.querySelector("#discordWebhookInput");
-const sceneImageInput = document.querySelector("#sceneImageInput");
-const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
-const sceneBackgroundHeight = document.querySelector("#sceneBackgroundHeight");
-const sceneFontSize = document.querySelector("#sceneFontSize");
-const scenePadding = document.querySelector("#scenePadding");
-const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
-const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
-const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
-const languageSelect = document.querySelector("#languageSelect");
-const ideaCategorySelect = document.querySelector("#ideaCategorySelect");
-const ideaNewBtn = document.querySelector("#ideaNewBtn");
-const ideaDisplay = document.querySelector("#ideaDisplay");
-const promptCategorySelect = document.querySelector("#promptCategorySelect");
-const promptCopyBtn = document.querySelector("#promptCopyBtn");
-const promptDisplay = document.querySelector("#promptDisplay");
-const blankSceneBtn = document.querySelector("#blankSceneBtn");
-const cetvelToggleBtn = document.querySelector("#cetvelToggleBtn");
-const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
-const sceneProjectInput = document.querySelector("#sceneProjectInput");
-const clearScenesBtn = document.querySelector("#clearScenesBtn");
-const hideShortcutsBtn = document.querySelector("#hideShortcutsBtn");
-const showShortcutsBtn = document.querySelector("#showShortcutsBtn");
-const sceneStatus = document.querySelector("#sceneStatus");
-const sceneList = document.querySelector("#sceneList");
-const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
-const appTitle = document.querySelector("#appTitle");
-const appSubtitle = document.querySelector("#appSubtitle");
-const scenePreviewPane = document.querySelector("#scenePreviewPane");
+export const appShell = document.querySelector(".app-shell");
+export const downloadBtn = document.querySelector("#downloadBtn");
+export const copySceneBtn = document.querySelector("#copySceneBtn");
+export const uploadImgbbBtn = document.querySelector("#uploadImgbbBtn");
+export const uploadHistoryBtn = document.querySelector("#uploadHistoryBtn");
+export const discordWebhookInput = document.querySelector("#discordWebhookInput");
+export const sceneImageInput = document.querySelector("#sceneImageInput");
+export const sceneOutputWidth = document.querySelector("#sceneOutputWidth");
+export const sceneBackgroundHeight = document.querySelector("#sceneBackgroundHeight");
+export const sceneFontSize = document.querySelector("#sceneFontSize");
+export const scenePadding = document.querySelector("#scenePadding");
+export const sceneTransitionSize = document.querySelector("#sceneTransitionSize");
+export const sceneTransitionStyle = document.querySelector("#sceneTransitionStyle");
+export const sceneTransitionSides = document.querySelector("#sceneTransitionSides");
+export const languageSelect = document.querySelector("#languageSelect");
+export const ideaCategorySelect = document.querySelector("#ideaCategorySelect");
+export const ideaNewBtn = document.querySelector("#ideaNewBtn");
+export const ideaDisplay = document.querySelector("#ideaDisplay");
+export const promptCategorySelect = document.querySelector("#promptCategorySelect");
+export const promptCopyBtn = document.querySelector("#promptCopyBtn");
+export const promptDisplay = document.querySelector("#promptDisplay");
+export const blankSceneBtn = document.querySelector("#blankSceneBtn");
+export const cetvelToggleBtn = document.querySelector("#cetvelToggleBtn");
+export const exportSceneProjectBtn = document.querySelector("#exportSceneProjectBtn");
+export const sceneProjectInput = document.querySelector("#sceneProjectInput");
+export const clearScenesBtn = document.querySelector("#clearScenesBtn");
+export const hideShortcutsBtn = document.querySelector("#hideShortcutsBtn");
+export const showShortcutsBtn = document.querySelector("#showShortcutsBtn");
+export const sceneStatus = document.querySelector("#sceneStatus");
+export const sceneList = document.querySelector("#sceneList");
+export const sceneLayersPanel = document.querySelector("#sceneLayersPanel");
+export const appTitle = document.querySelector("#appTitle");
+export const appSubtitle = document.querySelector("#appSubtitle");
+export const scenePreviewPane = document.querySelector("#scenePreviewPane");
 
-const controls = {
+export const controls = {
   sceneFontSize,
   scenePadding,
 };
 
-const storageKeys = {
-  sceneOutputWidth: "rollSs.sceneOutputWidth",
-  sceneBackgroundHeight: "rollSs.sceneBackgroundHeight",
-  sceneFontSize: "rollSs.sceneFontSize",
-  scenePadding: "rollSs.scenePadding",
-  sceneTransitionSize: "rollSs.sceneTransitionSize",
-  sceneTransitionStyle: "rollSs.sceneTransitionStyle",
-  sceneTransitionSides: "rollSs.sceneTransitionSides",
-  layersWidth: "rollSs.layersWidth",
-  layersHeight: "rollSs.layersHeight",
-  layersDock: "rollSs.layersDock",
-  shortcutsHidden: "rollSs.shortcutsHidden",
-};
-const localClientId = "local-client";
-const legacyUserRegistryKey = "rollSs.users";
-const legacyActiveUserKey = "rollSs.activeUser";
-const scenes = [];
-const sceneTransitionPx = 150;
-const sceneCanvasDefaultWidth = 1200;
-const sceneCanvasDefaultHeight = 800;
-const sceneCanvasMaxDimension = 32767;
+export const scenes = [];
+export const sceneTransitionPx = 150;
+export const sceneCanvasDefaultWidth = 1200;
+export const sceneCanvasDefaultHeight = 800;
+export const sceneCanvasMaxDimension = 32767;
 // 32767x32767 (the per-side max, mostly there so a single stray huge value
 // can't itself overflow canvas APIs) times an equally large other side would
 // be ~1.07 billion pixels - a ~4.3GB RGBA buffer, which reliably crashes or
@@ -81,49 +78,54 @@ const sceneCanvasMaxDimension = 32767;
 // "the browser gives up." Enforced in buildCompositeCanvas() right before
 // the canvas is allocated, so it catches every path that can set the two
 // dimensions (Ayarlar inputs, RSE import, drag-resize handle).
-const sceneCanvasMaxPixels = 40_000_000;
-const sceneCanvasBackground = "#10141b";
-const rseProjectMagic = "ROLEPLAY_SCENE_EXPORT";
-const rseProjectVersion = 1;
+export const sceneCanvasMaxPixels = 40_000_000;
+export const sceneCanvasBackground = "#10141b";
+export const rseProjectMagic = "ROLEPLAY_SCENE_EXPORT";
+export const rseProjectVersion = 1;
 // RSE files embed every layer's image as base64, so a legitimate multi-image
 // project can be large - this is a backstop against a corrupt/malicious
 // file hanging JSON.parse or blowing up memory, not a normal-use limit.
-const rseMaxImportBytes = 200 * 1024 * 1024;
-const sceneImageFilterDefaults = {
+export const rseMaxImportBytes = 200 * 1024 * 1024;
+export const sceneImageFilterDefaults = {
   brightness: 106,
   contrast: 108,
   saturate: 112,
   sepia: 4,
   blur: 0,
 };
-const sceneSnapThresholdPx = 12;
-const sceneHistoryLimit = 20;
-const sceneUndoStack = [];
-const sceneRedoStack = [];
-let sceneClipboardScenes = [];
-let sceneClipboardPasteCount = 0;
-let sceneViewportZoom = 1;
-let isSpacePanning = false;
-let selectedSceneId = "";
-let selectedSceneIds = [];
-let expandedLayerIds = new Set();
-let hoveredSceneId = "";
-let shouldAutoFitSceneViewport = true;
-let currentUserId = localClientId;
-let sceneSaveTimer = 0;
+export const sceneSnapThresholdPx = 12;
+export const sceneHistoryLimit = 20;
+export const sceneUndoStack = [];
+export const sceneRedoStack = [];
+export let sceneClipboardScenes = [];
+export let sceneClipboardPasteCount = 0;
+export let sceneViewportZoom = 1;
+export let isSpacePanning = false;
+export let selectedSceneId = "";
+export let selectedSceneIds = [];
+export let expandedLayerIds = new Set();
+export let hoveredSceneId = "";
+export let shouldAutoFitSceneViewport = true;
+// Setter for modules that can't reassign the imported selectedSceneId/
+// selectedSceneIds bindings directly (ES module imports are read-only
+// views) - e.g. storage.js restoring a saved/legacy selection on load.
+export function setSceneSelectionRaw(ids, primaryId) {
+  selectedSceneIds = ids;
+  selectedSceneId = primaryId;
+}
 // Last pointer position over the composite stage, so a new text layer can
 // spawn where the mouse actually is instead of a fixed spot. Tracked with a
 // plain document-level pointermove (cheap - just two numbers) rather than
 // only inside the stage, since the pointer needs to be checked against
 // whichever stage element exists at layer-creation time anyway.
-let lastPointerClientX = null;
-let lastPointerClientY = null;
+export let lastPointerClientX = null;
+export let lastPointerClientY = null;
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
 // last set on any text layer becomes the starting point for the next new
 // one (button-added or pasted), instead of always resetting to a fixed
 // factory default. Persisted so it survives a reload too.
-const textLayerDefaultsStorageKey = "personaLastTextLayerStyle";
-let lastTextLayerDefaults = loadLastTextLayerDefaults();
+export const textLayerDefaultsStorageKey = "personaLastTextLayerStyle";
+export let lastTextLayerDefaults = loadLastTextLayerDefaults();
 
 function loadLastTextLayerDefaults() {
   try {
@@ -206,255 +208,6 @@ function getOptions() {
     emoteColor: "#c69aff",
     chatColor: "#f5f5f5",
   };
-}
-
-function saveState() {
-  localStorage.setItem(clientStorageKey(storageKeys.sceneOutputWidth), sceneOutputWidth.value);
-  localStorage.setItem(clientStorageKey(storageKeys.sceneBackgroundHeight), sceneBackgroundHeight.value);
-  localStorage.setItem(clientStorageKey(storageKeys.sceneFontSize), sceneFontSize.value);
-  localStorage.setItem(clientStorageKey(storageKeys.scenePadding), scenePadding.value);
-  localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSize), sceneTransitionSize.value);
-  localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionStyle), sceneTransitionStyle.value);
-  localStorage.setItem(clientStorageKey(storageKeys.sceneTransitionSides), sceneTransitionSides.value);
-}
-
-function restoreState() {
-  migrateLegacyClientStorage();
-  const savedSceneWidth = getClientStoredValue(storageKeys.sceneOutputWidth);
-  const savedSceneHeight = getClientStoredValue(storageKeys.sceneBackgroundHeight);
-  sceneOutputWidth.value = !savedSceneWidth || savedSceneWidth === "1920" ? sceneCanvasDefaultWidth : savedSceneWidth;
-  sceneBackgroundHeight.value = !savedSceneHeight || savedSceneHeight === "1080" ? sceneCanvasDefaultHeight : savedSceneHeight;
-  sceneFontSize.value = getClientStoredValue(storageKeys.sceneFontSize) ?? sceneFontSize.value;
-  scenePadding.value = getClientStoredValue(storageKeys.scenePadding) ?? scenePadding.value;
-  sceneTransitionSize.value = getClientStoredValue(storageKeys.sceneTransitionSize) ?? sceneTransitionSize.value;
-  sceneTransitionStyle.value = getClientStoredValue(storageKeys.sceneTransitionStyle) ?? sceneTransitionStyle.value;
-  sceneTransitionSides.value = getClientStoredValue(storageKeys.sceneTransitionSides) ?? sceneTransitionSides.value;
-  appShell.style.setProperty("--layers-width", `${getSavedLayersWidth()}px`);
-  appShell.style.setProperty("--layers-height", `${getSavedLayersHeight()}px`);
-  applyLayersDock(getSavedLayersDock());
-  document.body.classList.toggle("shortcuts-hidden", getClientStoredValue(storageKeys.shortcutsHidden) === "true");
-}
-
-function clientStorageKey(key) {
-  return `rollSs.client.${currentUserId}.${key}`;
-}
-
-function legacyUserStorageKey(userId, key) {
-  return `rollSs.user.${userId}.${key}`;
-}
-
-function getLegacyClientIds() {
-  const ids = [];
-  const activeId = localStorage.getItem(legacyActiveUserKey);
-  if (activeId) ids.push(activeId);
-
-  try {
-    const users = JSON.parse(localStorage.getItem(legacyUserRegistryKey) || "[]");
-    if (Array.isArray(users)) {
-      users.forEach((user) => {
-        if (user?.id) ids.push(user.id);
-      });
-    }
-  } catch {
-    // Legacy profile data is optional.
-  }
-
-  ids.push("default");
-  return [...new Set(ids.filter(Boolean))];
-}
-
-function getLegacyStoredValue(key) {
-  for (const userId of getLegacyClientIds()) {
-    const value = localStorage.getItem(legacyUserStorageKey(userId, key));
-    if (value !== null) return value;
-  }
-  return null;
-}
-
-function getClientStoredValue(key) {
-  const currentValue = localStorage.getItem(clientStorageKey(key));
-  if (currentValue !== null) return currentValue;
-  return getLegacyStoredValue(key);
-}
-
-function migrateLegacyClientStorage() {
-  Object.values(storageKeys).forEach((key) => {
-    if (localStorage.getItem(clientStorageKey(key)) !== null) return;
-    const legacyValue = getLegacyStoredValue(key);
-    if (legacyValue !== null) localStorage.setItem(clientStorageKey(key), legacyValue);
-  });
-}
-
-function openSceneDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("roll-ss-editor-scenes", 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore("states", { keyPath: "userId" });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// Separate DB from the scene autosave one on purpose - upload history is
-// unrelated data (a log of past ImgBB links, kept as a fallback in case
-// ImgBB itself goes down) and keeping it isolated means a bug in one never
-// risks corrupting or version-migrating the other.
-const uploadHistoryLimit = 50;
-
-function openUploadHistoryDb() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open("roll-ss-editor-uploads", 1);
-    request.onupgradeneeded = () => {
-      request.result.createObjectStore("uploads", { keyPath: "id" });
-    };
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-// Small (~160px-wide) JPEG thumbnail, not the full composite - at up to 50
-// stored entries, keeping each one small matters for IndexedDB/quota use.
-// JPEG (not PNG) is fine here since the composite is always drawn onto an
-// opaque background (sceneCanvasBackground), so there's no transparency to
-// preserve, and JPEG compresses a photo-like composite far smaller than PNG.
-function createUploadThumbnail(canvas) {
-  const scale = Math.min(1, 160 / canvas.width);
-  const thumbCanvas = document.createElement("canvas");
-  thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
-  thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
-  const ctx = thumbCanvas.getContext("2d");
-  ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
-  return thumbCanvas.toDataURL("image/jpeg", 0.7);
-}
-
-async function recordUploadHistory(entry) {
-  try {
-    const db = await openUploadHistoryDb();
-    await new Promise((resolve, reject) => {
-      const tx = db.transaction("uploads", "readwrite");
-      tx.objectStore("uploads").put(entry);
-      tx.oncomplete = resolve;
-      tx.onerror = () => reject(tx.error);
-    });
-    await pruneUploadHistory(db);
-    db.close();
-  } catch {
-    // History is a convenience/backup, not core functionality - a failure
-    // here (quota, private browsing, etc.) must never break the upload
-    // flow itself.
-  }
-}
-
-function pruneUploadHistory(db) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("uploads", "readwrite");
-    const store = tx.objectStore("uploads");
-    const request = store.getAllKeys();
-    request.onsuccess = () => {
-      const keys = request.result.sort((a, b) => a - b);
-      const excess = keys.length - uploadHistoryLimit;
-      for (let i = 0; i < excess; i++) store.delete(keys[i]);
-    };
-    request.onerror = () => reject(request.error);
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-}
-
-function readUploadHistory() {
-  return new Promise((resolve, reject) => {
-    openUploadHistoryDb().then((db) => {
-      const tx = db.transaction("uploads", "readonly");
-      const request = tx.objectStore("uploads").getAll();
-      request.onsuccess = () => {
-        resolve(request.result.sort((a, b) => b.id - a.id));
-        db.close();
-      };
-      request.onerror = () => {
-        reject(request.error);
-        db.close();
-      };
-    }, reject);
-  });
-}
-
-async function saveLocalScenesNow() {
-  const db = await openSceneDb();
-  await new Promise((resolve, reject) => {
-    const tx = db.transaction("states", "readwrite");
-    tx.objectStore("states").put({
-      userId: currentUserId,
-      scenes: JSON.parse(JSON.stringify(scenes)),
-      selectedSceneId,
-      selectedSceneIds,
-      savedAt: Date.now(),
-    });
-    tx.oncomplete = resolve;
-    tx.onerror = () => reject(tx.error);
-  });
-  db.close();
-}
-
-async function loadLocalScenes() {
-  const db = await openSceneDb();
-  let record = await readSceneRecord(db, currentUserId);
-  // Only true when NEITHER this user's own record NOR a legacy record
-  // exists at all - i.e. this browser has genuinely never saved anything
-  // here before. Distinct from "record exists but scenes is empty" (user
-  // intentionally cleared everything via Sahneleri sil), which must not
-  // be treated as first-time and re-seeded.
-  let isFirstEverVisit = false;
-  if (!record) {
-    record = await readLegacySceneRecord(db);
-    if (record) {
-      scenes.splice(0, scenes.length, ...((record.scenes || [])));
-      selectedSceneId = record.selectedSceneId || scenes[0]?.id || "";
-      selectedSceneIds = Array.isArray(record.selectedSceneIds) ? record.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
-      normalizeSceneSelection();
-      await saveLocalScenesNow();
-      db.close();
-      renderScenes();
-      return;
-    }
-    isFirstEverVisit = true;
-  }
-  db.close();
-  scenes.splice(0, scenes.length, ...((record?.scenes || [])));
-  selectedSceneId = record?.selectedSceneId || scenes[0]?.id || "";
-  selectedSceneIds = Array.isArray(record?.selectedSceneIds) ? record.selectedSceneIds : selectedSceneId ? [selectedSceneId] : [];
-  normalizeSceneSelection();
-  if (isFirstEverVisit) {
-    scenes.splice(0, scenes.length, ...createExampleScenes());
-    selectedSceneId = "";
-    selectedSceneIds = [];
-    scheduleSceneAutosave();
-  }
-  renderScenes();
-}
-
-function readSceneRecord(db, userId) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction("states", "readonly");
-    const request = tx.objectStore("states").get(userId);
-    request.onsuccess = () => resolve(request.result);
-    request.onerror = () => reject(request.error);
-  });
-}
-
-async function readLegacySceneRecord(db) {
-  for (const userId of getLegacyClientIds()) {
-    const record = await readSceneRecord(db, userId);
-    if (record?.scenes?.length) return record;
-  }
-  return null;
-}
-
-function scheduleSceneAutosave() {
-  clearTimeout(sceneSaveTimer);
-  sceneSaveTimer = window.setTimeout(() => {
-    saveLocalScenesNow().catch(() => setSceneStatus(t("status.localSaveFailed")));
-  }, 450);
 }
 
 function setIconButtonContent(button, icon, label) {
@@ -1504,7 +1257,7 @@ function handlePaste(event) {
   addTextLayer(text);
 }
 
-function renderScenes() {
+export function renderScenes() {
   sceneList.replaceChildren();
   sceneLayersPanel.replaceChildren();
 
@@ -2384,7 +2137,7 @@ function createExampleBackgroundDataUrl() {
   return `data:image/svg+xml,${encodeURIComponent(svg)}`;
 }
 
-function createExampleScenes() {
+export function createExampleScenes() {
   const backgroundScene = {
     id: createId(),
     type: "image",
@@ -2613,7 +2366,7 @@ function applySceneProjectPayload(project) {
   normalizeSceneSelection();
 }
 
-function normalizeSceneSelection() {
+export function normalizeSceneSelection() {
   const sceneIds = new Set(scenes.map((scene) => scene.id));
   selectedSceneIds = selectedSceneIds.filter((id) => sceneIds.has(id));
   if (selectedSceneId && !sceneIds.has(selectedSceneId)) selectedSceneId = "";
@@ -4417,19 +4170,19 @@ function getScenePadding() {
   return clampNumber(scenePadding.value, 4, 80, 18);
 }
 
-function getSavedLayersWidth() {
+export function getSavedLayersWidth() {
   const savedWidth = Number(getClientStoredValue(storageKeys.layersWidth));
   if (!Number.isFinite(savedWidth)) return 380;
   return clampNumber(savedWidth, 320, 640, 380);
 }
 
-function getSavedLayersHeight() {
+export function getSavedLayersHeight() {
   const savedHeight = Number(getClientStoredValue(storageKeys.layersHeight));
   if (!Number.isFinite(savedHeight)) return 320;
   return clampNumber(savedHeight, 220, 640, 320);
 }
 
-function getSavedLayersDock() {
+export function getSavedLayersDock() {
   const saved = getClientStoredValue(storageKeys.layersDock);
   // "top" used to be a valid dock, but a wide-short strip at the top is a
   // bad fit for what's fundamentally a vertical card list - it was removed
@@ -4437,7 +4190,7 @@ function getSavedLayersDock() {
   return ["left", "bottom", "right"].includes(saved) ? saved : "right";
 }
 
-function applyLayersDock(dock) {
+export function applyLayersDock(dock) {
   document.body.classList.remove("layers-dock-left", "layers-dock-bottom");
   if (dock === "left") document.body.classList.add("layers-dock-left");
   else if (dock === "bottom") document.body.classList.add("layers-dock-bottom");
@@ -4601,7 +4354,7 @@ function safeFilePart(value) {
   return value.replace(/\.[^.]+$/, "").replace(/[^a-z0-9_-]+/gi, "-").replace(/^-+|-+$/g, "") || "scene";
 }
 
-function setSceneStatus(message) {
+export function setSceneStatus(message) {
   sceneStatus.textContent = message;
 }
 
