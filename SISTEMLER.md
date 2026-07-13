@@ -299,6 +299,14 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 
 ## 11. Fikir Menusu
 
+> v3.19.0'dan itibaren bu iki menu (Fikir + Promptlar) ayri menu tetikleyicileri
+> degil, tek bir "Icerik" menusunun (`data-menu="icerik"`) icinde iki alt
+> bolum olarak gosteriliyor (aralarinda `<hr class="menu-dropdown-divider">`).
+> Tum element ID'leri (`ideaCategorySelect`, `ideaNewBtn`, `ideaDisplay`,
+> `promptCategorySelect`, `promptCopyBtn`, `promptDisplay`) ve JS fonksiyonlari
+> degismedi - sadece menu cubugundaki konumlari birlesti (8 menuden 7'ye
+> indi).
+
 - **RP Senaryo Onerileri** — Legal (PD, MD, Diger: Mekanik/Taksi/Hukumet) ve
   Illegal (Ceteler, Kartel, Soygun) kategorilerinden birini secip
   "Yeni fikir" ile o kategoriden rastgele kisa bir rol yapma senaryosu

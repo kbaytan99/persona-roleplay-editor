@@ -2,14 +2,22 @@
 
 // Cache-buster query strings below (and on index.html's <link>/<script>
 // tags) must match appVersion on every release - see index.html for why.
-import { clampNumber } from "./scripts/utils.js?v=3.18.1";
-import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.18.1";
-import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.18.1";
-import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.18.1";
-import { promptCategories } from "./scripts/prompt-library.js?v=3.18.1";
+import { clampNumber } from "./scripts/utils.js?v=3.19.0";
+import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./scripts/rp-text.js?v=3.19.0";
+import { t, getLanguage, setLanguage, onLanguageChange, translateStaticDom } from "./scripts/i18n.js?v=3.19.0";
+import { rpIdeaCategories } from "./scripts/rp-ideas.js?v=3.19.0";
+import { promptCategories } from "./scripts/prompt-library.js?v=3.19.0";
 
-const appVersion = "3.18.1";
+const appVersion = "3.19.0";
 const appChangelog = [
+  {
+    version: "3.19.0",
+    date: "2026-07-13",
+    title: "Menu duzenlendi: Fikir + Promptlar tek 'Icerik' menusunde",
+    notes: [
+      "Menu cubugu 8'den 7 menuye indi: yapisi neredeyse ayni olan 'Fikir' ve 'Promptlar' menuleri tek bir 'Icerik' menusunde birlestirildi (ic ice iki bolum olarak, aralarinda ayirici cizgiyle) - tum ID'ler/fonksiyonlar degismedi, sadece nerede oldugu degisti.",
+    ],
+  },
   {
     version: "3.18.1",
     date: "2026-07-12",

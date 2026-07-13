@@ -425,6 +425,19 @@ textarea {
   margin-top: 2px;
 }
 
+.menu-section-title {
+  margin: 10px 0 2px;
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.menu-section-title:first-child {
+  margin-top: 0;
+}
+
 .idea-display {
   margin-top: 8px;
   padding: 10px;
