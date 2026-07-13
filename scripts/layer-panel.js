@@ -48,6 +48,12 @@ import {
   updateSceneImageTransform,
 } from "./canvas.js?v=3.19.0";
 import {
+  closeLayersPanel,
+  createPanelResizeHandles,
+  isNearLayersPanelResizeEdge,
+  showSceneContextMenu,
+} from "./menu-ui.js?v=3.19.0";
+import {
   controls,
   expandedLayerIds,
   hoveredSceneId,
@@ -57,14 +63,11 @@ import {
   scenes,
   selectedSceneIds,
   shouldAutoFitSceneViewport,
-  closeLayersPanel,
-  createPanelResizeHandles,
-  isNearLayersPanelResizeEdge,
   setHoveredSceneIdRaw,
   setSceneStatus,
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
-  showSceneContextMenu,
+  setShouldAutoFitSceneViewport,
 } from "../app.js?v=3.19.0";
 
 export function startLayerListMarqueeSelect(event, listContainer) {
@@ -415,7 +418,7 @@ export function renderScenes() {
     applySceneViewportZoom();
     if (shouldAutoFitSceneViewport) {
       fitSceneToViewport();
-      shouldAutoFitSceneViewport = false;
+      setShouldAutoFitSceneViewport(false);
     }
   });
 }

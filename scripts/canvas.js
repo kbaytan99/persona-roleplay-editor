@@ -10,6 +10,7 @@
 import { clampNumber } from "./utils.js?v=3.19.0";
 import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./rp-text.js?v=3.19.0";
 import { t, getLanguage } from "./i18n.js?v=3.19.0";
+import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.19.0";
 import {
   clearSceneSelection,
   refreshSceneSelection,
@@ -30,6 +31,18 @@ import {
   sceneClipboardScenes,
 } from "./scene-model.js?v=3.19.0";
 import { renderScenes, reorderScene } from "./layer-panel.js?v=3.19.0";
+import {
+  closeLayersPanel,
+  showLayersPanel,
+  isSceneUndoShortcut,
+  isSceneRedoShortcut,
+  isSceneSelectAllShortcut,
+  isSceneCopyShortcut,
+  isSceneCutShortcut,
+  isSceneDuplicateShortcut,
+  isSceneUploadShortcut,
+  isScenePasteShortcut,
+} from "./menu-ui.js?v=3.19.0";
 import {
   scenes,
   selectedSceneId,
@@ -52,16 +65,6 @@ import {
   setSelectedSceneIdsRaw,
   setHoveredSceneIdRaw,
   setSceneStatus,
-  closeLayersPanel,
-  showLayersPanel,
-  isSceneUndoShortcut,
-  isSceneRedoShortcut,
-  isSceneSelectAllShortcut,
-  isSceneCopyShortcut,
-  isSceneCutShortcut,
-  isSceneDuplicateShortcut,
-  isSceneUploadShortcut,
-  isScenePasteShortcut,
 } from "../app.js?v=3.19.0";
 
 export let sceneViewportZoom = 1;

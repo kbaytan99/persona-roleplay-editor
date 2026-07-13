@@ -30,6 +30,7 @@ import {
   getSceneTransitionSides,
 } from "./canvas.js?v=3.19.0";
 import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.19.0";
+import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.19.0";
 import {
   scenes,
   selectedSceneId,
@@ -68,9 +69,7 @@ import {
   setSelectedSceneIdsRaw,
   setHoveredSceneIdRaw,
   setSceneStatus,
-  switchMode,
-  isSceneUndoShortcut,
-  isSceneRedoShortcut,
+  setShouldAutoFitSceneViewport,
 } from "../app.js?v=3.19.0";
 
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
@@ -240,7 +239,7 @@ export async function addSceneImages(files) {
   setHoveredSceneIdRaw("");
   newScenes.forEach((scene) => expandedLayerIds.add(scene.id));
 
-  if (wasEmpty) shouldAutoFitSceneViewport = true;
+  if (wasEmpty) setShouldAutoFitSceneViewport(true);
   renderScenes();
   setSceneStatus(t("status.imagesAdded", { count: imageFiles.length }));
   sceneImageInput.value = "";
@@ -271,7 +270,7 @@ export function addBlankScene() {
   setSelectedSceneIdsRaw([scene.id]);
   setHoveredSceneIdRaw("");
   expandedLayerIds.add(scene.id);
-  shouldAutoFitSceneViewport = true;
+  setShouldAutoFitSceneViewport(true);
   renderScenes();
   switchMode();
   setSceneStatus(t("status.blankSceneAdded"));
@@ -753,7 +752,7 @@ export function applySceneProjectPayload(project) {
   setSelectedSceneIdRaw(typeof project.selection.selectedSceneId === "string" ? project.selection.selectedSceneId : scenes[0]?.id || "");
   setSelectedSceneIdsRaw(Array.isArray(project.selection.selectedSceneIds) ? project.selection.selectedSceneIds : selectedSceneId ? [selectedSceneId] : []);
   setHoveredSceneIdRaw("");
-  shouldAutoFitSceneViewport = true;
+  setShouldAutoFitSceneViewport(true);
   ensureSceneModel();
   normalizeSceneSelection();
 }

@@ -9,6 +9,12 @@ import { t } from "./i18n.js?v=3.19.0";
 import { normalizeSceneSelection, createExampleScenes } from "./scene-model.js?v=3.19.0";
 import { renderScenes } from "./layer-panel.js?v=3.19.0";
 import {
+  getSavedLayersWidth,
+  getSavedLayersHeight,
+  getSavedLayersDock,
+  applyLayersDock,
+} from "./menu-ui.js?v=3.19.0";
+import {
   appShell,
   sceneOutputWidth,
   sceneBackgroundHeight,
@@ -25,10 +31,6 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setSceneStatus,
-  getSavedLayersWidth,
-  getSavedLayersHeight,
-  getSavedLayersDock,
-  applyLayersDock,
 } from "../app.js?v=3.19.0";
 
 export const storageKeys = {
