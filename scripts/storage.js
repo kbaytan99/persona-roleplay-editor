@@ -7,6 +7,7 @@
 
 import { t } from "./i18n.js?v=3.19.0";
 import { normalizeSceneSelection, createExampleScenes } from "./scene-model.js?v=3.19.0";
+import { renderScenes } from "./layer-panel.js?v=3.19.0";
 import {
   appShell,
   sceneOutputWidth,
@@ -23,7 +24,6 @@ import {
   selectedSceneIds,
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
-  renderScenes,
   setSceneStatus,
   getSavedLayersWidth,
   getSavedLayersHeight,

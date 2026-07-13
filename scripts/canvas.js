@@ -29,6 +29,7 @@ import {
   uploadCompositeSceneToImgbb,
   sceneClipboardScenes,
 } from "./scene-model.js?v=3.19.0";
+import { renderScenes, reorderScene } from "./layer-panel.js?v=3.19.0";
 import {
   scenes,
   selectedSceneId,
@@ -50,11 +51,9 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setHoveredSceneIdRaw,
-  renderScenes,
   setSceneStatus,
   closeLayersPanel,
   showLayersPanel,
-  reorderScene,
   isSceneUndoShortcut,
   isSceneRedoShortcut,
   isSceneSelectAllShortcut,

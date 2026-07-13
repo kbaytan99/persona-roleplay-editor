@@ -29,6 +29,7 @@ import {
   getSceneTransitionStyle,
   getSceneTransitionSides,
 } from "./canvas.js?v=3.19.0";
+import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.19.0";
 import {
   scenes,
   selectedSceneId,
@@ -66,10 +67,8 @@ import {
   setSelectedSceneIdRaw,
   setSelectedSceneIdsRaw,
   setHoveredSceneIdRaw,
-  renderScenes,
   setSceneStatus,
   switchMode,
-  flashSceneEditorItem,
   isSceneUndoShortcut,
   isSceneRedoShortcut,
 } from "../app.js?v=3.19.0";
