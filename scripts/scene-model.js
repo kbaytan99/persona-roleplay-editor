@@ -8,15 +8,15 @@
 // canvas pointer-interaction or layer-panel-card renderer (see
 // scripts/canvas.js and scripts/layer-panel.js for those).
 
-import { clampNumber } from "./utils.js?v=3.19.0";
-import { t, getLanguage } from "./i18n.js?v=3.19.0";
+import { clampNumber } from "./utils.js?v=3.20.0";
+import { t, getLanguage } from "./i18n.js?v=3.20.0";
 import {
   saveState,
   scheduleSceneAutosave,
   recordUploadHistory,
   readUploadHistory,
   createUploadThumbnail,
-} from "./storage.js?v=3.19.0";
+} from "./storage.js?v=3.20.0";
 import {
   isEditableTarget,
   drawSceneLayerImage,
@@ -28,9 +28,9 @@ import {
   getSceneTransitionSize,
   getSceneTransitionStyle,
   getSceneTransitionSides,
-} from "./canvas.js?v=3.19.0";
-import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.19.0";
-import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.19.0";
+} from "./canvas.js?v=3.20.0";
+import { renderScenes, flashSceneEditorItem } from "./layer-panel.js?v=3.20.0";
+import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.0";
 import {
   scenes,
   selectedSceneId,
@@ -70,7 +70,7 @@ import {
   setHoveredSceneIdRaw,
   setSceneStatus,
   setShouldAutoFitSceneViewport,
-} from "../app.js?v=3.19.0";
+} from "../app.js?v=3.20.0";
 
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
 // last set on any text layer becomes the starting point for the next new

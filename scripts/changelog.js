@@ -6,6 +6,15 @@
 
 export const appChangelog = [
   {
+    version: "3.20.0",
+    date: "2026-07-13",
+    title: "Buyuk ic temizlik: app.js 5 dosyaya bolundu",
+    notes: [
+      "Kullaniciya donuk hicbir davranis degisikligi yok - bu tamamen bir kod duzenleme surumu. app.js tek parca ~5500 satirdan gercek bir bootstrap dosyasina (~490 satir) indirildi; kod artik scripts/storage.js (kalicilik), scripts/scene-model.js (sahne CRUD/secim/gecmis/Cetvel/RSE/ImgBB), scripts/canvas.js (render + pointer etkilesimleri), scripts/layer-panel.js (katman karti UI'i) ve scripts/menu-ui.js (menu/panel/kisayol chrome) arasinda bolunmus durumda.",
+      "Her modul tarayicida tek tek canli test edildi (menu acma, katman ekle/sil/surukle/kilitle, geri al/ileri al, Cetvel, ImgBB/RSE, Kisayollar, dil degistirme) - hicbir regresyon bulunmadi. scripts/verify-release.mjs artik tum dosyalardaki cache-buster'lari tarayacak sekilde guncellendi.",
+    ],
+  },
+  {
     version: "3.19.0",
     date: "2026-07-13",
     title: "Menu duzenlendi: Fikir + Promptlar tek 'Icerik' menusunde",

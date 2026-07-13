@@ -347,7 +347,54 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   arasinda gezinilir; panel her acildiginda en yeniden baslar.
   *(`appChangelog`, `renderAboutPanel`, `aboutChangelogPage`)*
 
+## 14. Dosya Yapisi (app.js bolunmesi)
+
+- **Modul sinirlari** — `app.js` (2026-07-13, v3.19.0) tek parca ~5500
+  satirdan gercek bir bootstrap dosyasina (~490 satir: state/DOM tanimlari +
+  olay dinleyici kurulumu) indirildi. Kod artik su dosyalara ayrilmis
+  durumda, her biri kendi sorumluluk alanini kapsiyor:
+  - **`scripts/storage.js`** — localStorage ayar kaliciligi, IndexedDB sahne
+    autosave + yukleme gecmisi, eski kullanici profili migrasyonu.
+  - **`scripts/scene-model.js`** — sahne CRUD, secim, pano, geri al/ileri al
+    gecmisi, Cetvel, yapiskan yazi varsayilanlari, RSE disa/ice aktarma,
+    PNG/ImgBB/Discord ciktisi.
+  - **`scripts/canvas.js`** — pointer etkilesimleri (pan/zoom/marquee/
+    surukle/boyutlandir/olcekle/akilli hizalama), composite render'lama
+    (`drawSceneLayerImage`/`drawSceneTextBlock`), sahne cikti boyutu
+    getter'lari.
+  - **`scripts/layer-panel.js`** — `renderScenes` ana dongusu, tum katman
+    karti insaatcilari (resim+yazi), surukle-siralama, liste marquee-secim,
+    paylasilan UI kontrol yardimcilari (`createRangeControl` vb.).
+  - **`scripts/menu-ui.js`** — menu cubugu wiring, sag tik baglam menusu,
+    Yardim/Fikir/Promptlar panel icerigi, Kisayollar goster/gizle, katman
+    paneli boyutlandirma/serbest pencere tutamaclari.
+  - **`scripts/changelog.js`** — `appChangelog` salt veri dizisi.
+  - **`app.js`** — sadece DOM/state tanimlari (hepsi `export`'lu, diger
+    modullerin okuyup gerektiginde `set*Raw` setter'lariyla yazdigi tek
+    kaynak) ve en alttaki bootstrap olay dinleyici kurulumu.
+- **Coklu-dongusel import** — modul cifti/uclusu birbirini import ediyor
+  (or. `app.js` <-> `storage.js` <-> `scene-model.js`) - ES module'ler bunu
+  destekliyor cunku hicbir modulun ust-seviye kodu import ettigi bir
+  fonksiyonu HEMEN cagirmiyor, sadece daha sonra bir event handler icinde.
+  `selectedSceneId`/`selectedSceneIds`/`hoveredSceneId`/
+  `shouldAutoFitSceneViewport` gibi app.js'in sahip oldugu ama baska
+  modullerin de degistirmesi gereken degiskenler icin `setSelectedSceneIdRaw`/
+  `setSelectedSceneIdsRaw`/`setHoveredSceneIdRaw`/
+  `setShouldAutoFitSceneViewport` setter'lari kullaniliyor (import edilen
+  bir binding'e dogrudan atama yapilamiyor - ES module kurali).
+- **`scripts/verify-release.mjs`** artik `app.js` ve `scripts/*.js`
+  icindeki TUM `import ... from "..."` satirlarini tarayip her birinin
+  `?v=` cache-buster'inin `appVersion` ile eslesip esleşmedigini kontrol
+  ediyor (eskiden sadece `app.js`'in kendi importlarina bakiyordu).
+
 ---
+
+**Kural (bolme sonrasi):** Yeni bir sahne-veri/CRUD islevi `scene-model.js`'e,
+yeni bir canvas render/etkilesim ozelligi `canvas.js`'e, yeni bir katman
+karti kontrolu `layer-panel.js`'e, yeni bir menu/panel/kisayol ozelligi
+`menu-ui.js`'e, yeni bir kalicilik/depolama ihtiyaci `storage.js`'e gider —
+`app.js`'e sadece yeni bir DOM referansi/state degiskeni veya bootstrap
+kurulum satiri eklenir, yeni is mantigi fonksiyonlari eklenmez.
 
 **Kural:** Yeni bir ozellik/sistem eklendiginde bu dosyaya kisa bir madde,
 `appChangelog`'a bir degisiklik notu ve gerekirse Kisayollar Kutusu'na bir
