@@ -18,6 +18,18 @@ import {
   createUploadThumbnail,
 } from "./storage.js?v=3.19.0";
 import {
+  isEditableTarget,
+  drawSceneLayerImage,
+  drawSceneTextBlock,
+  getSceneOutputWidth,
+  getSceneBackgroundHeight,
+  getSceneFontSize,
+  getScenePadding,
+  getSceneTransitionSize,
+  getSceneTransitionStyle,
+  getSceneTransitionSides,
+} from "./canvas.js?v=3.19.0";
+import {
   scenes,
   selectedSceneId,
   selectedSceneIds,
@@ -57,19 +69,9 @@ import {
   renderScenes,
   setSceneStatus,
   switchMode,
-  isEditableTarget,
   flashSceneEditorItem,
   isSceneUndoShortcut,
   isSceneRedoShortcut,
-  drawSceneLayerImage,
-  drawSceneTextBlock,
-  getSceneOutputWidth,
-  getSceneBackgroundHeight,
-  getSceneFontSize,
-  getScenePadding,
-  getSceneTransitionSize,
-  getSceneTransitionStyle,
-  getSceneTransitionSides,
 } from "../app.js?v=3.19.0";
 
 // "Sticky" text layer defaults: whatever font size/style/spacing the user
