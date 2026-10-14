@@ -1,4 +1,4 @@
-# Persona
+# Persona.
 
 Text based roleplay sahnelerini tek canvas uzerinde duzenleyip tek PNG olarak
 disari aktaran client-side web uygulamasi. Latince "persona", Roma tiyatrosunda
