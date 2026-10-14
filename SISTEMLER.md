@@ -59,6 +59,12 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   Yukseklik/X/Y degerleri. *(`createRangeControl`, Pozisyon bolumu)*
 - **Filtre Sistemi** — Parlaklik/Kontrast/Doygunluk/Sicaklik/Blur; her resim
   katmani icin ayri ayarlanir. *(`getSceneImageFilter`)*
+- **Arka Plan Sil** — Filtreler bolumundeki 0-100 cubuk; resim katmaninin
+  koyu (siyah) arka planini otomatik seffaflastirir (luma key). 0 kapali;
+  yukseldikce daha koyu tonlar silinir, kenarlar yumusak gecer. Orijinal
+  resim degismez - sadece sahne gorunumunde ve PNG/ImgBB ciktisinda uygulanir.
+  Filtreler'in "Sifirla" dugmesi bunu da 0'a dondurur. *(`getSceneBgKeyRange`,
+  `getSceneImagePreviewFilter`, `getSceneKeyedSource`, `bgRemove`)*
 - **Gecis Efektleri** — Stil (Soft fade/Sinematik/Blur/Keskin), Boyut ve Yon;
   Ayarlar menusunde degistirilince **otomatik olarak tum katmanlara**
   uygulanir. *(`applyGlobalTransitionToAllScenes`)*

@@ -755,6 +755,59 @@ export function getSceneImageFilter(scene) {
   return `brightness(${brightness}%) contrast(${contrast}%) saturate(${saturate}%) sepia(${sepia}%) blur(${blur}px)`;
 }
 
+// "Arka plan sil" is a luma key: pixels darker than `low` become transparent,
+// and the `band` above it fades in so anti-aliased text edges don't get a
+// hard cut. The live preview (SVG filter below) and the export
+// (getSceneKeyedSource) both read these numbers, so the stage and the PNG
+// key exactly the same pixels.
+export function getSceneBgKeyRange(threshold) {
+  return { low: (threshold / 100) * 0.6, band: 0.08 };
+}
+
+export function getSceneImagePreviewFilter(scene) {
+  const threshold = clampNumber(scene.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
+  const colorFilter = getSceneImageFilter(scene);
+  if (!threshold) return colorFilter;
+  return `url(#${ensureSceneBgKeyFilter(threshold)}) ${colorFilter}`;
+}
+
+// The preview is a DOM <img>, so the key has to be an SVG filter there: a
+// luma-based mask multiplied into the source alpha. One <filter> per
+// threshold value (at most 100), created on first use, so the slider never
+// has to track or clean up per-layer filter nodes.
+function ensureSceneBgKeyFilter(threshold) {
+  const id = `scene-bgkey-${threshold}`;
+  if (document.getElementById(id)) return id;
+  const svgNs = "http://www.w3.org/2000/svg";
+  let defs = document.getElementById("sceneBgKeyDefs");
+  if (!defs) {
+    defs = document.createElementNS(svgNs, "svg");
+    defs.id = "sceneBgKeyDefs";
+    defs.setAttribute("aria-hidden", "true");
+    // Positioned off to the side rather than display:none - Chromium won't
+    // resolve url() filters that live inside a display:none SVG.
+    defs.style.cssText = "position:absolute;width:0;height:0;overflow:hidden;";
+    document.body.append(defs);
+  }
+  const { low, band } = getSceneBgKeyRange(threshold);
+  const k = 1 / band;
+  const filter = document.createElementNS(svgNs, "filter");
+  filter.id = id;
+  filter.setAttribute("color-interpolation-filters", "sRGB");
+  const mask = document.createElementNS(svgNs, "feColorMatrix");
+  mask.setAttribute("in", "SourceGraphic");
+  mask.setAttribute("type", "matrix");
+  mask.setAttribute("values", `0 0 0 0 0  0 0 0 0 0  0 0 0 0 0  ${0.2126 * k} ${0.7152 * k} ${0.0722 * k} 0 ${-low * k}`);
+  mask.setAttribute("result", "lumaMask");
+  const composite = document.createElementNS(svgNs, "feComposite");
+  composite.setAttribute("in", "SourceGraphic");
+  composite.setAttribute("in2", "lumaMask");
+  composite.setAttribute("operator", "in");
+  filter.append(mask, composite);
+  defs.append(filter);
+  return id;
+}
+
 export function updateSceneImageTransform(scene) {
   const image = document.querySelector(`[data-scene-image-id="${CSS.escape(scene.id)}"]`);
   const box = document.querySelector(`[data-scene-transform-id="${CSS.escape(scene.id)}"]`);
@@ -762,7 +815,7 @@ export function updateSceneImageTransform(scene) {
   const transform = getSceneImageTransform(scene);
   if (image) {
     image.style.transform = transform;
-    image.style.filter = getSceneImageFilter(scene);
+    image.style.filter = getSceneImagePreviewFilter(scene);
   }
   if (box) box.style.transform = transform;
   if (wrap) applySceneLayerPosition(wrap, scene);
@@ -1124,6 +1177,29 @@ export function startSceneTextResize(event, textBlock) {
   handle.addEventListener("pointerup", onUp);
   handle.addEventListener("pointercancel", onUp);
 }
+// Export-side twin of the SVG preview key: bakes the same luma key into the
+// image's alpha at the size it is drawn, so the PNG / ImgBB output matches
+// what the stage shows. Returns the image untouched when the key is off.
+function getSceneKeyedSource(image, scene, width, height) {
+  const threshold = clampNumber(scene.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
+  if (!threshold || width < 1 || height < 1) return image;
+  const keyed = document.createElement("canvas");
+  keyed.width = width;
+  keyed.height = height;
+  const keyedCtx = keyed.getContext("2d", { willReadFrequently: true });
+  keyedCtx.drawImage(image, 0, 0, width, height);
+  const pixels = keyedCtx.getImageData(0, 0, width, height);
+  const data = pixels.data;
+  const { low, band } = getSceneBgKeyRange(threshold);
+  for (let i = 0; i < data.length; i += 4) {
+    const luma = (0.2126 * data[i] + 0.7152 * data[i + 1] + 0.0722 * data[i + 2]) / 255;
+    const keep = Math.min(1, Math.max(0, (luma - low) / band));
+    data[i + 3] = Math.round(data[i + 3] * keep);
+  }
+  keyedCtx.putImageData(pixels, 0, 0);
+  return keyed;
+}
+
 // Scales width/height down proportionally, if needed, to fit the total
 // pixel budget - keeps the aspect ratio so the composite still looks like
 // what the user configured, just smaller, rather than cropping or
@@ -1146,10 +1222,12 @@ export function drawSceneLayerImage(context, image, scene, width, height) {
   tempCanvas.height = drawHeight;
   const tempCtx = tempCanvas.getContext("2d");
 
-  // Draw filtered image on temp canvas
+  // Draw filtered image on temp canvas. The background key goes first so
+  // brightness/contrast don't shift which pixels count as "dark" enough to drop.
+  const source = getSceneKeyedSource(image, scene, drawWidth, drawHeight);
   tempCtx.save();
   tempCtx.filter = getSceneImageFilter(scene);
-  tempCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+  tempCtx.drawImage(source, 0, 0, drawWidth, drawHeight);
   tempCtx.restore();
 
   const style = scene.transitionStyle || "none";
@@ -1207,7 +1285,7 @@ export function drawSceneLayerImage(context, image, scene, width, height) {
 
       blurCtx.save();
       blurCtx.filter = `blur(15px) ${getSceneImageFilter(scene)}`;
-      blurCtx.drawImage(image, 0, 0, drawWidth, drawHeight);
+      blurCtx.drawImage(source, 0, 0, drawWidth, drawHeight);
       blurCtx.restore();
 
       blurCtx.save();

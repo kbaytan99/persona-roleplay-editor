@@ -31,7 +31,7 @@ import {
   createStageResizeFrame,
   fitSceneToViewport,
   getSceneFontSize,
-  getSceneImageFilter,
+  getSceneImagePreviewFilter,
   getSceneImageTransform,
   getSceneLayerZIndex,
   getScenePadding,
@@ -255,7 +255,7 @@ export function renderScenes() {
     image.alt = scene.name;
     image.dataset.sceneImageId = scene.id;
     image.style.transform = getSceneImageTransform(scene);
-    image.style.filter = getSceneImageFilter(scene);
+    image.style.filter = getSceneImagePreviewFilter(scene);
     image.addEventListener("load", () => applySceneViewportZoom());
     wrap.append(image);
 
@@ -780,6 +780,8 @@ export function createImageLayerControls(scene) {
       withSelectedSiblings(scene, "filterSepia", updateSceneImageTransform), "thermometer"),
     createRangeControl(t("control.blur"), scene.filterBlur ?? sceneImageFilterDefaults.blur, 0, 8, 0.1,
       withSelectedSiblings(scene, "filterBlur", updateSceneImageTransform), "scan-eye"),
+    createRangeControl(t("control.bgRemove"), scene.bgRemove ?? sceneImageFilterDefaults.bgRemove, 0, 100, 1,
+      withSelectedSiblings(scene, "bgRemove", updateSceneImageTransform), "eraser"),
   );
   const resetFilterButton = document.createElement("button");
   resetFilterButton.type = "button";
@@ -992,6 +994,7 @@ export function resetSceneFilter(scene) {
     target.filterSaturate = sceneImageFilterDefaults.saturate;
     target.filterSepia = sceneImageFilterDefaults.sepia;
     target.filterBlur = sceneImageFilterDefaults.blur;
+    target.bgRemove = sceneImageFilterDefaults.bgRemove;
   };
   reset(scene);
   applyToSelectedSiblings(scene, reset);
