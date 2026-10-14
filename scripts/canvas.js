@@ -29,6 +29,7 @@ import {
   redoSceneHistory,
   uploadCompositeSceneToImgbb,
   sceneClipboardScenes,
+  addSceneImages,
 } from "./scene-model.js?v=3.20.2";
 import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.2";
 import {
@@ -806,6 +807,50 @@ function ensureSceneBgKeyFilter(threshold) {
   filter.append(mask, composite);
   defs.append(filter);
   return id;
+}
+
+// Drag-and-drop of image files from the OS. Dropping over the stage centers the
+// new layers on the cursor (same stage-percent basis as the text layer spawn);
+// dropping anywhere else adds them at the default position, like "Resim ekle".
+function getStagePercentAt(clientX, clientY) {
+  const stage = document.querySelector(".composite-stage");
+  if (!stage) return null;
+  const rect = stage.getBoundingClientRect();
+  const withinStage = clientX >= rect.left && clientX <= rect.right
+    && clientY >= rect.top && clientY <= rect.bottom;
+  if (!withinStage || rect.width <= 0 || rect.height <= 0) return null;
+  return {
+    x: ((clientX - rect.left) / rect.width) * 100,
+    y: ((clientY - rect.top) / rect.height) * 100,
+  };
+}
+
+function isFileDrag(event) {
+  return [...(event.dataTransfer?.types || [])].includes("Files");
+}
+
+export function handleSceneFileDragOver(event) {
+  if (!isFileDrag(event)) return;
+  // Without preventDefault() the browser won't accept the drop and instead
+  // navigates to the file - so this is also what keeps a stray drop from
+  // replacing the editor with the image.
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "copy";
+  document.querySelector(".composite-stage")
+    ?.classList.toggle("file-drag-over", Boolean(getStagePercentAt(event.clientX, event.clientY)));
+}
+
+export function handleSceneFileDragLeave(event) {
+  if (!isFileDrag(event)) return;
+  document.querySelector(".composite-stage")
+    ?.classList.toggle("file-drag-over", Boolean(getStagePercentAt(event.clientX, event.clientY)));
+}
+
+export function handleSceneFileDrop(event) {
+  if (!isFileDrag(event)) return;
+  event.preventDefault();
+  document.querySelector(".composite-stage")?.classList.remove("file-drag-over");
+  addSceneImages(event.dataTransfer.files, getStagePercentAt(event.clientX, event.clientY));
 }
 
 export function updateSceneImageTransform(scene) {

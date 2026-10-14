@@ -47,6 +47,9 @@ import {
   drawSceneTextBlock,
   getSceneBackgroundHeight,
   getSceneOutputWidth,
+  handleSceneFileDragLeave,
+  handleSceneFileDragOver,
+  handleSceneFileDrop,
   handleSceneKeyDown,
   handleSceneKeyUp,
   handleSceneWheel,
@@ -287,6 +290,9 @@ document.querySelector("#aboutChangelogNext").addEventListener("click", (event) 
   showNextChangelogPage();
 });
 document.addEventListener("paste", handlePaste);
+document.addEventListener("dragover", handleSceneFileDragOver);
+document.addEventListener("dragleave", handleSceneFileDragLeave);
+document.addEventListener("drop", handleSceneFileDrop);
 document.addEventListener("pointermove", (event) => {
   lastPointerClientX = event.clientX;
   lastPointerClientY = event.clientY;

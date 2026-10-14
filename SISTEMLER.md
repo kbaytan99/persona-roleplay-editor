@@ -239,6 +239,12 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   gecersizse veya istek basarisiz olursa durum cubugundaki ana yukleme
   mesajinin sonuna kisa bir not eklenir. *(`sendDiscordLinkMessage`,
   `isValidDiscordWebhookUrl`, `uploadCompositeSceneToImgbb`)*
+- **Surukle-Birak Resim Yerlestirme** — Bilgisayardan (Gezgin/Finder) bir resim
+  dosyasini canvas'in uzerine birakmak, resmi birakilan noktanin ortasina
+  yerlestirir; canvas'in disina birakilirsa "Resim ekle" gibi varsayilan
+  konuma eklenir. Canvas uzerindeyken kenari kesikli cizgiyle vurgulanir.
+  *(`handleSceneFileDrop`, `handleSceneFileDragOver`, `computeDropImagePlacement`,
+  `addSceneImages`)*
 - **Otomatik Kaydetme** — degisikliklerin tarayicinin IndexedDB'sine
   arka planda otomatik yazilmasi. *(`scheduleSceneAutosave`,
   `saveLocalScenesNow`)*

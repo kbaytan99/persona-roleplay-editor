@@ -149,6 +149,20 @@ export function computeCetvelImagePlacement(reference, naturalWidth, naturalHeig
   return { imageZoom: zoom, imageScaleX: scaleX, imageScaleY: scaleY, imageX, imageY };
 }
 
+// Centers a new image on a stage-percent point. drawSceneLayerImage() puts the
+// image's visible center at 50% + imageX horizontally and at imageY% plus half
+// the un-zoomed base height vertically; zoom/scale don't move that center, so
+// it's enough to solve those two equations for imageX/imageY.
+export function computeDropImagePlacement(point, naturalWidth, naturalHeight) {
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const baseHeight = (naturalHeight * outputWidth) / Math.max(1, naturalWidth);
+  return {
+    imageX: point.x - 50,
+    imageY: point.y - ((baseHeight / 2) / outputHeight) * 100,
+  };
+}
+
 export async function handleMainDownload() {
   if (downloadBtn.disabled) return;
   downloadBtn.disabled = true;
@@ -189,7 +203,9 @@ export async function handleCopyScene() {
   }
 }
 
-export async function addSceneImages(files) {
+// dropPoint (optional) is a stage-percent {x, y} - used by drag-and-drop so
+// the new image lands where it was dropped, not at the default position.
+export async function addSceneImages(files, dropPoint = null) {
   const imageFiles = [...files].filter((file) => file.type.startsWith("image/"));
   if (!imageFiles.length) {
     setSceneStatus(t("status.noImageSelected"));
@@ -223,10 +239,17 @@ export async function addSceneImages(files) {
       bgRemove: sceneImageFilterDefaults.bgRemove,
       blocks: [],
     };
-    if (cetvelReference) {
+    if (cetvelReference || dropPoint) {
       try {
         const image = await loadImage(dataUrl);
-        Object.assign(scene, computeCetvelImagePlacement(cetvelReference, image.naturalWidth, image.naturalHeight));
+        if (cetvelReference) {
+          Object.assign(scene, computeCetvelImagePlacement(cetvelReference, image.naturalWidth, image.naturalHeight));
+        }
+        // Drop position wins over Cetvel's Y (Cetvel's size still applies) -
+        // an explicit drop is a more specific request than the reference match.
+        if (dropPoint) {
+          Object.assign(scene, computeDropImagePlacement(dropPoint, image.naturalWidth, image.naturalHeight));
+        }
       } catch {
         // Couldn't decode dimensions in time - leave the image at its
         // normal default size/position rather than failing the whole add.
