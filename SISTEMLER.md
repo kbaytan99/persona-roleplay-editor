@@ -74,6 +74,25 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   katmanin tasima/boyutlandirma tutamaclari gecici olarak kapanir.
   *(`toggleSceneEraseMode`, `startEraseStroke`, `applySceneEraseMask`,
   `createSceneEraseCanvas`, `eraseMask`)*
+- **Silme Onayi (Modal)** — Del tusu ve Duzen/sag tik "Sil" artik tarayicinin
+  onay penceresi yerine uygulama ici bir pencere acar: "Silmek istiyor
+  musunuz?" ve "Bugun bir daha sorma" kutucugu. Kutucuk isaretlenip onaylanirsa
+  o gun icin sorulmaz (ertesi gun yeniden sorar). Temizle ve RSE uzerine yazma
+  ayni pencereyi kullanir ama kutucuk yoktur. Bir metin kutusunun icindeyken
+  Del tusu yalnizca o metni siler, katman silmez. *(`askConfirm`,
+  `askDeleteConfirm`, `removeScene`, `removeScenes`)*
+- **Kirpilan Alani Kopyala** — Kirpma aracinda kirpma alani cizilip Ctrl+C
+  basilirsa panoya tum katman degil sadece o alan (yeni bir katman olarak)
+  girer; Ctrl+V bu parcayi yapistirir. *(`copyCroppedSelection`,
+  `getPendingCropSelection`)*
+- **Kontur (Yazi Konturu)** — Photoshop'taki gibi: resimdeki bir yazinin rengi
+  (Ekrandan yazi rengini sec ile ya da renk alaniyla) secilir; bu renge yakin
+  pikseller yazi sayilir ve dis kenarina secilen kalinlikta (resim genisliginin
+  yuzdesi, 0-5) kontur halkasi boyanir. Yazi pikselleri degismez. Kontur,
+  disa aktarmada ve onizlemede ayni pikselden uretilir (`getSceneOutlinedSource`).
+  Yazi rengi ile ayni renkteki her sey de konturlanir; tolerans bu yakinligi
+  ayarlar. *(`applySceneTextOutline`, `getSceneOutlinedSource`,
+  `refreshSceneOutlinePreview`, `hasSceneTextOutline`, `outlineWidth`)*
 - **Birlestir (Katman Birlestirme)** — Duzen menusunde ya da sag tik menusunde,
   en az 2 resim katmani seciliyken aktif olur. Secili resim katmanlari
   sahnede gorundugu gibi (filtre, gecis, arka plan silme ve silgi dahil)
@@ -140,7 +159,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
 - **Tekli/Coklu Secim** — bir katmana tiklayarak tek secim; `Ctrl`/`Cmd` +
   tiklama ile secime tek tek katman ekleme/cikarma; `Shift` + tiklama ile
   son secilen katmandan (anchor) o ana kadar araliktaki tum katmanlari
-  secme (Windows/Photoshop mantigi). *(`setSelectedScene`,
+  secme (Windows/Photoshop mantigi). Bu kurallar canvas'taki resim/yazi katmanlarinda
+  ve katman listesinde ayni sekilde calisir; Ctrl/Shift ile tiklamak katmani
+  surukletmez, sadece secimi degistirir. *(`applySceneModifierSelection`,
+  `setSelectedScene`,
   `toggleSceneSelection`, `selectSceneRange`, `selectedSceneIds`)*
 - **Kutu ile Secim** (Marquee Select) — canvas'in bos bir noktasindan (ya da
   canvas'in disindaki bos gorunum alanindan) suruklenerek cizilen kutunun
@@ -152,7 +174,8 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   menu ayrica Pozisyon (Boyut/Genislik/Yukseklik) ve Filtreler
   (Parlaklik/Kontrast/Doygunluk) kontrollerini de ekliyor - katman
   panelini acmaya gerek kalmadan hizli ayar icin.
-  *(`showSceneContextMenu`)*
+  Katman listesindeki bir karta sag tiklamak da ayni menuyu acar; secili
+  degilse kart once secilir (canvas'taki gibi). *(`showSceneContextMenu`)*
 
 ## 5. Pano Sistemi (Kopyala/Kes/Yapistir)
 

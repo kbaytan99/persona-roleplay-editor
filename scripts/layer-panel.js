@@ -8,6 +8,7 @@
 
 import { clampNumber } from "./utils.js?v=3.20.2";
 import { t } from "./i18n.js?v=3.20.2";
+import { createToolWorkspace, decorateToolStage, getActiveTool, handleToolStagePointerDown } from "./tool-panel.js?v=3.20.2";
 import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import {
   addTextLayer,
@@ -20,9 +21,8 @@ import {
   refreshSceneSelection,
   rememberTextLayerDefaults,
   removeScene,
-  selectSceneRange,
+  applySceneModifierSelection,
   setSelectedScene,
-  toggleSceneSelection,
 } from "./scene-model.js?v=3.20.2";
 import {
   applySceneLayerPosition,
@@ -32,6 +32,9 @@ import {
   fitSceneToViewport,
   getSceneFontSize,
   getSceneImagePreviewFilter,
+  hasSceneTextOutline,
+  refreshSceneOutlinePreview,
+  updateSceneOutline,
   applySceneEraseMask,
   clearSceneEraseMask,
   createSceneEraseCanvas,
@@ -188,6 +191,10 @@ export function renderScenes() {
 
   const stage = document.createElement("div");
   stage.className = "composite-stage";
+  // Drawing tools (pen, crop) take presses on the empty stage; move does nothing here.
+  stage.addEventListener("pointerdown", (event) => {
+    handleToolStagePointerDown(event, stage);
+  });
   stage.style.width = `${getScenePreviewWidth()}px`;
   stage.style.height = `${getScenePreviewHeight()}px`;
   stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
@@ -227,6 +234,7 @@ export function renderScenes() {
       renderSceneTextBlock(content, scene.text);
       block.append(content);
       block.addEventListener("pointerdown", (event) => startSceneTextDrag(event, scene));
+      if (getActiveTool() !== "move") block.style.pointerEvents = "none";
       block.addEventListener("dblclick", (event) => {
         event.stopPropagation();
         event.preventDefault();
@@ -249,7 +257,7 @@ export function renderScenes() {
     if (isSceneSelected(scene.id)) wrap.classList.add("selected");
     wrap.addEventListener("pointerdown", (event) => {
       event.stopPropagation();
-      setSelectedScene(scene.id);
+      if (!applySceneModifierSelection(event, scene.id)) setSelectedScene(scene.id);
     });
     wrap.addEventListener("pointerenter", () => {
       setHoveredSceneIdRaw(scene.id);
@@ -324,10 +332,15 @@ export function renderScenes() {
       }
     }
     applySceneEraseMask(image, scene, imageTransitionMask);
+    // A drawing tool owns the pointer, so layers let presses pass through to the stage.
+    if (getActiveTool() !== "move" && !erasing) wrap.style.pointerEvents = "none";
+    if (hasSceneTextOutline(scene)) {
+      refreshSceneOutlinePreview(scene).catch(() => setSceneStatus(t("error.unknown")));
+    }
     if (erasing) wrap.append(createSceneEraseCanvas(scene, imageTransitionMask));
 
     // The move/scale box would sit above the erase canvas and swallow strokes.
-    if (!scene.isLocked && !erasing) {
+    if (!scene.isLocked && !erasing && getActiveTool() === "move") {
       const transformBox = createSceneImageTransformBox(scene);
       // Offset 2: just above this scene's own image content (offset 1) so
       // its drag/resize handles are grabbable, but still inside this
@@ -340,6 +353,7 @@ export function renderScenes() {
     renderClip.append(wrap);
   });
 
+  decorateToolStage(stage);
   stage.append(createStageResizeFrame());
 
   const canvasViewport = document.createElement("div");
@@ -378,6 +392,16 @@ export function renderScenes() {
     if (event.target.closest(".scene-editor-item")) return;
     if (isNearLayersPanelResizeEdge(event)) return;
     startLayerListMarqueeSelect(event, listContainer);
+  });
+  // Same menu as right-clicking the canvas, so Birlestir (and copy/cut/delete)
+  // work from the list too. An unselected card is selected first, matching the
+  // canvas behavior; a card already in a multi-selection keeps the selection.
+  listContainer.addEventListener("contextmenu", (event) => {
+    event.preventDefault();
+    const item = event.target.closest(".scene-editor-item");
+    const targetScene = item ? scenes.find((scene) => scene.id === item.dataset.sceneEditorId) : null;
+    if (targetScene && !isSceneSelected(targetScene.id)) setSelectedScene(targetScene.id);
+    showSceneContextMenu(event.clientX, event.clientY, targetScene || null);
   });
 
   const layersTitle = document.createElement("div");
@@ -423,7 +447,7 @@ export function renderScenes() {
   sceneLayersPanel.append(listContainer);
   sceneLayersPanel.append(...createPanelResizeHandles());
 
-  composer.append(toolbar, canvasViewport);
+  composer.append(toolbar, createToolWorkspace(canvasViewport));
   sceneList.append(composer);
   scheduleSceneAutosave();
   if (window.lucide) window.lucide.createIcons();
@@ -457,9 +481,7 @@ export function createLayerCard(scene, index, stage, listContainer) {
   item.style.setProperty("--scene-accent", getSceneAccent(scene.id));
   item.addEventListener("pointerdown", (event) => {
     if (isEditableTarget(event.target)) return;
-    if (event.shiftKey) selectSceneRange(scene.id);
-    else if (event.ctrlKey || event.metaKey) toggleSceneSelection(scene.id);
-    else setSelectedScene(scene.id);
+    if (!applySceneModifierSelection(event, scene.id)) setSelectedScene(scene.id);
   });
 
   const cardInner = document.createElement("div");
@@ -804,6 +826,45 @@ export function createImageLayerControls(scene) {
   filterSection.body.append(resetFilterButton);
   nodes.push(filterSection.el);
 
+  const outlineSection = createLayerSection(`${scene.id}:outline`, t("section.outline"), false);
+  const outlinePickButton = document.createElement("button");
+  outlinePickButton.type = "button";
+  outlinePickButton.className = "layer-mini-btn";
+  outlinePickButton.textContent = t("control.outlinePick");
+  // The screen eyedropper is a Chromium API; elsewhere the color field still works.
+  outlinePickButton.disabled = typeof window.EyeDropper !== "function";
+  outlinePickButton.addEventListener("click", async () => {
+    let picked;
+    try {
+      picked = await new window.EyeDropper().open();
+    } catch {
+      return; // cancelled with Esc
+    }
+    pushSceneHistory();
+    withSelectedSiblings(scene, "outlineTextColor", updateSceneOutline)(picked.sRGBHex);
+  });
+  const outlineOffButton = document.createElement("button");
+  outlineOffButton.type = "button";
+  outlineOffButton.className = "layer-mini-btn";
+  outlineOffButton.textContent = t("control.outlineOff");
+  outlineOffButton.addEventListener("click", () => {
+    pushSceneHistory();
+    withSelectedSiblings(scene, "outlineWidth", updateSceneOutline)(0);
+  });
+  outlineSection.body.append(
+    createColorControl(t("control.outlineTextColor"), scene.outlineTextColor || "#ffffff",
+      withSelectedSiblings(scene, "outlineTextColor", updateSceneOutline), "pipette"),
+    outlinePickButton,
+    createRangeControl(t("control.outlineTolerance"), scene.outlineTolerance ?? 20, 0, 100, 1,
+      withSelectedSiblings(scene, "outlineTolerance", updateSceneOutline), "scan-search"),
+    createRangeControl(t("control.outlineWidth"), scene.outlineWidth ?? 0, 0, 5, 0.1,
+      withSelectedSiblings(scene, "outlineWidth", updateSceneOutline), "circle-dashed"),
+    createColorControl(t("control.outlineColor"), scene.outlineColor || "#000000",
+      withSelectedSiblings(scene, "outlineColor", updateSceneOutline), "paintbrush"),
+    outlineOffButton,
+  );
+  nodes.push(outlineSection.el);
+
   const eraseSection = createLayerSection(`${scene.id}:erase`, t("section.erase"), false);
   const erasing = isSceneEraseMode(scene);
   const eraseToggle = document.createElement("button");
@@ -1141,6 +1202,23 @@ export function createRangeControl(labelText, value, min, max, step, onInput, ic
   }, { passive: false });
 
   label.append(...(iconEl ? [iconEl] : []), title, input, valueInput);
+  return label;
+}
+
+// Color field with the same label and icon layout as createRangeControl, so it
+// sits in the layer card with the other controls.
+export function createColorControl(labelText, value, onInput, icon) {
+  const label = document.createElement("label");
+  label.className = "range-control";
+  const iconEl = createControlIcon(icon);
+  const title = document.createElement("span");
+  title.textContent = labelText;
+  const input = document.createElement("input");
+  input.type = "color";
+  input.value = value;
+  prepareSceneHistoryControl(input);
+  input.addEventListener("input", () => onInput(input.value));
+  label.append(...(iconEl ? [iconEl] : []), title, input);
   return label;
 }
 

@@ -20,6 +20,7 @@ import {
 import {
   isEditableTarget,
   drawSceneLayerImage,
+  getSceneOutlinedSource,
   getSceneImageDrawRect,
   drawSceneTextBlock,
   getSceneOutputWidth,
@@ -30,6 +31,8 @@ import {
   getSceneTransitionStyle,
   getSceneTransitionSides,
 } from "./canvas.js?v=3.20.2";
+import { askConfirm, askDeleteConfirm } from "./confirm-modal.js?v=3.20.2";
+import { getPendingCropSelection } from "./tool-panel.js?v=3.20.2";
 import { renderScenes, flashSceneEditorItem, clearExpandedSectionsFor } from "./layer-panel.js?v=3.20.2";
 import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.2";
 import {
@@ -340,14 +343,17 @@ export function handlePaste(event) {
   addTextLayer(text);
 }
 
-export function removeScene(id) {
-  const index = scenes.findIndex((scene) => scene.id === id);
+export async function removeScene(id) {
+  let index = scenes.findIndex((scene) => scene.id === id);
   if (index === -1) return;
   if (scenes[index].isLocked) {
     setSceneStatus(t("status.lockedCannotDelete"));
     return;
   }
-  if (!confirm(t("confirm.deleteScene", { n: index + 1 }))) return;
+  if (!(await askDeleteConfirm(t("confirm.deleteScene", { n: index + 1 })))) return;
+  // The dialog is async: the list may have changed while it was open.
+  index = scenes.findIndex((scene) => scene.id === id);
+  if (index === -1) return;
   pushSceneHistory();
   scenes.splice(index, 1);
   expandedLayerIds.delete(id);
@@ -359,7 +365,7 @@ export function removeScene(id) {
   setSceneStatus(t("status.sceneDeleted"));
 }
 
-export function removeScenes(ids) {
+export async function removeScenes(ids) {
   const requestedIds = [...new Set(ids)].filter((id) => scenes.some((scene) => scene.id === id));
   const lockedCount = requestedIds.filter((id) => scenes.find((scene) => scene.id === id)?.isLocked).length;
   const targetIds = requestedIds.filter((id) => !scenes.find((scene) => scene.id === id)?.isLocked);
@@ -367,7 +373,7 @@ export function removeScenes(ids) {
     if (lockedCount) setSceneStatus(t("status.lockedLayersCannotDelete"));
     return;
   }
-  if (!confirm(t("confirm.deleteSelected", { count: targetIds.length }))) return;
+  if (!(await askDeleteConfirm(t("confirm.deleteSelected", { count: targetIds.length })))) return;
 
   pushSceneHistory();
   const firstIndex = scenes.findIndex((scene) => targetIds.includes(scene.id));
@@ -384,6 +390,12 @@ export function removeScenes(ids) {
 }
 
 export function copySelectedScenes() {
+  // A finished crop area is what gets copied, not the whole layer.
+  const crop = getPendingCropSelection();
+  if (crop) {
+    copyCroppedSelection(crop.scene, crop.rect);
+    return;
+  }
   const targetIds = getSceneClipboardTargets();
   if (!targetIds.length) {
     setSceneStatus(t("status.noSceneToCopy"));
@@ -590,14 +602,14 @@ export function createExampleScenes() {
   return [textScene, backgroundScene];
 }
 
-export function clearScenes() {
+export async function clearScenes() {
   if (!scenes.length) return;
   const lockedCount = scenes.filter((scene) => scene.isLocked).length;
   if (lockedCount === scenes.length) {
     setSceneStatus(t("status.lockedLayersCannotDelete"));
     return;
   }
-  if (!confirm(t("confirm.clearAll"))) return;
+  if (!(await askConfirm({ title: t("modal.deleteQuestion"), message: t("confirm.clearAll") }))) return;
   pushSceneHistory();
   const removedIds = scenes.filter((scene) => !scene.isLocked).map((scene) => scene.id);
   scenes.splice(0, scenes.length, ...scenes.filter((scene) => scene.isLocked));
@@ -682,7 +694,7 @@ export async function importSceneProject(event) {
       return;
     }
 
-    if (scenes.length && !confirm(t("confirm.overwriteRse"))) return;
+    if (scenes.length && !(await askConfirm({ message: t("confirm.overwriteRse") }))) return;
 
     pushSceneHistory();
     applySceneProjectPayload(project);
@@ -761,6 +773,10 @@ export function normalizeImportedScene(scene, index) {
     clone.filterBlur = clampNumber(clone.filterBlur, 0, 8, sceneImageFilterDefaults.blur);
     clone.bgRemove = clampNumber(clone.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
     // Same data: check as dataUrl above - the eraser mask is an embedded PNG too.
+    clone.outlineWidth = clampNumber(clone.outlineWidth, 0, 5, 0);
+    clone.outlineTolerance = clampNumber(clone.outlineTolerance, 0, 100, 20);
+    clone.outlineTextColor = /^#[0-9a-f]{6}$/i.test(clone.outlineTextColor) ? clone.outlineTextColor : "";
+    clone.outlineColor = /^#[0-9a-f]{6}$/i.test(clone.outlineColor) ? clone.outlineColor : "#000000";
     clone.eraseMask = typeof clone.eraseMask === "string" && /^data:image\//i.test(clone.eraseMask) ? clone.eraseMask : "";
     clone.transitionStyle = ["soft", "cinematic", "blur", "none"].includes(clone.transitionStyle)
       ? clone.transitionStyle
@@ -821,6 +837,21 @@ export function toggleSceneSelection(id) {
     setSelectedSceneIdRaw(id);
   }
   refreshSceneSelection();
+}
+
+// Selection rule shared by the canvas and the layer list: Ctrl/Cmd toggles one
+// layer, Shift selects the range from the anchor. Returns true when the press
+// was a modifier click, so the caller doesn't also start a move/select drag.
+export function applySceneModifierSelection(event, id) {
+  if (event.shiftKey) {
+    selectSceneRange(id);
+    return true;
+  }
+  if (event.ctrlKey || event.metaKey) {
+    toggleSceneSelection(id);
+    return true;
+  }
+  return false;
 }
 
 // Shift+click: select the contiguous range between the current anchor
@@ -1118,12 +1149,14 @@ export function clampCanvasPixelBudget(width, height) {
 }
 
 // Decodes each picture layer's image and erase mask once, so the export and
-// the merge can both draw them without loading the same data twice.
+// the merge can both draw them without loading the same data twice. The image
+// is the outlined version when the layer has a text outline, so the export uses
+// exactly the pixels the preview shows.
 async function loadSceneImages(sceneList) {
   const images = new Map(await Promise.all(
     sceneList
       .filter((scene) => scene.type !== "text" && scene.dataUrl)
-      .map(async (scene) => [scene.id, await loadImage(scene.dataUrl)]),
+      .map(async (scene) => [scene.id, await loadImage(await getSceneOutlinedSource(scene))]),
   ));
   const eraseMasks = new Map(await Promise.all(
     sceneList
@@ -1163,6 +1196,142 @@ export async function buildCompositeCanvas() {
   });
 
   return canvas;
+}
+
+// Placement and neutral look for a layer that holds already-flattened pixels
+// (a merge or a crop). The crop (x0, y0, cropWidth, cropHeight, in output px)
+// lands exactly where it was: zoom * scale equals its share of the output width,
+// and the un-zoomed height follows its aspect. Filters, transitions, key, erase
+// mask and outline are all baked into the pixels, so none are applied again.
+function getFlatLayerFields(x0, y0, cropWidth, cropHeight, outputWidth, outputHeight) {
+  const share = cropWidth / outputWidth;
+  const imageZoom = clampNumber(share * 100, 5, 1200, 100);
+  const imageScale = clampNumber((share * 10000) / imageZoom, 5, 1200, 100);
+  const baseHeight = (cropHeight * outputWidth) / cropWidth;
+  const centerX = x0 + cropWidth / 2;
+  const centerY = y0 + cropHeight / 2;
+  return {
+    imageZoom,
+    imageScaleX: imageScale,
+    imageScaleY: imageScale,
+    imageX: ((centerX - outputWidth / 2) / outputWidth) * 100,
+    imageY: ((centerY - baseHeight / 2) / outputHeight) * 100,
+    filterBrightness: 100,
+    filterContrast: 100,
+    filterSaturate: 100,
+    filterSepia: 0,
+    filterBlur: 0,
+    bgRemove: 0,
+    eraseMask: "",
+    outlineWidth: 0,
+    outlineTextColor: "",
+    transitionStyle: "none",
+    transitionSize: 150,
+    transitionSides: "both",
+  };
+}
+
+// Crops one picture layer to a rectangle in output px. The layer keeps its place
+// in the list and its name; its pixels are replaced by the visible part inside
+// the rectangle, so it's destructive but undoable like every other edit.
+export async function cropSceneToRect(scene, rect, copyTo = null) {
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const { images, eraseMasks } = await loadSceneImages([scene]);
+  const image = images.get(scene.id);
+  if (!image) {
+    setSceneStatus(t("status.cropEmpty"));
+    return false;
+  }
+  const layer = getSceneImageDrawRect(scene, image.naturalWidth || image.width, image.naturalHeight || image.height, outputWidth, outputHeight);
+  const x0 = Math.max(0, Math.floor(Math.max(rect.x, layer.x)));
+  const y0 = Math.max(0, Math.floor(Math.max(rect.y, layer.y)));
+  const x1 = Math.min(outputWidth, Math.ceil(Math.min(rect.x + rect.width, layer.x + layer.width)));
+  const y1 = Math.min(outputHeight, Math.ceil(Math.min(rect.y + rect.height, layer.y + layer.height)));
+  if (x1 <= x0 || y1 <= y0) {
+    setSceneStatus(t("status.cropEmpty"));
+    return false;
+  }
+  const cropWidth = x1 - x0;
+  const cropHeight = y1 - y0;
+  const canvas = document.createElement("canvas");
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
+  const context = canvas.getContext("2d");
+  context.translate(-x0, -y0);
+  drawSceneLayerImage(context, image, scene, outputWidth, outputHeight, eraseMasks.get(scene.id));
+
+  const fields = {
+    dataUrl: canvas.toDataURL("image/png"),
+    isBlank: false,
+    ...getFlatLayerFields(x0, y0, cropWidth, cropHeight, outputWidth, outputHeight),
+  };
+  // Copy path: the cropped piece goes into the given object, the layer stays as it is.
+  if (copyTo) {
+    Object.assign(copyTo, fields);
+    return copyTo;
+  }
+  pushSceneHistory();
+  Object.assign(scene, fields);
+  renderScenes();
+  scheduleSceneAutosave();
+  setSceneStatus(t("status.cropApplied"));
+  return true;
+}
+
+// Ctrl+C with a finished crop area: the clipboard gets only that area, as a new
+// layer, so paste brings back the cropped piece instead of the whole layer.
+async function copyCroppedSelection(scene, rect) {
+  const piece = cloneSceneSnapshot(scene);
+  piece.id = createId();
+  const result = await cropSceneToRect(scene, rect, piece);
+  if (!result) return;
+  sceneClipboardScenes = [piece];
+  sceneClipboardPasteCount = 0;
+  setSceneStatus(t("status.cropCopied"));
+}
+
+// A new, empty drawing layer the size of the output, on top of the list. Its
+// pixels are a transparent PNG that the pen tool paints into.
+export function createPaintLayer() {
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const blank = document.createElement("canvas");
+  blank.width = outputWidth;
+  blank.height = outputHeight;
+  pushSceneHistory();
+  const scene = {
+    id: createId(),
+    name: t("layer.paintName", { n: scenes.length + 1 }),
+    dataUrl: blank.toDataURL("image/png"),
+    isBlank: false,
+    paintLayer: true,
+    imageZoom: 100,
+    imageScaleX: 100,
+    imageScaleY: 100,
+    imageX: 0,
+    imageY: 0,
+    filterBrightness: 100,
+    filterContrast: 100,
+    filterSaturate: 100,
+    filterSepia: 0,
+    filterBlur: 0,
+    bgRemove: 0,
+    eraseMask: "",
+    transitionStyle: "none",
+    transitionSize: 150,
+    transitionSides: "both",
+    isLocked: false,
+    blocks: [],
+  };
+  scenes.unshift(scene);
+  setSelectedSceneIdRaw(scene.id);
+  setSelectedSceneIdsRaw([scene.id]);
+  setHoveredSceneIdRaw("");
+  expandedLayerIds.add(scene.id);
+  renderScenes();
+  scheduleSceneAutosave();
+  return scene;
 }
 
 // Picture layers a merge would combine: the selected ones, in layer-list
@@ -1230,16 +1399,6 @@ export async function mergeSelectedScenes() {
     if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight, eraseMasks.get(scene.id));
   });
 
-  // Position so the new layer's visible box is exactly the crop, using the same
-  // geometry as getSceneImageDrawRect: zoom * scale must equal the crop's share
-  // of the output width, and the un-zoomed height follows the crop's aspect.
-  const share = cropWidth / outputWidth;
-  const imageZoom = clampNumber(share * 100, 5, 1200, 100);
-  const imageScale = clampNumber((share * 10000) / imageZoom, 5, 1200, 100);
-  const baseHeight = (cropHeight * outputWidth) / cropWidth;
-  const centerX = x0 + cropWidth / 2;
-  const centerY = y0 + cropHeight / 2;
-
   pushSceneHistory();
   const insertAt = scenes.indexOf(targets[0]);
   const removeIds = new Set(targets.map((scene) => scene.id));
@@ -1248,21 +1407,7 @@ export async function mergeSelectedScenes() {
     name: t("layer.mergedName", { n: scenes.length + 1 }),
     dataUrl: canvas.toDataURL("image/png"),
     isBlank: false,
-    imageZoom,
-    imageScaleX: imageScale,
-    imageScaleY: imageScale,
-    imageX: ((centerX - outputWidth / 2) / outputWidth) * 100,
-    imageY: ((centerY - baseHeight / 2) / outputHeight) * 100,
-    filterBrightness: 100,
-    filterContrast: 100,
-    filterSaturate: 100,
-    filterSepia: 0,
-    filterBlur: 0,
-    bgRemove: 0,
-    eraseMask: "",
-    transitionStyle: "none",
-    transitionSize: 150,
-    transitionSides: "both",
+    ...getFlatLayerFields(x0, y0, cropWidth, cropHeight, outputWidth, outputHeight),
     isLocked: false,
     blocks: [],
   };
