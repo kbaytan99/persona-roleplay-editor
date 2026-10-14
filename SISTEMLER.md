@@ -85,6 +85,23 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   basilirsa panoya tum katman degil sadece o alan (yeni bir katman olarak)
   girer; Ctrl+V bu parcayi yapistirir. *(`copyCroppedSelection`,
   `getPendingCropSelection`)*
+- **Kirpilan Alani Kes / Seckin Disini Tut** — Kirpma alani cizilmisken Ctrl+X
+  alani panoya (Ctrl+C gibi) koyar ve katmandan siler; diger kisim kalir.
+  Ctrl+B secili alan disindakini siler, alan kalir. Iki islem de katmanin
+  maskesini (silgi maskesi) degistirir; katmanin boyutu ve konumu ayni kalir,
+  geri al ile geri donulur. *(`cutCroppedSelection`, `keepOnlySelectedArea`,
+  `applyRectToLayerMask`, `clearCropSelection`)*
+- **Piksele Gore Secim (Seffaftan Gecme)** — Resim katmaninin seffaf kismina
+  basilinca tiklama o katmanin altindaki, pikselin dolu oldugu katmana gecer;
+  hicbir katman dolu degilse bos alanda oldugu gibi coklu secim kutusu acilir.
+  Her katmanin kucuk bir alfa kopyasi tutulur (`handleStagePressCapture`,
+  `findPictureLayerAt`, `warmLayerPickCache`).
+- **Secili Katman Cercevesi** — Secili katmanin etrafinda duz mavi bir cerceve
+  cikar. Tasima aracinda tasima/boyutlandirma tutamaclari da vardir; diger
+  araclarda cerceve sadece gorunur, tiklamayi engellemez (`frame-only`).
+- **Ctrl+V Imlecte** — Ctrl+V ile yapistirilan katman(lar), fare sahnenin
+  ustundeyken grubun ortasi farenin oldugu noktaya gelecek sekilde yerlesir;
+  fare sahne disindaysa eski konumlandirma kullanilir (`placeClonesAtPointer`).
 - **Kontur (Yazi Konturu)** — Photoshop'taki gibi: resimdeki bir yazinin rengi
   (Ekrandan yazi rengini sec ile ya da renk alaniyla) secilir; bu renge yakin
   pikseller yazi sayilir ve dis kenarina secilen kalinlikta (resim genisliginin

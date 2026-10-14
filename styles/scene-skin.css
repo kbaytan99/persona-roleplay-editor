@@ -200,8 +200,8 @@ button:hover,
 
 .scene-image-transform-box.selected {
   opacity: 1;
-  border-color: rgba(125, 184, 255, 0.98);
-  /* Outline only: the blue glow used to wash over the picture and made the text under it hard to read. */
+  /* Solid blue outline around the selected layer, no glow over the picture. */
+  border: 2px solid #3b82f6;
   box-shadow: none;
 }
 
@@ -220,7 +220,8 @@ button:hover,
 .scene-mode .shortcut-hud {
   position: fixed;
   top: 110px;
-  left: 12px;
+  /* Right of the tool rail (the rail is 40px wide and starts about 12px in), so it never covers it. */
+  left: 60px;
   z-index: 18;
   display: grid;
   gap: 5px;

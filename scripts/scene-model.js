@@ -21,6 +21,7 @@ import {
   isEditableTarget,
   drawSceneLayerImage,
   getSceneOutlinedSource,
+  rectHasSceneContent,
   getSceneImageDrawRect,
   drawSceneTextBlock,
   getSceneOutputWidth,
@@ -32,7 +33,7 @@ import {
   getSceneTransitionSides,
 } from "./canvas.js?v=3.20.2";
 import { askConfirm, askDeleteConfirm } from "./confirm-modal.js?v=3.20.2";
-import { getPendingCropSelection } from "./tool-panel.js?v=3.20.2";
+import { clearCropSelection, getPendingCropSelection } from "./tool-panel.js?v=3.20.2";
 import { renderScenes, flashSceneEditorItem, clearExpandedSectionsFor } from "./layer-panel.js?v=3.20.2";
 import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.2";
 import {
@@ -306,7 +307,7 @@ export function addBlankScene() {
 
 export function addSceneImageBlobs(blobs) {
   const files = blobs.map((blob, index) => new File([blob], `pasted-scene-${Date.now()}-${index + 1}.png`, { type: blob.type || "image/png" }));
-  return addSceneImages(files);
+  return addSceneImages(files, getStagePointPercent());
 }
 
 export function handlePaste(event) {
@@ -409,6 +410,12 @@ export function copySelectedScenes() {
 }
 
 export function cutSelectedScenes() {
+  // A finished crop area is cut out of its layer, not the whole layer.
+  const crop = getPendingCropSelection();
+  if (crop) {
+    cutCroppedSelection(crop.scene, crop.rect);
+    return;
+  }
   const requestedIds = getSceneClipboardTargets();
   if (!requestedIds.length) {
     setSceneStatus(t("status.noSceneToCut"));
@@ -436,13 +443,66 @@ export function cutSelectedScenes() {
     : t("status.scenesCutPlain", { count: targetIds.length }));
 }
 
-export function pasteSceneClipboard() {
+// Stage point under the mouse, in percent of the stage, or null when the pointer
+// is outside the stage or hasn't moved over the page yet.
+export function getStagePointPercent() {
+  const stage = document.querySelector(".composite-stage");
+  if (!stage || lastPointerClientX === null || lastPointerClientY === null) return null;
+  const rect = stage.getBoundingClientRect();
+  const withinStage = lastPointerClientX >= rect.left && lastPointerClientX <= rect.right
+    && lastPointerClientY >= rect.top && lastPointerClientY <= rect.bottom;
+  if (!withinStage || rect.width <= 0 || rect.height <= 0) return null;
+  return {
+    x: ((lastPointerClientX - rect.left) / rect.width) * 100,
+    y: ((lastPointerClientY - rect.top) / rect.height) * 100,
+  };
+}
+
+// Ctrl+V with the mouse over the stage: the pasted group's center moves to the
+// mouse. The layers keep their arrangement among themselves, and pictures and
+// text move as one group.
+async function placeClonesAtPointer(clones) {
+  const point = getStagePointPercent();
+  if (!point || !clones.length) return;
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const centers = await Promise.all(clones.map(async (scene) => {
+    if (scene.type === "text") {
+      return { x: (scene.x || 0) + (scene.width || 0) / 2, y: scene.y || 0 };
+    }
+    let centerY = scene.imageY || 0;
+    if (scene.dataUrl) {
+      const image = await loadImage(scene.dataUrl);
+      const baseHeight = (image.naturalHeight * outputWidth) / Math.max(1, image.naturalWidth);
+      centerY += ((baseHeight / 2) / outputHeight) * 100;
+    }
+    return { x: 50 + (scene.imageX || 0), y: centerY };
+  }));
+  const group = {
+    x: centers.reduce((sum, center) => sum + center.x, 0) / centers.length,
+    y: centers.reduce((sum, center) => sum + center.y, 0) / centers.length,
+  };
+  const dx = point.x - group.x;
+  const dy = point.y - group.y;
+  clones.forEach((scene) => {
+    if (scene.type === "text") {
+      scene.x = (scene.x || 0) + dx;
+      scene.y = (scene.y || 0) + dy;
+    } else {
+      scene.imageX = (scene.imageX || 0) + dx;
+      scene.imageY = (scene.imageY || 0) + dy;
+    }
+  });
+}
+
+export async function pasteSceneClipboard() {
   if (!sceneClipboardScenes.length) return;
 
   sceneClipboardPasteCount += 1;
   pushSceneHistory();
   const offset = 3 * sceneClipboardPasteCount;
   const clones = sceneClipboardScenes.map((scene) => cloneSceneForPaste(scene, offset));
+  await placeClonesAtPointer(clones);
   const selectedIds = getSelectedSceneIds();
   const anchorIds = selectedIds.length ? selectedIds : hoveredSceneId ? [hoveredSceneId] : [];
   const anchorIndices = anchorIds.map((id) => scenes.findIndex((scene) => scene.id === id)).filter((index) => index >= 0);
@@ -1234,7 +1294,7 @@ function getFlatLayerFields(x0, y0, cropWidth, cropHeight, outputWidth, outputHe
 // Crops one picture layer to a rectangle in output px. The layer keeps its place
 // in the list and its name; its pixels are replaced by the visible part inside
 // the rectangle, so it's destructive but undoable like every other edit.
-export async function cropSceneToRect(scene, rect, copyTo = null) {
+export async function cropSceneToRect(scene, rect, copyTo) {
   const outputWidth = getSceneOutputWidth();
   const outputHeight = getSceneBackgroundHeight();
   const { images, eraseMasks } = await loadSceneImages([scene]);
@@ -1261,34 +1321,107 @@ export async function cropSceneToRect(scene, rect, copyTo = null) {
   context.translate(-x0, -y0);
   drawSceneLayerImage(context, image, scene, outputWidth, outputHeight, eraseMasks.get(scene.id));
 
-  const fields = {
+  // The cropped piece goes into copyTo; the layer itself is left as it is.
+  Object.assign(copyTo, {
     dataUrl: canvas.toDataURL("image/png"),
     isBlank: false,
     ...getFlatLayerFields(x0, y0, cropWidth, cropHeight, outputWidth, outputHeight),
-  };
-  // Copy path: the cropped piece goes into the given object, the layer stays as it is.
-  if (copyTo) {
-    Object.assign(copyTo, fields);
-    return copyTo;
-  }
-  pushSceneHistory();
-  Object.assign(scene, fields);
-  renderScenes();
-  scheduleSceneAutosave();
-  setSceneStatus(t("status.cropApplied"));
-  return true;
+  });
+  return copyTo;
 }
 
 // Ctrl+C with a finished crop area: the clipboard gets only that area, as a new
 // layer, so paste brings back the cropped piece instead of the whole layer.
 async function copyCroppedSelection(scene, rect) {
+  if (!(await rectHasSceneContent(scene, rect))) {
+    setSceneStatus(t("status.cropNoLayer"));
+    return false;
+  }
   const piece = cloneSceneSnapshot(scene);
   piece.id = createId();
   const result = await cropSceneToRect(scene, rect, piece);
-  if (!result) return;
+  if (!result) return false;
   sceneClipboardScenes = [piece];
   sceneClipboardPasteCount = 0;
   setSceneStatus(t("status.cropCopied"));
+  return true;
+}
+
+// Rewrites a picture layer's erase mask for a rectangle (output px). keepInside
+// false: the rectangle becomes transparent (the cut). keepInside true: everything
+// outside it becomes transparent (keep only the selection). The layer's size and
+// place don't change, and the edit is one undo step.
+async function applyRectToLayerMask(scene, rect, keepInside) {
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const image = await loadImage(scene.dataUrl);
+  const naturalWidth = image.naturalWidth || image.width;
+  const naturalHeight = image.naturalHeight || image.height;
+  const layer = getSceneImageDrawRect(scene, naturalWidth, naturalHeight, outputWidth, outputHeight);
+  // Output px -> the layer's own pixels; the mask has that size.
+  const scaleX = naturalWidth / layer.width;
+  const scaleY = naturalHeight / layer.height;
+  const clampX = (value) => Math.min(naturalWidth, Math.max(0, value));
+  const clampY = (value) => Math.min(naturalHeight, Math.max(0, value));
+  const x0 = clampX((rect.x - layer.x) * scaleX);
+  const y0 = clampY((rect.y - layer.y) * scaleY);
+  const x1 = clampX((rect.x + rect.width - layer.x) * scaleX);
+  const y1 = clampY((rect.y + rect.height - layer.y) * scaleY);
+
+  const mask = document.createElement("canvas");
+  mask.width = naturalWidth;
+  mask.height = naturalHeight;
+  const ctx = mask.getContext("2d");
+  if (scene.eraseMask) {
+    ctx.drawImage(await loadImage(scene.eraseMask), 0, 0, naturalWidth, naturalHeight);
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, naturalWidth, naturalHeight);
+  }
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.fillStyle = "#000";
+  if (keepInside) {
+    // Clear the four strips around the rectangle.
+    ctx.fillRect(0, 0, naturalWidth, y0);
+    ctx.fillRect(0, y1, naturalWidth, naturalHeight - y1);
+    ctx.fillRect(0, y0, x0, y1 - y0);
+    ctx.fillRect(x1, y0, naturalWidth - x1, y1 - y0);
+  } else {
+    ctx.fillRect(x0, y0, x1 - x0, y1 - y0);
+  }
+  ctx.restore();
+  pushSceneHistory();
+  scene.eraseMask = mask.toDataURL("image/png");
+}
+
+// Ctrl+X with a finished crop area: the area goes to the clipboard as a piece
+// (like Ctrl+C) and is cleared out of the layer; everything else stays.
+async function cutCroppedSelection(scene, rect) {
+  if (!(await copyCroppedSelection(scene, rect))) return;
+  await applyRectToLayerMask(scene, rect, false);
+  clearCropSelection();
+  scheduleSceneAutosave();
+  setSceneStatus(t("status.cropCut"));
+}
+
+// Ctrl+B with a finished crop area: everything outside the area is cleared from
+// the layer, and the area itself stays.
+export async function keepOnlySelectedArea() {
+  const crop = getPendingCropSelection();
+  if (!crop) {
+    setSceneStatus(t("status.cropNeedsArea"));
+    return;
+  }
+  // Keeping an empty spot would delete the whole layer, so it needs real content.
+  if (!(await rectHasSceneContent(crop.scene, crop.rect))) {
+    setSceneStatus(t("status.cropNoLayer"));
+    return;
+  }
+  await applyRectToLayerMask(crop.scene, crop.rect, true);
+  clearCropSelection();
+  scheduleSceneAutosave();
+  setSceneStatus(t("status.cropKept"));
 }
 
 // A new, empty drawing layer the size of the output, on top of the list. Its
