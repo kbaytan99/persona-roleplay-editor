@@ -32,6 +32,7 @@ import {
   addSceneImages,
   loadImage,
   applySceneModifierSelection,
+  keepOnlySelectedArea,
 } from "./scene-model.js?v=3.20.2";
 import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.2";
 import {
@@ -359,6 +360,14 @@ export function handleSceneKeyDown(event) {
   if (!isTextEntryTarget(event.target) && isSceneSelectAllShortcut(event)) {
     event.preventDefault();
     selectAllScenes();
+    return;
+  }
+
+  // Ctrl+B: keep the crop area and clear everything outside it (not a text box).
+  if (!isTextEntryTarget(event.target) && (event.ctrlKey || event.metaKey) && !event.shiftKey && !event.altKey
+    && event.key.toLowerCase() === "b") {
+    event.preventDefault();
+    keepOnlySelectedArea();
     return;
   }
 
@@ -1184,6 +1193,136 @@ export function updateSceneImageTransform(scene) {
   if (wrap) applySceneLayerPosition(wrap, scene);
   if (box) applySceneLayerPosition(box, scene);
 }
+// ---- Click-through picking ----
+// Each layer's pointer target is its full image rectangle, so a transparent part
+// of the top layer used to swallow presses meant for the layers under it. Picking
+// looks at the pixels instead: a press goes to the topmost layer that is opaque
+// at that point. Each picture keeps a small alpha copy for this, rebuilt after
+// each render; until a copy is ready the old behaviour applies.
+const layerPickCache = new Map();
+const PICK_MAX_SIDE = 512;
+const PICK_MIN_ALPHA = 16;
+
+async function buildLayerPick(scene) {
+  const image = await loadImage(scene.dataUrl);
+  const naturalWidth = image.naturalWidth || image.width;
+  const naturalHeight = image.naturalHeight || image.height;
+  const scale = Math.min(1, PICK_MAX_SIDE / Math.max(naturalWidth, naturalHeight));
+  const width = Math.max(1, Math.round(naturalWidth * scale));
+  const height = Math.max(1, Math.round(naturalHeight * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  ctx.drawImage(image, 0, 0, width, height);
+  if (scene.eraseMask) {
+    // Erased parts are transparent for picking too.
+    ctx.globalCompositeOperation = "destination-in";
+    ctx.drawImage(await loadImage(scene.eraseMask), 0, 0, width, height);
+  }
+  const data = ctx.getImageData(0, 0, width, height).data;
+  const alpha = new Uint8Array(width * height);
+  for (let i = 0; i < alpha.length; i++) alpha[i] = data[i * 4 + 3];
+  return { dataUrl: scene.dataUrl, eraseMask: scene.eraseMask || "", naturalWidth, naturalHeight, width, height, alpha };
+}
+
+// Alpha copy for one layer, built now when the cache doesn't hold a current one.
+async function getLayerPick(scene) {
+  const cached = layerPickCache.get(scene.id);
+  if (cached && cached.dataUrl === scene.dataUrl && cached.eraseMask === (scene.eraseMask || "")) return cached;
+  const pick = await buildLayerPick(scene);
+  layerPickCache.set(scene.id, pick);
+  return pick;
+}
+
+// True when a picture layer has visible pixels inside a rectangle (output px).
+// Copy, cut and keep-only use this, so an empty or transparent spot of the
+// canvas (even one inside a full-canvas paint layer) is not a layer.
+export async function rectHasSceneContent(scene, rect) {
+  if (!scene || scene.type === "text" || !scene.dataUrl) return false;
+  const pick = await getLayerPick(scene);
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const layer = getSceneImageDrawRect(scene, pick.naturalWidth, pick.naturalHeight, outputWidth, outputHeight);
+  const x0 = Math.max(rect.x, layer.x);
+  const y0 = Math.max(rect.y, layer.y);
+  const x1 = Math.min(rect.x + rect.width, layer.x + layer.width);
+  const y1 = Math.min(rect.y + rect.height, layer.y + layer.height);
+  if (x1 <= x0 || y1 <= y0) return false;
+  const u0 = Math.max(0, Math.floor(((x0 - layer.x) / layer.width) * pick.width));
+  const u1 = Math.min(pick.width - 1, Math.ceil(((x1 - layer.x) / layer.width) * pick.width) - 1);
+  const v0 = Math.max(0, Math.floor(((y0 - layer.y) / layer.height) * pick.height));
+  const v1 = Math.min(pick.height - 1, Math.ceil(((y1 - layer.y) / layer.height) * pick.height) - 1);
+  for (let v = v0; v <= v1; v++) {
+    for (let u = u0; u <= u1; u++) {
+      if (pick.alpha[v * pick.width + u] >= PICK_MIN_ALPHA) return true;
+    }
+  }
+  return false;
+}
+
+export function warmLayerPickCache() {
+  const live = new Set(scenes.map((scene) => scene.id));
+  for (const id of layerPickCache.keys()) {
+    if (!live.has(id)) layerPickCache.delete(id);
+  }
+  scenes.forEach((scene) => {
+    if (scene.type === "text" || !scene.dataUrl) return;
+    const cached = layerPickCache.get(scene.id);
+    if (cached && cached.dataUrl === scene.dataUrl && cached.eraseMask === (scene.eraseMask || "")) return;
+    buildLayerPick(scene)
+      .then((pick) => layerPickCache.set(scene.id, pick))
+      .catch(() => {});
+  });
+}
+
+// Topmost picture layer that is opaque under the mouse. `unknown` means a layer
+// above the point has no alpha copy yet, so the answer isn't known.
+function findPictureLayerAt(clientX, clientY) {
+  const stage = document.querySelector(".composite-stage");
+  if (!stage) return null;
+  const rect = stage.getBoundingClientRect();
+  if (rect.width <= 0 || rect.height <= 0) return null;
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const x = ((clientX - rect.left) / rect.width) * outputWidth;
+  const y = ((clientY - rect.top) / rect.height) * outputHeight;
+  for (const scene of scenes) {
+    if (scene.type === "text" || !scene.dataUrl) continue;
+    const pick = layerPickCache.get(scene.id);
+    if (!pick || pick.dataUrl !== scene.dataUrl || pick.eraseMask !== (scene.eraseMask || "")) {
+      return { scene, unknown: true };
+    }
+    const layer = getSceneImageDrawRect(scene, pick.naturalWidth, pick.naturalHeight, outputWidth, outputHeight);
+    if (x < layer.x || y < layer.y || x >= layer.x + layer.width || y >= layer.y + layer.height) continue;
+    const u = Math.min(pick.width - 1, Math.floor(((x - layer.x) / layer.width) * pick.width));
+    const v = Math.min(pick.height - 1, Math.floor(((y - layer.y) / layer.height) * pick.height));
+    if (pick.alpha[v * pick.width + u] >= PICK_MIN_ALPHA) return { scene, unknown: false };
+  }
+  return null;
+}
+
+// Runs in the capture phase on the stage, before the layer boxes see the press.
+// A press on a layer's transparent part goes to the layer that is opaque there,
+// or starts a marquee when no layer is.
+export function handleStagePressCapture(event, stage) {
+  if (event.button !== 0 || isSpacePanning || eraseModeSceneId) return;
+  if (event.target.closest(".image-transform-handle, .scene-text-block, .scene-resize-handle, .scene-erase-canvas")) return;
+  const layerEl = event.target.closest(".scene-image-wrap, .scene-image-transform-box");
+  if (!layerEl) return;
+  const ownId = layerEl.dataset.sceneId || layerEl.dataset.sceneTransformId;
+  const pick = findPictureLayerAt(event.clientX, event.clientY);
+  if (pick && pick.unknown) return;
+  if (pick && pick.scene.id === ownId) return;
+  event.stopPropagation();
+  event.preventDefault();
+  if (pick) {
+    if (!applySceneModifierSelection(event, pick.scene.id)) setSelectedScene(pick.scene.id);
+    return;
+  }
+  startSceneMarqueeSelect(event, stage);
+}
+
 export function startSceneImagePan(event, scene) {
   if (scene.isLocked) return;
   if (isSpacePanning) return;

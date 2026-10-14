@@ -53,6 +53,8 @@ import {
   sceneViewportZoom,
   startInlineSceneTextEdit,
   startSceneMarqueeSelect,
+  handleStagePressCapture,
+  warmLayerPickCache,
   startSceneTextDrag,
   startSceneTextResize,
   updateSceneImageTransform,
@@ -195,6 +197,10 @@ export function renderScenes() {
   stage.addEventListener("pointerdown", (event) => {
     handleToolStagePointerDown(event, stage);
   });
+  // Move tool: presses on transparent parts of layers pass through (capture phase).
+  stage.addEventListener("pointerdown", (event) => {
+    if (getActiveTool() === "move") handleStagePressCapture(event, stage);
+  }, true);
   stage.style.width = `${getScenePreviewWidth()}px`;
   stage.style.height = `${getScenePreviewHeight()}px`;
   stage.style.setProperty("--scene-padding", `${getScenePadding()}px`);
@@ -340,8 +346,12 @@ export function renderScenes() {
     if (erasing) wrap.append(createSceneEraseCanvas(scene, imageTransitionMask));
 
     // The move/scale box would sit above the erase canvas and swallow strokes.
-    if (!scene.isLocked && !erasing && getActiveTool() === "move") {
+    // Move tool: the full box (drag and handles). Other tools: a visual-only frame
+    // around the selected layer, so the selection stays visible.
+    const moveTool = getActiveTool() === "move";
+    if (!scene.isLocked && (moveTool ? !erasing : isSceneSelected(scene.id))) {
       const transformBox = createSceneImageTransformBox(scene);
+      if (!moveTool) transformBox.classList.add("frame-only");
       // Offset 2: just above this scene's own image content (offset 1) so
       // its drag/resize handles are grabbable, but still inside this
       // scene's own 10-wide z-index band so a layer correctly in front of
@@ -451,6 +461,7 @@ export function renderScenes() {
   sceneList.append(composer);
   scheduleSceneAutosave();
   if (window.lucide) window.lucide.createIcons();
+  warmLayerPickCache();
   requestAnimationFrame(() => {
     applySceneViewportZoom();
     if (shouldAutoFitSceneViewport) {

@@ -20,7 +20,7 @@ import {
   setEraseBrushPercent,
   setSceneEraseMode,
 } from "./canvas.js?v=3.20.2";
-import { cropSceneToRect, createPaintLayer, loadImage, pushSceneHistory } from "./scene-model.js?v=3.20.2";
+import { createPaintLayer, loadImage, pushSceneHistory } from "./scene-model.js?v=3.20.2";
 import { scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import { createColorControl, createRangeControl, renderScenes } from "./layer-panel.js?v=3.20.2";
 
@@ -154,11 +154,9 @@ function createToolOptions() {
     const hint = document.createElement("span");
     hint.className = "tool-options-hint";
     hint.textContent = t("tool.cropHint");
-    const apply = createToolButton(t("tool.apply"), applyCrop);
-    apply.disabled = !cropReady;
     const cancel = createToolButton(t("tool.cancel"), cancelCrop);
     cancel.disabled = !cropDraft;
-    bar.append(hint, apply, cancel);
+    bar.append(hint, cancel);
   }
   return bar;
 }
@@ -400,19 +398,12 @@ function onCropUp(event) {
   renderScenes();
 }
 
-async function applyCrop() {
-  const target = getSelectedPictureScene();
-  if (!target || !cropDraft) {
-    setSceneStatus(t("status.toolNeedsLayer"));
-    return;
-  }
-  const rect = cropDraft;
-  cropDraft = null;
-  cropReady = false;
-  await cropSceneToRect(target, rect);
+function cancelCrop() {
+  clearCropSelection();
 }
 
-function cancelCrop() {
+// Drops the crop rectangle once it has been cut or kept, or cancelled.
+export function clearCropSelection() {
   cropDraft = null;
   cropReady = false;
   renderScenes();
