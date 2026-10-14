@@ -47,6 +47,9 @@ import {
   drawSceneTextBlock,
   getSceneBackgroundHeight,
   getSceneOutputWidth,
+  handleSceneFileDragLeave,
+  handleSceneFileDragOver,
+  handleSceneFileDrop,
   handleSceneKeyDown,
   handleSceneKeyUp,
   handleSceneWheel,
@@ -131,7 +134,6 @@ export const sceneCanvasMaxDimension = 32767;
 // the canvas is allocated, so it catches every path that can set the two
 // dimensions (Ayarlar inputs, RSE import, drag-resize handle).
 export const sceneCanvasMaxPixels = 40_000_000;
-export const sceneCanvasBackground = "#10141b";
 export const rseProjectMagic = "ROLEPLAY_SCENE_EXPORT";
 export const rseProjectVersion = 1;
 // RSE files embed every layer's image as base64, so a legitimate multi-image
@@ -287,6 +289,9 @@ document.querySelector("#aboutChangelogNext").addEventListener("click", (event) 
   showNextChangelogPage();
 });
 document.addEventListener("paste", handlePaste);
+document.addEventListener("dragover", handleSceneFileDragOver);
+document.addEventListener("dragleave", handleSceneFileDragLeave);
+document.addEventListener("drop", handleSceneFileDrop);
 document.addEventListener("pointermove", (event) => {
   lastPointerClientX = event.clientX;
   lastPointerClientY = event.clientY;

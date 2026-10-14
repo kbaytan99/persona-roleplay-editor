@@ -32,6 +32,13 @@ import {
   fitSceneToViewport,
   getSceneFontSize,
   getSceneImagePreviewFilter,
+  applySceneEraseMask,
+  clearSceneEraseMask,
+  createSceneEraseCanvas,
+  getEraseBrushPercent,
+  isSceneEraseMode,
+  setEraseBrushPercent,
+  toggleSceneEraseMode,
   getSceneImageTransform,
   getSceneLayerZIndex,
   getScenePadding,
@@ -250,12 +257,15 @@ export function renderScenes() {
     wrap.addEventListener("pointerleave", () => {
       if (hoveredSceneId === scene.id) setHoveredSceneIdRaw("");
     });
+    const erasing = isSceneEraseMode(scene);
     const image = document.createElement("img");
     image.src = scene.dataUrl;
     image.alt = scene.name;
     image.dataset.sceneImageId = scene.id;
     image.style.transform = getSceneImageTransform(scene);
     image.style.filter = getSceneImagePreviewFilter(scene);
+    // While erasing, the live erase canvas (appended below) stands in for it.
+    if (erasing) image.style.visibility = "hidden";
     image.addEventListener("load", () => applySceneViewportZoom());
     wrap.append(image);
 
@@ -263,6 +273,7 @@ export function renderScenes() {
     const transStyle = scene.transitionStyle || "none";
     const transSize = scene.transitionStyle === "none" ? 0 : (scene.transitionSize ?? 150);
     const transSides = scene.transitionSides || "both";
+    let imageTransitionMask = "";
 
     if (transStyle !== "none" && transSize > 0) {
       if (transStyle === "soft") {
@@ -274,8 +285,7 @@ export function renderScenes() {
         } else if (transSides === "bottom") {
           mask = `linear-gradient(to top, transparent 0px, black ${transSize}px)`;
         }
-        image.style.webkitMaskImage = mask;
-        image.style.maskImage = mask;
+        imageTransitionMask = mask;
       } else if (transStyle === "cinematic") {
         if (transSides === "both" || transSides === "top") {
           const topOverlay = document.createElement("div");
@@ -289,7 +299,8 @@ export function renderScenes() {
           bottomOverlay.style.height = `${transSize}px`;
           wrap.append(bottomOverlay);
         }
-      } else if (transStyle === "blur") {
+      } else if (transStyle === "blur" && !erasing) {
+        // Skipped while erasing: this copy would paint over the live erase canvas.
         const blurImg = image.cloneNode(true);
         blurImg.style.filter = (image.style.filter || "") + " blur(15px)";
         blurImg.style.position = "absolute";
@@ -308,13 +319,15 @@ export function renderScenes() {
         } else if (transSides === "bottom") {
           mask = `linear-gradient(to top, black 0px, transparent ${transSize}px)`;
         }
-        blurImg.style.webkitMaskImage = mask;
-        blurImg.style.maskImage = mask;
+        applySceneEraseMask(blurImg, scene, mask);
         wrap.append(blurImg);
       }
     }
+    applySceneEraseMask(image, scene, imageTransitionMask);
+    if (erasing) wrap.append(createSceneEraseCanvas(scene, imageTransitionMask));
 
-    if (!scene.isLocked) {
+    // The move/scale box would sit above the erase canvas and swallow strokes.
+    if (!scene.isLocked && !erasing) {
       const transformBox = createSceneImageTransformBox(scene);
       // Offset 2: just above this scene's own image content (offset 1) so
       // its drag/resize handles are grabbable, but still inside this
@@ -790,6 +803,27 @@ export function createImageLayerControls(scene) {
   resetFilterButton.addEventListener("click", () => resetSceneFilter(scene));
   filterSection.body.append(resetFilterButton);
   nodes.push(filterSection.el);
+
+  const eraseSection = createLayerSection(`${scene.id}:erase`, t("section.erase"), false);
+  const erasing = isSceneEraseMode(scene);
+  const eraseToggle = document.createElement("button");
+  eraseToggle.type = "button";
+  eraseToggle.className = "layer-mini-btn";
+  eraseToggle.setAttribute("aria-pressed", String(erasing));
+  eraseToggle.textContent = erasing ? t("control.eraseDone") : t("control.erase");
+  eraseToggle.addEventListener("click", () => toggleSceneEraseMode(scene));
+  const eraseClearButton = document.createElement("button");
+  eraseClearButton.type = "button";
+  eraseClearButton.className = "layer-mini-btn";
+  eraseClearButton.textContent = t("control.eraseClear");
+  eraseClearButton.addEventListener("click", () => clearSceneEraseMask(scene));
+  eraseSection.body.append(
+    createRangeControl(t("control.eraseBrush"), getEraseBrushPercent(), 0.5, 20, 0.5,
+      (value) => setEraseBrushPercent(value), "brush"),
+    eraseToggle,
+    eraseClearButton,
+  );
+  nodes.push(eraseSection.el);
 
   const transSection = createLayerSection(`${scene.id}:trans`, t("section.transition"), false);
   transSection.body.append(

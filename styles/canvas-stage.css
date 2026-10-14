@@ -399,6 +399,23 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   pointer-events: auto;
 }
 
+.scene-erase-canvas {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: auto;
+  display: block;
+  transform-origin: center center;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+.composite-stage.file-drag-over {
+  outline: 2px dashed var(--ui-accent, #48c7b8);
+  outline-offset: 6px;
+}
+
 .scene-smart-guides {
   position: absolute;
   inset: 0;

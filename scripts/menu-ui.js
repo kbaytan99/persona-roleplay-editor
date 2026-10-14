@@ -20,6 +20,8 @@ import {
   exportSceneProject,
   getSceneClipboardTargets,
   getSceneDeleteTargets,
+  getMergeableScenes,
+  mergeSelectedScenes,
   pasteSceneClipboard,
   redoSceneHistory,
   removeScene,
@@ -135,6 +137,7 @@ export function showSceneContextMenu(clientX, clientY, scene) {
   addItem(t("edit.cut"), cutSelectedScenes, "Ctrl+X", "cut");
   addItem(t("edit.paste"), pasteSceneClipboard, "Ctrl+V", "paste");
   addItem(t("edit.duplicate"), duplicateSelectedScenes, "Ctrl+D", "duplicate");
+  addItem(t("edit.merge"), mergeSelectedScenes, null, "merge");
   addItem(t("edit.delete"), () => {
     const ids = getSceneDeleteTargets();
     if (!ids.length) return;
@@ -214,6 +217,8 @@ export function refreshEditMenuState() {
   document.querySelectorAll("#copyMenuBtn, .scene-context-menu [data-action='copy']").forEach((el) => { el.disabled = !hasTargets; });
   document.querySelectorAll("#cutMenuBtn, .scene-context-menu [data-action='cut']").forEach((el) => { el.disabled = !hasTargets; });
   document.querySelectorAll("#duplicateMenuBtn, .scene-context-menu [data-action='duplicate']").forEach((el) => { el.disabled = !hasTargets; });
+  const hasMerge = getMergeableScenes().length >= 2;
+  document.querySelectorAll("#mergeMenuBtn, .scene-context-menu [data-action='merge']").forEach((el) => { el.disabled = !hasMerge; });
   document.querySelectorAll("#pasteMenuBtn, .scene-context-menu [data-action='paste']").forEach((el) => { el.disabled = !hasClipboard; });
   const deleteTargets = getSceneDeleteTargets().length > 0;
   document.querySelectorAll(".scene-context-menu [data-action='delete']").forEach((el) => { el.disabled = !deleteTargets; });
@@ -396,6 +401,7 @@ export function initMenuBar() {
   document.querySelector("#cutMenuBtn").addEventListener("click", cutSelectedScenes);
   document.querySelector("#pasteMenuBtn").addEventListener("click", pasteSceneClipboard);
   document.querySelector("#duplicateMenuBtn").addEventListener("click", duplicateSelectedScenes);
+  document.querySelector("#mergeMenuBtn").addEventListener("click", mergeSelectedScenes);
   document.querySelector("#selectAllMenuBtn").addEventListener("click", selectAllScenes);
   document.querySelector("#toggleLayersMenuBtn").addEventListener("click", () => {
     if (document.body.classList.contains("layers-hidden")) showLayersPanel();
