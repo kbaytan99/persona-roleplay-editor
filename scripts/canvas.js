@@ -30,6 +30,7 @@ import {
   uploadCompositeSceneToImgbb,
   sceneClipboardScenes,
   addSceneImages,
+  loadImage,
 } from "./scene-model.js?v=3.20.2";
 import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.2";
 import {
@@ -853,6 +854,207 @@ export function handleSceneFileDrop(event) {
   addSceneImages(event.dataTransfer.files, getStagePercentAt(event.clientX, event.clientY));
 }
 
+// ---- Silgi (per-layer eraser) ----
+// scene.eraseMask is a PNG the size of the source image: opaque = visible,
+// transparent = erased. The preview applies it as a CSS mask
+// (applySceneEraseMask) and the export multiplies it into the layer's alpha
+// (getSceneKeyedSource). While a layer is in erase mode its <img> is hidden
+// and a live canvas (createSceneEraseCanvas) shows image x mask, so strokes
+// appear while dragging; the mask is encoded once per stroke, on release.
+let eraseModeSceneId = "";
+let eraseBrushPercent = 3;
+let eraseMaskCache = { sceneId: "", source: "", base: null, canvas: null };
+let eraseStroke = null;
+
+export function isSceneEraseMode(scene) {
+  return eraseModeSceneId === scene.id;
+}
+
+export function getEraseBrushPercent() {
+  return eraseBrushPercent;
+}
+
+export function setEraseBrushPercent(value) {
+  eraseBrushPercent = clampNumber(value, 0.5, 20, eraseBrushPercent);
+}
+
+async function loadEraseMaskCache(scene) {
+  const source = scene.eraseMask || "";
+  if (eraseMaskCache.canvas && eraseMaskCache.sceneId === scene.id && eraseMaskCache.source === source) {
+    return eraseMaskCache;
+  }
+  const base = await loadImage(scene.dataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = base.naturalWidth;
+  canvas.height = base.naturalHeight;
+  const ctx = canvas.getContext("2d");
+  if (source) {
+    ctx.drawImage(await loadImage(source), 0, 0, canvas.width, canvas.height);
+  } else {
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+  }
+  eraseMaskCache = { sceneId: scene.id, source, base, canvas };
+  return eraseMaskCache;
+}
+
+function drawSceneEraseDisplay(display, cache) {
+  const mask = cache.canvas;
+  if (display.width !== mask.width) display.width = mask.width;
+  if (display.height !== mask.height) display.height = mask.height;
+  const ctx = display.getContext("2d");
+  ctx.clearRect(0, 0, display.width, display.height);
+  ctx.drawImage(cache.base, 0, 0, display.width, display.height);
+  ctx.globalCompositeOperation = "destination-in";
+  ctx.drawImage(mask, 0, 0);
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function getEraseLocalPoint(clientX, clientY, display) {
+  const rect = display.getBoundingClientRect();
+  return {
+    x: ((clientX - rect.left) / rect.width) * display.width,
+    y: ((clientY - rect.top) / rect.height) * display.height,
+  };
+}
+
+function paintEraseSegment(stroke, from, to) {
+  const ctx = stroke.cache.canvas.getContext("2d");
+  ctx.save();
+  ctx.globalCompositeOperation = "destination-out";
+  ctx.lineCap = "round";
+  ctx.lineWidth = stroke.radius * 2;
+  ctx.beginPath();
+  ctx.moveTo(from.x, from.y);
+  ctx.lineTo(to.x, to.y);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(to.x, to.y, stroke.radius, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+}
+
+function startEraseStroke(event, scene, display) {
+  if (event.button !== 0) return;
+  event.preventDefault();
+  event.stopPropagation();
+  try {
+    display.setPointerCapture(event.pointerId);
+  } catch {
+    // Synthetic events have no active pointer to capture; real ones always do.
+  }
+  // One undo step per stroke: the snapshot is taken before the mask changes.
+  pushSceneHistory();
+  const stroke = { scene, display, pointerId: event.pointerId, cache: null, radius: 0, last: null, ended: false };
+  eraseStroke = stroke;
+  loadEraseMaskCache(scene).then((cache) => {
+    stroke.cache = cache;
+    // Brush size is a percent of the image width, so the same slider value
+    // removes the same visible amount at any source resolution.
+    stroke.radius = (eraseBrushPercent / 100) * cache.canvas.width;
+    stroke.last = getEraseLocalPoint(event.clientX, event.clientY, display);
+    paintEraseSegment(stroke, stroke.last, stroke.last);
+    drawSceneEraseDisplay(display, cache);
+    if (stroke.ended) finishEraseStroke(stroke);
+  }).catch(() => {
+    eraseStroke = null;
+    setSceneStatus(t("error.unknown"));
+  });
+}
+
+function continueEraseStroke(event) {
+  const stroke = eraseStroke;
+  if (!stroke || stroke.ended || !stroke.cache || event.pointerId !== stroke.pointerId) return;
+  const point = getEraseLocalPoint(event.clientX, event.clientY, stroke.display);
+  paintEraseSegment(stroke, stroke.last, point);
+  stroke.last = point;
+  drawSceneEraseDisplay(stroke.display, stroke.cache);
+}
+
+function endEraseStroke(event) {
+  const stroke = eraseStroke;
+  if (!stroke || event.pointerId !== stroke.pointerId) return;
+  stroke.ended = true;
+  // Released before the mask finished loading: finish once it arrives.
+  if (stroke.cache) finishEraseStroke(stroke);
+}
+
+function finishEraseStroke(stroke) {
+  eraseStroke = null;
+  stroke.scene.eraseMask = stroke.cache.canvas.toDataURL("image/png");
+  stroke.cache.source = stroke.scene.eraseMask;
+  scheduleSceneAutosave();
+}
+
+export function createSceneEraseCanvas(scene, transitionMask = "") {
+  const display = document.createElement("canvas");
+  display.className = "scene-erase-canvas";
+  display.dataset.sceneEraseId = scene.id;
+  display.style.transform = getSceneImageTransform(scene);
+  display.style.filter = getSceneImagePreviewFilter(scene);
+  applySceneEraseMask(display, scene, transitionMask, false);
+  display.addEventListener("pointerdown", (event) => startEraseStroke(event, scene, display));
+  display.addEventListener("pointermove", continueEraseStroke);
+  display.addEventListener("pointerup", endEraseStroke);
+  display.addEventListener("pointercancel", endEraseStroke);
+  loadEraseMaskCache(scene)
+    .then((cache) => drawSceneEraseDisplay(display, cache))
+    .catch(() => setSceneStatus(t("error.unknown")));
+  return display;
+}
+
+function handleEraseModeKeyDown(event) {
+  if (event.key === "Escape") exitSceneEraseMode();
+}
+
+export function toggleSceneEraseMode(scene) {
+  if (eraseModeSceneId === scene.id) {
+    exitSceneEraseMode();
+    return;
+  }
+  eraseModeSceneId = scene.id;
+  setSelectedScene(scene.id);
+  document.addEventListener("keydown", handleEraseModeKeyDown);
+  renderScenes();
+  setSceneStatus(t("status.eraseOn"));
+}
+
+export function exitSceneEraseMode() {
+  if (!eraseModeSceneId) return;
+  // Keep a stroke that's still being saved; drop nothing mid-edit.
+  if (eraseStroke?.cache) finishEraseStroke(eraseStroke);
+  eraseModeSceneId = "";
+  document.removeEventListener("keydown", handleEraseModeKeyDown);
+  renderScenes();
+  setSceneStatus(t("status.eraseOff"));
+}
+
+export function clearSceneEraseMask(scene) {
+  if (!scene.eraseMask) return;
+  pushSceneHistory();
+  scene.eraseMask = "";
+  eraseMaskCache = { sceneId: "", source: "", base: null, canvas: null };
+  scheduleSceneAutosave();
+  renderScenes();
+  setSceneStatus(t("status.eraseCleared"));
+}
+
+// Shared by the layer image and its blur-transition copy. transitionMask is
+// the CSS mask the transition style produced (or ""); the erase mask is
+// intersected with it so both still apply. The live erase canvas passes
+// includeErase=false because its pixels already have the erase baked in.
+export function applySceneEraseMask(element, scene, transitionMask = "", includeErase = true) {
+  const erase = includeErase && scene.eraseMask ? `url("${scene.eraseMask}")` : "";
+  const both = Boolean(erase && transitionMask);
+  const mask = both ? `${erase}, ${transitionMask}` : (erase || transitionMask);
+  element.style.webkitMaskImage = mask;
+  element.style.maskImage = mask;
+  element.style.webkitMaskComposite = both ? "source-in" : "";
+  element.style.maskComposite = both ? "intersect" : "";
+  element.style.webkitMaskSize = erase ? "100% 100%" : "";
+  element.style.maskSize = erase ? "100% 100%" : "";
+}
+
 export function updateSceneImageTransform(scene) {
   const image = document.querySelector(`[data-scene-image-id="${CSS.escape(scene.id)}"]`);
   const box = document.querySelector(`[data-scene-transform-id="${CSS.escape(scene.id)}"]`);
@@ -1225,14 +1427,21 @@ export function startSceneTextResize(event, textBlock) {
 // Export-side twin of the SVG preview key: bakes the same luma key into the
 // image's alpha at the size it is drawn, so the PNG / ImgBB output matches
 // what the stage shows. Returns the image untouched when the key is off.
-function getSceneKeyedSource(image, scene, width, height) {
+function getSceneKeyedSource(image, scene, width, height, eraseMaskImage = null) {
   const threshold = clampNumber(scene.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
-  if (!threshold || width < 1 || height < 1) return image;
+  if ((!threshold && !eraseMaskImage) || width < 1 || height < 1) return image;
   const keyed = document.createElement("canvas");
   keyed.width = width;
   keyed.height = height;
   const keyedCtx = keyed.getContext("2d", { willReadFrequently: true });
   keyedCtx.drawImage(image, 0, 0, width, height);
+  if (eraseMaskImage) {
+    // Keep only where the mask is opaque (= not erased).
+    keyedCtx.globalCompositeOperation = "destination-in";
+    keyedCtx.drawImage(eraseMaskImage, 0, 0, width, height);
+    keyedCtx.globalCompositeOperation = "source-over";
+  }
+  if (!threshold) return keyed;
   const pixels = keyedCtx.getImageData(0, 0, width, height);
   const data = pixels.data;
   const { low, band } = getSceneBgKeyRange(threshold);
@@ -1249,17 +1458,32 @@ function getSceneKeyedSource(image, scene, width, height) {
 // pixel budget - keeps the aspect ratio so the composite still looks like
 // what the user configured, just smaller, rather than cropping or
 // stretching it.
-export function drawSceneLayerImage(context, image, scene, width, height) {
+// Where a picture layer lands on the output, in output pixels. Shared by the
+// export (drawSceneLayerImage) and the merge, which needs the union box of
+// several layers before it draws anything.
+export function getSceneImageDrawRect(scene, naturalWidth, naturalHeight, width, height) {
   const zoom = (scene.imageZoom || 100) / 100;
   const scaleX = (scene.imageScaleX || 100) / 100;
   const scaleY = (scene.imageScaleY || 100) / 100;
-  const naturalWidth = image.naturalWidth || image.width;
-  const naturalHeight = image.naturalHeight || image.height;
   const baseHeight = Math.round((naturalHeight * width) / Math.max(1, naturalWidth));
   const drawWidth = Math.ceil(width * zoom * scaleX);
   const drawHeight = Math.ceil(baseHeight * zoom * scaleY);
-  const drawX = ((scene.imageX || 0) / 100) * width + (width - drawWidth) / 2;
-  const drawY = ((scene.imageY || 0) / 100) * height + (baseHeight - drawHeight) / 2;
+  return {
+    x: ((scene.imageX || 0) / 100) * width + (width - drawWidth) / 2,
+    y: ((scene.imageY || 0) / 100) * height + (baseHeight - drawHeight) / 2,
+    width: drawWidth,
+    height: drawHeight,
+  };
+}
+
+export function drawSceneLayerImage(context, image, scene, width, height, eraseMaskImage = null) {
+  const { x: drawX, y: drawY, width: drawWidth, height: drawHeight } = getSceneImageDrawRect(
+    scene,
+    image.naturalWidth || image.width,
+    image.naturalHeight || image.height,
+    width,
+    height,
+  );
 
   // Temporary canvas to process filters and masks/transitions per layer
   const tempCanvas = document.createElement("canvas");
@@ -1269,7 +1493,7 @@ export function drawSceneLayerImage(context, image, scene, width, height) {
 
   // Draw filtered image on temp canvas. The background key goes first so
   // brightness/contrast don't shift which pixels count as "dark" enough to drop.
-  const source = getSceneKeyedSource(image, scene, drawWidth, drawHeight);
+  const source = getSceneKeyedSource(image, scene, drawWidth, drawHeight, eraseMaskImage);
   tempCtx.save();
   tempCtx.filter = getSceneImageFilter(scene);
   tempCtx.drawImage(source, 0, 0, drawWidth, drawHeight);

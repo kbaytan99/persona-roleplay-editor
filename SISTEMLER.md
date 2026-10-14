@@ -65,6 +65,22 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   resim degismez - sadece sahne gorunumunde ve PNG/ImgBB ciktisinda uygulanir.
   Filtreler'in "Sifirla" dugmesi bunu da 0'a dondurur. *(`getSceneBgKeyRange`,
   `getSceneImagePreviewFilter`, `getSceneKeyedSource`, `bgRemove`)*
+- **Silgi (Katman Silgisi)** — Filtreler'in altindaki "Silgi" bolumunden bir
+  resim katmaninin "Silgi modu"na girilir; canvas'ta resmin uzerinde surukleyerek
+  pikselleri siler (fircanin boyutu resmin genisligine yuzde olarak, 0.5-20).
+  Silinen alan `scene.eraseMask` (seffaflik PNG'si) olarak katmanda saklanir;
+  her firca darbesi geri al ile ayri ayri geri alinabilir. Esc ya da "Silgiyi
+  bitir" ile cikilir, "Silgiyi temizle" tum silmeyi kaldirir. Silme sirasinda
+  katmanin tasima/boyutlandirma tutamaclari gecici olarak kapanir.
+  *(`toggleSceneEraseMode`, `startEraseStroke`, `applySceneEraseMask`,
+  `createSceneEraseCanvas`, `eraseMask`)*
+- **Birlestir (Katman Birlestirme)** — Duzen menusunde ya da sag tik menusunde,
+  en az 2 resim katmani seciliyken aktif olur. Secili resim katmanlari
+  sahnede gorundugu gibi (filtre, gecis, arka plan silme ve silgi dahil)
+  tek bir resim katmanina duzlestirilir; katman, secililerin en ustteki
+  katmaninin yerine gecer ve kutusu yalnizca kapsadigi alana kirpilir. Yazi ve
+  kilitli katmanlar birlestirmeye girmez. *(`mergeSelectedScenes`,
+  `getMergeableScenes`, `getSceneImageDrawRect`, `loadSceneImages`)*
 - **Gecis Efektleri** — Stil (Soft fade/Sinematik/Blur/Keskin), Boyut ve Yon;
   Ayarlar menusunde degistirilince **otomatik olarak tum katmanlara**
   uygulanir. *(`applyGlobalTransitionToAllScenes`)*
@@ -195,7 +211,10 @@ Her madde: **Sistem Adi** — kisa aciklama. *(Koddaki karsiligi, arama icin.)*
   "Yapistir") bundan ayri, klavye seviyesinde ele alinir - bir katman
   kopyalanmisken Ctrl+V her zaman onu yapistirir. *(`handlePaste`,
   `addTextLayer`, `addSceneImageBlobs`)*
-- **PNG Disa Aktarma** — tum katmanlari tek bir PNG olarak birlestirip
+- **PNG Disa Aktarma** — Cikti seffaftir: hicbir katmanin kaplamadigi alan
+  mavimsi arka plan yerine seffaf kalir, yalnizca katmanlardaki resimler
+  cikar (`buildCompositeCanvas` artik arka plan doldurmuyor). Tum katmanlari
+  tek bir PNG olarak birlestirip
   gecici Blob URL uzerinden indirme; render/PNG hatalari arayuzde bildirilir
   ve ayni anda tek indirme calisir. *(`downloadCompositeScene`,
   `canvasToPngBlob`)*

@@ -20,6 +20,7 @@ import {
 import {
   isEditableTarget,
   drawSceneLayerImage,
+  getSceneImageDrawRect,
   drawSceneTextBlock,
   getSceneOutputWidth,
   getSceneBackgroundHeight,
@@ -47,7 +48,6 @@ import {
   sceneCanvasDefaultHeight,
   sceneCanvasMaxDimension,
   sceneCanvasMaxPixels,
-  sceneCanvasBackground,
   sceneTransitionPx,
   rseProjectMagic,
   rseProjectVersion,
@@ -760,6 +760,8 @@ export function normalizeImportedScene(scene, index) {
     clone.filterSepia = clampNumber(clone.filterSepia, 0, 18, sceneImageFilterDefaults.sepia);
     clone.filterBlur = clampNumber(clone.filterBlur, 0, 8, sceneImageFilterDefaults.blur);
     clone.bgRemove = clampNumber(clone.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
+    // Same data: check as dataUrl above - the eraser mask is an embedded PNG too.
+    clone.eraseMask = typeof clone.eraseMask === "string" && /^data:image\//i.test(clone.eraseMask) ? clone.eraseMask : "";
     clone.transitionStyle = ["soft", "cinematic", "blur", "none"].includes(clone.transitionStyle)
       ? clone.transitionStyle
       : "none";
@@ -1115,13 +1117,25 @@ export function clampCanvasPixelBudget(width, height) {
   };
 }
 
-export async function buildCompositeCanvas() {
-  ensureSceneModel();
+// Decodes each picture layer's image and erase mask once, so the export and
+// the merge can both draw them without loading the same data twice.
+async function loadSceneImages(sceneList) {
   const images = new Map(await Promise.all(
-    scenes
+    sceneList
       .filter((scene) => scene.type !== "text" && scene.dataUrl)
       .map(async (scene) => [scene.id, await loadImage(scene.dataUrl)]),
   ));
+  const eraseMasks = new Map(await Promise.all(
+    sceneList
+      .filter((scene) => scene.type !== "text" && scene.eraseMask)
+      .map(async (scene) => [scene.id, await loadImage(scene.eraseMask)]),
+  ));
+  return { images, eraseMasks };
+}
+
+export async function buildCompositeCanvas() {
+  ensureSceneModel();
+  const { images, eraseMasks } = await loadSceneImages(scenes);
   const canvas = document.createElement("canvas");
   const context = canvas.getContext("2d");
   const { width: outputWidth, height: outputHeight, scaled } = clampCanvasPixelBudget(
@@ -1136,8 +1150,8 @@ export async function buildCompositeCanvas() {
 
   canvas.width = outputWidth;
   canvas.height = outputHeight;
-  context.fillStyle = sceneCanvasBackground;
-  context.fillRect(0, 0, outputWidth, outputHeight);
+  // Deliberately no background fill: the PNG is transparent wherever no layer
+  // covers it, so only the layers' own pixels end up in the output.
 
   [...scenes].reverse().forEach((scene) => {
     if (scene.type === "text") {
@@ -1145,10 +1159,124 @@ export async function buildCompositeCanvas() {
       return;
     }
     const image = images.get(scene.id);
-    if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight);
+    if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight, eraseMasks.get(scene.id));
   });
 
   return canvas;
+}
+
+// Picture layers a merge would combine: the selected ones, in layer-list
+// order. Text layers and locked layers are left out of a merge.
+export function getMergeableScenes() {
+  return scenes.filter((scene) => selectedSceneIds.includes(scene.id)
+    && scene.type !== "text" && scene.dataUrl && !scene.isLocked);
+}
+
+// Flattens the selected picture layers into ONE picture layer. The new layer
+// is drawn exactly as the export draws them (filters, transitions, background
+// key and erasing included), then cropped to the union box of the sources.
+// Those effects are now baked in, so the new layer gets identity filter values
+// and no transition or erase mask of its own. It takes the place of the
+// top-most source; the sources are removed.
+export async function mergeSelectedScenes() {
+  const targets = getMergeableScenes();
+  if (targets.length < 2) {
+    setSceneStatus(t("status.mergeNeedsTwo"));
+    return;
+  }
+  const outputWidth = getSceneOutputWidth();
+  const outputHeight = getSceneBackgroundHeight();
+  const { images, eraseMasks } = await loadSceneImages(targets);
+
+  let left = Infinity;
+  let top = Infinity;
+  let right = -Infinity;
+  let bottom = -Infinity;
+  targets.forEach((scene) => {
+    const image = images.get(scene.id);
+    if (!image) return;
+    const rect = getSceneImageDrawRect(
+      scene,
+      image.naturalWidth || image.width,
+      image.naturalHeight || image.height,
+      outputWidth,
+      outputHeight,
+    );
+    left = Math.min(left, rect.x);
+    top = Math.min(top, rect.y);
+    right = Math.max(right, rect.x + rect.width);
+    bottom = Math.max(bottom, rect.y + rect.height);
+  });
+  // Clipped to the output: drawSceneLayerImage clips every layer to the output
+  // anyway, so nothing outside it would reach the export.
+  const x0 = Math.max(0, Math.floor(left));
+  const y0 = Math.max(0, Math.floor(top));
+  const x1 = Math.min(outputWidth, Math.ceil(right));
+  const y1 = Math.min(outputHeight, Math.ceil(bottom));
+  if (x1 <= x0 || y1 <= y0) {
+    setSceneStatus(t("status.mergeEmpty"));
+    return;
+  }
+
+  const cropWidth = x1 - x0;
+  const cropHeight = y1 - y0;
+  const canvas = document.createElement("canvas");
+  canvas.width = cropWidth;
+  canvas.height = cropHeight;
+  const context = canvas.getContext("2d");
+  context.translate(-x0, -y0);
+  [...targets].reverse().forEach((scene) => {
+    const image = images.get(scene.id);
+    if (image) drawSceneLayerImage(context, image, scene, outputWidth, outputHeight, eraseMasks.get(scene.id));
+  });
+
+  // Position so the new layer's visible box is exactly the crop, using the same
+  // geometry as getSceneImageDrawRect: zoom * scale must equal the crop's share
+  // of the output width, and the un-zoomed height follows the crop's aspect.
+  const share = cropWidth / outputWidth;
+  const imageZoom = clampNumber(share * 100, 5, 1200, 100);
+  const imageScale = clampNumber((share * 10000) / imageZoom, 5, 1200, 100);
+  const baseHeight = (cropHeight * outputWidth) / cropWidth;
+  const centerX = x0 + cropWidth / 2;
+  const centerY = y0 + cropHeight / 2;
+
+  pushSceneHistory();
+  const insertAt = scenes.indexOf(targets[0]);
+  const removeIds = new Set(targets.map((scene) => scene.id));
+  const merged = {
+    id: createId(),
+    name: t("layer.mergedName", { n: scenes.length + 1 }),
+    dataUrl: canvas.toDataURL("image/png"),
+    isBlank: false,
+    imageZoom,
+    imageScaleX: imageScale,
+    imageScaleY: imageScale,
+    imageX: ((centerX - outputWidth / 2) / outputWidth) * 100,
+    imageY: ((centerY - baseHeight / 2) / outputHeight) * 100,
+    filterBrightness: 100,
+    filterContrast: 100,
+    filterSaturate: 100,
+    filterSepia: 0,
+    filterBlur: 0,
+    bgRemove: 0,
+    eraseMask: "",
+    transitionStyle: "none",
+    transitionSize: 150,
+    transitionSides: "both",
+    isLocked: false,
+    blocks: [],
+  };
+  const remaining = scenes.filter((scene) => !removeIds.has(scene.id));
+  const keptBefore = scenes.slice(0, insertAt).filter((scene) => !removeIds.has(scene.id)).length;
+  remaining.splice(keptBefore, 0, merged);
+  scenes.splice(0, scenes.length, ...remaining);
+  setSelectedSceneIdsRaw([merged.id]);
+  setSelectedSceneIdRaw(merged.id);
+  setHoveredSceneIdRaw("");
+  expandedLayerIds.add(merged.id);
+  renderScenes();
+  scheduleSceneAutosave();
+  setSceneStatus(t("status.merged", { count: targets.length }));
 }
 
 export async function downloadCompositeScene() {

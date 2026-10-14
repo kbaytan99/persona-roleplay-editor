@@ -158,15 +158,18 @@ export function openUploadHistoryDb() {
 
 // Small (~160px-wide) JPEG thumbnail, not the full composite - at up to 50
 // stored entries, keeping each one small matters for IndexedDB/quota use.
-// JPEG (not PNG) is fine here since the composite is always drawn onto an
-// opaque background, so there's no transparency to preserve, and JPEG
-// compresses a photo-like composite far smaller than PNG.
+// JPEG (not PNG) compresses a photo-like composite far smaller than PNG. The
+// composite itself is transparent where no layer covers it, and JPEG has no
+// alpha - so the thumbnail is filled with the stage's dark color first, which
+// keeps those areas from turning black.
 export function createUploadThumbnail(canvas) {
   const scale = Math.min(1, 160 / canvas.width);
   const thumbCanvas = document.createElement("canvas");
   thumbCanvas.width = Math.max(1, Math.round(canvas.width * scale));
   thumbCanvas.height = Math.max(1, Math.round(canvas.height * scale));
   const ctx = thumbCanvas.getContext("2d");
+  ctx.fillStyle = "#10141b";
+  ctx.fillRect(0, 0, thumbCanvas.width, thumbCanvas.height);
   ctx.drawImage(canvas, 0, 0, thumbCanvas.width, thumbCanvas.height);
   return thumbCanvas.toDataURL("image/jpeg", 0.7);
 }
