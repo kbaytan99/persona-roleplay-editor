@@ -31,6 +31,7 @@ import {
   sceneClipboardScenes,
   addSceneImages,
   loadImage,
+  applySceneModifierSelection,
 } from "./scene-model.js?v=3.20.2";
 import { renderScenes, reorderScene } from "./layer-panel.js?v=3.20.2";
 import {
@@ -428,7 +429,8 @@ export function handleSceneKeyDown(event) {
     }
   }
 
-  if (event.key === "Delete" || event.code === "Delete") {
+  // Delete inside a text box edits that text; only outside one does it remove layers.
+  if ((event.key === "Delete" || event.code === "Delete") && !isTextEntryTarget(event.target)) {
     const sceneIds = getSceneDeleteTargets();
     if (!sceneIds.length) return;
     event.preventDefault();
@@ -863,6 +865,10 @@ export function handleSceneFileDrop(event) {
 // appear while dragging; the mask is encoded once per stroke, on release.
 let eraseModeSceneId = "";
 let eraseBrushPercent = 3;
+// "erase" removes everything under the brush; "bgErase" only removes pixels
+// close to the color under the stroke's start point (background eraser).
+let eraseBrushMode = "erase";
+let bgEraserTolerance = 25;
 let eraseMaskCache = { sceneId: "", source: "", base: null, canvas: null };
 let eraseStroke = null;
 
@@ -880,10 +886,15 @@ export function setEraseBrushPercent(value) {
 
 async function loadEraseMaskCache(scene) {
   const source = scene.eraseMask || "";
-  if (eraseMaskCache.canvas && eraseMaskCache.sceneId === scene.id && eraseMaskCache.source === source) {
+  // The live canvas shows the outlined pixels too, so an outline change must reload it.
+  const baseSource = await getSceneOutlinedSource(scene);
+  if (
+    eraseMaskCache.canvas && eraseMaskCache.sceneId === scene.id
+    && eraseMaskCache.source === source && eraseMaskCache.baseSource === baseSource
+  ) {
     return eraseMaskCache;
   }
-  const base = await loadImage(scene.dataUrl);
+  const base = await loadImage(baseSource);
   const canvas = document.createElement("canvas");
   canvas.width = base.naturalWidth;
   canvas.height = base.naturalHeight;
@@ -894,7 +905,14 @@ async function loadEraseMaskCache(scene) {
     ctx.fillStyle = "#fff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  eraseMaskCache = { sceneId: scene.id, source, base, canvas };
+  // Pixels of the base, used by the background eraser to match colors.
+  const baseCanvas = document.createElement("canvas");
+  baseCanvas.width = canvas.width;
+  baseCanvas.height = canvas.height;
+  const baseCtx = baseCanvas.getContext("2d", { willReadFrequently: true });
+  baseCtx.drawImage(base, 0, 0, canvas.width, canvas.height);
+  const baseData = baseCtx.getImageData(0, 0, canvas.width, canvas.height).data;
+  eraseMaskCache = { sceneId: scene.id, source, baseSource, base, canvas, baseData };
   return eraseMaskCache;
 }
 
@@ -919,6 +937,10 @@ function getEraseLocalPoint(clientX, clientY, display) {
 }
 
 function paintEraseSegment(stroke, from, to) {
+  if (stroke.mode === "bgErase") {
+    paintBgEraseSegment(stroke, from, to);
+    return;
+  }
   const ctx = stroke.cache.canvas.getContext("2d");
   ctx.save();
   ctx.globalCompositeOperation = "destination-out";
@@ -934,6 +956,96 @@ function paintEraseSegment(stroke, from, to) {
   ctx.restore();
 }
 
+export function setEraseBrushMode(mode) {
+  eraseBrushMode = mode === "bgErase" ? "bgErase" : "erase";
+}
+
+export function getEraseBrushMode() {
+  return eraseBrushMode;
+}
+
+export function setBgEraserTolerance(value) {
+  bgEraserTolerance = clampNumber(value, 0, 100, bgEraserTolerance);
+}
+
+export function getBgEraserTolerance() {
+  return bgEraserTolerance;
+}
+
+// Average of a 5x5 patch of the base image, so one noisy pixel doesn't set the color.
+function sampleEraseBaseColor(cache, point) {
+  const { baseData, canvas } = cache;
+  let r = 0;
+  let g = 0;
+  let b = 0;
+  let count = 0;
+  for (let dy = -2; dy <= 2; dy++) {
+    for (let dx = -2; dx <= 2; dx++) {
+      const x = Math.round(point.x) + dx;
+      const y = Math.round(point.y) + dy;
+      if (x < 0 || y < 0 || x >= canvas.width || y >= canvas.height) continue;
+      const i = (y * canvas.width + x) * 4;
+      r += baseData[i];
+      g += baseData[i + 1];
+      b += baseData[i + 2];
+      count++;
+    }
+  }
+  return count ? [r / count, g / count, b / count] : [0, 0, 0];
+}
+
+// Background eraser stroke: inside the brush, pixels whose color is close to the
+// sampled color are erased from the mask; everything else stays.
+function paintBgEraseSegment(stroke, from, to) {
+  const { canvas, baseData } = stroke.cache;
+  const width = canvas.width;
+  const radius = stroke.radius;
+  const minX = Math.max(0, Math.floor(Math.min(from.x, to.x) - radius));
+  const minY = Math.max(0, Math.floor(Math.min(from.y, to.y) - radius));
+  const maxX = Math.min(width - 1, Math.ceil(Math.max(from.x, to.x) + radius));
+  const maxY = Math.min(canvas.height - 1, Math.ceil(Math.max(from.y, to.y) + radius));
+  if (maxX < minX || maxY < minY) return;
+  const boxWidth = maxX - minX + 1;
+  const boxHeight = maxY - minY + 1;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const area = ctx.getImageData(minX, minY, boxWidth, boxHeight);
+  const data = area.data;
+  const [sr, sg, sb] = stroke.sample;
+  const limit = (bgEraserTolerance / 100) * 0.4 * 255 * Math.sqrt(3);
+  const dx = to.x - from.x;
+  const dy = to.y - from.y;
+  const lengthSquared = dx * dx + dy * dy;
+  for (let by = 0; by < boxHeight; by++) {
+    for (let bx = 0; bx < boxWidth; bx++) {
+      const x = minX + bx;
+      const y = minY + by;
+      const along = lengthSquared ? clampNumber(((x - from.x) * dx + (y - from.y) * dy) / lengthSquared, 0, 1, 0) : 0;
+      const nearX = from.x + dx * along - x;
+      const nearY = from.y + dy * along - y;
+      if (nearX * nearX + nearY * nearY > radius * radius) continue;
+      const i = (y * width + x) * 4;
+      const dr = baseData[i] - sr;
+      const dg = baseData[i + 1] - sg;
+      const db = baseData[i + 2] - sb;
+      if (Math.sqrt(dr * dr + dg * dg + db * db) > limit) continue;
+      data[(by * boxWidth + bx) * 4 + 3] = 0;
+    }
+  }
+  ctx.putImageData(area, minX, minY);
+}
+
+// Erase mode on or off, without the toggle's flip, so the tool bar can drive it.
+export function setSceneEraseMode(scene, on) {
+  if (on) {
+    if (eraseModeSceneId === scene.id) return;
+    eraseModeSceneId = scene.id;
+    document.addEventListener("keydown", handleEraseModeKeyDown);
+    renderScenes();
+    return;
+  }
+  if (eraseModeSceneId === scene.id) exitSceneEraseMode();
+}
+
 function startEraseStroke(event, scene, display) {
   if (event.button !== 0) return;
   event.preventDefault();
@@ -945,7 +1057,10 @@ function startEraseStroke(event, scene, display) {
   }
   // One undo step per stroke: the snapshot is taken before the mask changes.
   pushSceneHistory();
-  const stroke = { scene, display, pointerId: event.pointerId, cache: null, radius: 0, last: null, ended: false };
+  const stroke = {
+    scene, display, pointerId: event.pointerId, cache: null, radius: 0, last: null, ended: false,
+    mode: eraseBrushMode, sample: null,
+  };
   eraseStroke = stroke;
   loadEraseMaskCache(scene).then((cache) => {
     stroke.cache = cache;
@@ -953,6 +1068,7 @@ function startEraseStroke(event, scene, display) {
     // removes the same visible amount at any source resolution.
     stroke.radius = (eraseBrushPercent / 100) * cache.canvas.width;
     stroke.last = getEraseLocalPoint(event.clientX, event.clientY, display);
+    if (stroke.mode === "bgErase") stroke.sample = sampleEraseBaseColor(cache, stroke.last);
     paintEraseSegment(stroke, stroke.last, stroke.last);
     drawSceneEraseDisplay(display, cache);
     if (stroke.ended) finishEraseStroke(stroke);
@@ -1078,6 +1194,8 @@ export function startSceneImagePan(event, scene) {
 
   event.preventDefault();
   event.stopPropagation();
+  // Ctrl/Shift press only changes the selection; it doesn't start a move.
+  if (applySceneModifierSelection(event, scene.id)) return;
   const isGroupMember = selectedSceneIds.includes(scene.id) && selectedSceneIds.length > 1;
   if (!isGroupMember) setSelectedScene(scene.id);
   pushSceneHistory();
@@ -1322,6 +1440,7 @@ export function startSceneTextDrag(event, textBlock) {
 
   event.preventDefault();
   event.stopPropagation();
+  if (applySceneModifierSelection(event, block.dataset.sceneId)) return;
   const isGroupMember = selectedSceneIds.includes(block.dataset.sceneId) && selectedSceneIds.length > 1;
   if (!isGroupMember) setSelectedScene(block.dataset.sceneId);
   if (textBlock.isLocked) return;
@@ -1424,6 +1543,139 @@ export function startSceneTextResize(event, textBlock) {
   handle.addEventListener("pointerup", onUp);
   handle.addEventListener("pointercancel", onUp);
 }
+// ---- Kontur (text outline) ----
+// Photoshop's way, on a flat picture: pick the text's color, take the pixels of
+// that color as the text, expand that selection by the outline width, and paint
+// the ring around it. The text pixels themselves are never changed. The export
+// applies it while it builds the layer (getSceneKeyedSource); the preview shows
+// the same pixels as a baked PNG (getSceneOutlinedSource), so they match.
+const outlinedSourceCache = new Map();
+
+function hexToRgb(hex) {
+  const match = /^#([0-9a-f]{6})$/i.exec(hex || "");
+  if (!match) return null;
+  const value = parseInt(match[1], 16);
+  return [(value >> 16) & 255, (value >> 8) & 255, value & 255];
+}
+
+export function hasSceneTextOutline(scene) {
+  return clampNumber(scene.outlineWidth, 0, 5, 0) > 0 && hexToRgb(scene.outlineTextColor) !== null;
+}
+
+// Two-pass chamfer distance (3-4 weights) from every pixel to the nearest text
+// pixel. Values are in 1/3 px, so dividing by 3 gives roughly Euclidean px.
+function distanceToTextPixels(isText, width, height) {
+  const dist = new Float32Array(width * height);
+  for (let i = 0; i < dist.length; i++) dist[i] = isText[i] ? 0 : 1e9;
+  for (let y = 0; y < height; y++) {
+    for (let x = 0; x < width; x++) {
+      const i = y * width + x;
+      let best = dist[i];
+      if (x > 0) best = Math.min(best, dist[i - 1] + 3);
+      if (y > 0) {
+        const up = i - width;
+        best = Math.min(best, dist[up] + 3);
+        if (x > 0) best = Math.min(best, dist[up - 1] + 4);
+        if (x < width - 1) best = Math.min(best, dist[up + 1] + 4);
+      }
+      dist[i] = best;
+    }
+  }
+  for (let y = height - 1; y >= 0; y--) {
+    for (let x = width - 1; x >= 0; x--) {
+      const i = y * width + x;
+      let best = dist[i];
+      if (x < width - 1) best = Math.min(best, dist[i + 1] + 3);
+      if (y < height - 1) {
+        const down = i + width;
+        best = Math.min(best, dist[down] + 3);
+        if (x < width - 1) best = Math.min(best, dist[down + 1] + 4);
+        if (x > 0) best = Math.min(best, dist[down - 1] + 4);
+      }
+      dist[i] = best;
+    }
+  }
+  return dist;
+}
+
+// Paints the outline ring onto `canvas` in place, at the canvas's own size.
+// Width is a percent of the canvas width, so the look is the same at preview
+// and export resolutions.
+export function applySceneTextOutline(canvas, scene) {
+  if (!hasSceneTextOutline(scene)) return;
+  const width = canvas.width;
+  const height = canvas.height;
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  const pixels = ctx.getImageData(0, 0, width, height);
+  const data = pixels.data;
+  const text = hexToRgb(scene.outlineTextColor);
+  const outline = hexToRgb(scene.outlineColor) || [0, 0, 0];
+  // Tolerance is a fraction of the largest RGB distance (black to white).
+  const limit = (clampNumber(scene.outlineTolerance, 0, 100, 20) / 100) * 0.4 * 255 * Math.sqrt(3);
+  const isText = new Uint8Array(width * height);
+  for (let i = 0; i < isText.length; i++) {
+    const p = i * 4;
+    if (data[p + 3] === 0) continue;
+    const dr = data[p] - text[0];
+    const dg = data[p + 1] - text[1];
+    const db = data[p + 2] - text[2];
+    if (Math.sqrt(dr * dr + dg * dg + db * db) <= limit) isText[i] = 1;
+  }
+  const radius = (clampNumber(scene.outlineWidth, 0, 5, 0) / 100) * width;
+  const distance = distanceToTextPixels(isText, width, height);
+  const maxUnits = radius * 3;
+  for (let i = 0; i < isText.length; i++) {
+    if (isText[i] || distance[i] > maxUnits) continue;
+    const p = i * 4;
+    data[p] = outline[0];
+    data[p + 1] = outline[1];
+    data[p + 2] = outline[2];
+    data[p + 3] = 255;
+  }
+  ctx.putImageData(pixels, 0, 0);
+}
+
+function getSceneOutlineKey(scene) {
+  return [scene.id, scene.outlineTextColor, scene.outlineTolerance, scene.outlineWidth, scene.outlineColor].join("|");
+}
+
+// Preview version of the outline: the layer's natural-size pixels with the ring
+// already painted in, as a PNG. Cached per settings; without an outline it's
+// just the original image.
+export async function getSceneOutlinedSource(scene) {
+  if (!hasSceneTextOutline(scene)) return scene.dataUrl;
+  const key = getSceneOutlineKey(scene);
+  const cached = outlinedSourceCache.get(key);
+  if (cached && cached.source === scene.dataUrl) return cached.url;
+  const image = await loadImage(scene.dataUrl);
+  const canvas = document.createElement("canvas");
+  canvas.width = image.naturalWidth;
+  canvas.height = image.naturalHeight;
+  canvas.getContext("2d").drawImage(image, 0, 0);
+  applySceneTextOutline(canvas, scene);
+  const url = canvas.toDataURL("image/png");
+  if (outlinedSourceCache.size >= 12) outlinedSourceCache.clear();
+  outlinedSourceCache.set(key, { source: scene.dataUrl, url });
+  return url;
+}
+
+// Puts the outlined pixels into the layer's <img> (and its blur copy). If the
+// settings changed while the PNG was being built, the stale result is dropped.
+export async function refreshSceneOutlinePreview(scene) {
+  const key = getSceneOutlineKey(scene);
+  const url = await getSceneOutlinedSource(scene);
+  const current = scenes.find((candidate) => candidate.id === scene.id);
+  if (!current || getSceneOutlineKey(current) !== key) return;
+  document.querySelectorAll(`[data-scene-image-id="${CSS.escape(scene.id)}"]`).forEach((image) => {
+    image.src = url;
+  });
+}
+
+export function updateSceneOutline(scene) {
+  updateSceneImageTransform(scene);
+  refreshSceneOutlinePreview(scene).catch(() => setSceneStatus(t("error.unknown")));
+}
+
 // Export-side twin of the SVG preview key: bakes the same luma key into the
 // image's alpha at the size it is drawn, so the PNG / ImgBB output matches
 // what the stage shows. Returns the image untouched when the key is off.
