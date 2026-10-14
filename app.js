@@ -144,6 +144,7 @@ export const sceneImageFilterDefaults = {
   saturate: 112,
   sepia: 4,
   blur: 0,
+  bgRemove: 0,
 };
 export const sceneSnapThresholdPx = 12;
 export const sceneHistoryLimit = 20;

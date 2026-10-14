@@ -220,6 +220,7 @@ export async function addSceneImages(files) {
       filterSaturate: sceneImageFilterDefaults.saturate,
       filterSepia: sceneImageFilterDefaults.sepia,
       filterBlur: sceneImageFilterDefaults.blur,
+      bgRemove: sceneImageFilterDefaults.bgRemove,
       blocks: [],
     };
     if (cetvelReference) {
@@ -263,6 +264,7 @@ export function addBlankScene() {
     filterSaturate: sceneImageFilterDefaults.saturate,
     filterSepia: sceneImageFilterDefaults.sepia,
     filterBlur: sceneImageFilterDefaults.blur,
+    bgRemove: sceneImageFilterDefaults.bgRemove,
     blocks: [],
   };
   scenes.unshift(scene);
@@ -549,6 +551,7 @@ export function createExampleScenes() {
     filterSaturate: sceneImageFilterDefaults.saturate,
     filterSepia: sceneImageFilterDefaults.sepia,
     filterBlur: sceneImageFilterDefaults.blur,
+    bgRemove: sceneImageFilterDefaults.bgRemove,
     blocks: [],
   };
   const textScene = {
@@ -733,6 +736,7 @@ export function normalizeImportedScene(scene, index) {
     clone.filterSaturate = clampNumber(clone.filterSaturate, 60, 180, sceneImageFilterDefaults.saturate);
     clone.filterSepia = clampNumber(clone.filterSepia, 0, 18, sceneImageFilterDefaults.sepia);
     clone.filterBlur = clampNumber(clone.filterBlur, 0, 8, sceneImageFilterDefaults.blur);
+    clone.bgRemove = clampNumber(clone.bgRemove, 0, 100, sceneImageFilterDefaults.bgRemove);
     clone.transitionStyle = ["soft", "cinematic", "blur", "none"].includes(clone.transitionStyle)
       ? clone.transitionStyle
       : "none";
@@ -1035,6 +1039,7 @@ export function ensureSceneModel() {
     scene.filterSaturate ??= sceneImageFilterDefaults.saturate;
     scene.filterSepia ??= sceneImageFilterDefaults.sepia;
     scene.filterBlur ??= sceneImageFilterDefaults.blur;
+    scene.bgRemove ??= sceneImageFilterDefaults.bgRemove;
     scene.isLocked ??= false;
     scene.transitionStyle ??= (sceneTransitionStyle ? sceneTransitionStyle.value : "none") || "none";
     scene.transitionSize ??= Number(sceneTransitionSize ? sceneTransitionSize.value : 150) || 150;
