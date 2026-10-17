@@ -232,6 +232,13 @@ body.resizing-layers.layers-dock-bottom {
   min-height: 0;
 }
 
+/* Sections and blocks keep their natural height so the body scrolls instead.
+   Without this, flex shrinking squeezes open sections (overflow:hidden gives
+   them a 0 min-height) and clips their controls. */
+.scene-editor-item-scrollable > * {
+  flex-shrink: 0;
+}
+
 .scene-editor-item-scrollable::-webkit-scrollbar {
   width: 4px;
 }
