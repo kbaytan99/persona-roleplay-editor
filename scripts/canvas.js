@@ -9,6 +9,7 @@
 
 import { clampNumber } from "./utils.js?v=3.20.2";
 import { parseLines, appendSegments, wrapLine, drawSegmentedText } from "./rp-text.js?v=3.20.2";
+import { textFontFamily } from "./text-fonts.js?v=3.20.2";
 import { t, getLanguage } from "./i18n.js?v=3.20.2";
 import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import {
@@ -1994,7 +1995,7 @@ export function drawSceneTextBlock(context, text, textBlock, width, height) {
   const x = (textBlock.x / 100) * width;
   const y = (textBlock.y / 100) * height;
 
-  context.font = `800 ${fontSize}px Arial, Helvetica, sans-serif`;
+  context.font = `800 ${fontSize}px ${textFontFamily(textBlock.fontId)}`;
   context.textBaseline = "top";
   if ("letterSpacing" in context) context.letterSpacing = `${(textBlock.letterSpacing || 0) * scale}px`;
   const sceneOptions = { ...getOptions(), fontSize, lineGap: lineHeight - fontSize };

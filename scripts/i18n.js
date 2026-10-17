@@ -171,6 +171,8 @@ const tr = {
   "control.direction": "Yön",
   "control.letterSpacing": "Harf boşluğu",
   "control.lineHeight": "Satır boşluğu",
+  "control.font": "Yazı tipi",
+  "font.default": "Varsayılan (Arial)",
 
   "textStyle.box": "★ Siyah kutu",
   "textStyle.soft": "★ Soft gölge",
@@ -477,6 +479,8 @@ const en = {
   "control.direction": "Direction",
   "control.letterSpacing": "Letter spacing",
   "control.lineHeight": "Line spacing",
+  "control.font": "Font",
+  "font.default": "Default (Arial)",
 
   "textStyle.box": "★ Black box",
   "textStyle.soft": "★ Soft shadow",
@@ -783,6 +787,8 @@ const ru = {
   "control.direction": "Направление",
   "control.letterSpacing": "Межбуквенный интервал",
   "control.lineHeight": "Межстрочный интервал",
+  "control.font": "Шрифт",
+  "font.default": "По умолчанию (Arial)",
 
   "textStyle.box": "★ Чёрный блок",
   "textStyle.soft": "★ Мягкая тень",
@@ -1089,6 +1095,8 @@ const es = {
   "control.direction": "Dirección",
   "control.letterSpacing": "Espaciado de letras",
   "control.lineHeight": "Espaciado de línea",
+  "control.font": "Fuente",
+  "font.default": "Predeterminada (Arial)",
 
   "textStyle.box": "★ Caja negra",
   "textStyle.soft": "★ Sombra suave",

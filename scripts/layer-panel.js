@@ -8,6 +8,7 @@
 
 import { clampNumber } from "./utils.js?v=3.20.2";
 import { t } from "./i18n.js?v=3.20.2";
+import { TEXT_FONTS, DEFAULT_TEXT_FONT_ID, textFontFamily } from "./text-fonts.js?v=3.20.2";
 import { createToolWorkspace, decorateToolStage, getActiveTool, handleToolStagePointerDown } from "./tool-panel.js?v=3.20.2";
 import { saveState, scheduleSceneAutosave } from "./storage.js?v=3.20.2";
 import {
@@ -168,7 +169,35 @@ export function startLayerListMarqueeSelect(event, listContainer) {
   document.addEventListener("pointerup", onUp);
 }
 
+// renderScenes() throws the whole layer panel away and rebuilds it, which
+// would otherwise snap the list and every card body back to the top on each
+// change. Card bodies are keyed by scene id so a card keeps its place when
+// the list is reordered too.
+function captureLayerScrollPositions() {
+  const list = sceneLayersPanel.querySelector(".scene-editor-list-container");
+  if (!list) return null;
+  const bodyTops = new Map();
+  list.querySelectorAll(".scene-editor-item").forEach((card) => {
+    const body = card.querySelector(".scene-editor-item-scrollable");
+    if (body?.scrollTop) bodyTops.set(card.dataset.sceneEditorId, body.scrollTop);
+  });
+  return { listTop: list.scrollTop, bodyTops };
+}
+
+function restoreLayerScrollPositions(list, saved) {
+  if (!saved) return;
+  // "instant" because the list has scroll-behavior: smooth, which would
+  // animate the jump back down instead of landing on the saved spot.
+  list.scrollTo({ top: saved.listTop, behavior: "instant" });
+  list.querySelectorAll(".scene-editor-item").forEach((card) => {
+    const top = saved.bodyTops.get(card.dataset.sceneEditorId);
+    const body = card.querySelector(".scene-editor-item-scrollable");
+    if (top && body) body.scrollTo({ top, behavior: "instant" });
+  });
+}
+
 export function renderScenes() {
+  const savedLayerScroll = captureLayerScrollPositions();
   sceneList.replaceChildren();
   sceneLayersPanel.replaceChildren();
 
@@ -231,6 +260,7 @@ export function renderScenes() {
       block.style.fontSize = `${scene.fontSize || getSceneFontSize()}px`;
       block.style.letterSpacing = `${scene.letterSpacing || 0}px`;
       block.style.lineHeight = String(scene.lineHeight || 1.18);
+      block.style.fontFamily = textFontFamily(scene.fontId);
       block.style.left = `${scene.x}%`;
       block.style.top = `${scene.y}%`;
       block.style.width = `${scene.width}%`;
@@ -455,6 +485,7 @@ export function renderScenes() {
   });
 
   sceneLayersPanel.append(listContainer);
+  restoreLayerScrollPositions(listContainer, savedLayerScroll);
   sceneLayersPanel.append(...createPanelResizeHandles());
 
   composer.append(toolbar, createToolWorkspace(canvasViewport));
@@ -728,9 +759,25 @@ export function createTextLayerControls(scene, stage) {
 
   textControls.append(fontInput, styleSelect);
 
+  const fontSelect = createSelectControl(t("control.font"), scene.fontId || DEFAULT_TEXT_FONT_ID,
+    TEXT_FONTS.map((font) => ({ value: font.id, text: font.label || t("font.default") })),
+    (value) => {
+      pushSceneHistory();
+      const applyFont = (target) => {
+        target.fontId = value;
+        const block = stage.querySelector(`.scene-text-block[data-scene-id="${CSS.escape(target.id)}"]`);
+        if (block) block.style.fontFamily = textFontFamily(value);
+      };
+      applyFont(scene);
+      applyToSelectedSiblings(scene, applyFont);
+      rememberTextLayerDefaults(scene);
+      scheduleSceneAutosave();
+    }, "type");
+
   const spacingControls = document.createElement("div");
   spacingControls.className = "block-editor-spacing";
   spacingControls.append(
+    fontSelect,
     createRangeControl(t("control.letterSpacing"), scene.letterSpacing || 0, -5, 20, 1, (value) => {
       withSelectedSiblings(scene, "letterSpacing", updateSceneTextStyle)(value);
       rememberTextLayerDefaults(scene);
