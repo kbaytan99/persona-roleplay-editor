@@ -516,38 +516,67 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   z-index: 2000000;
   display: grid;
   place-items: center;
-  background: rgba(4, 6, 10, 0.6);
+  background: rgba(6, 8, 12, 0.42);
+  backdrop-filter: blur(4px);
+  animation: confirm-modal-fade 0.16s ease-out;
 }
 
 .confirm-modal {
-  width: min(380px, calc(100vw - 32px));
-  padding: 18px 20px;
-  border: 1px solid #2a303b;
-  border-radius: 10px;
-  background: #14171d;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  width: min(360px, calc(100vw - 32px));
+  padding: 22px 22px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 16px;
+  background: linear-gradient(180deg, rgba(30, 34, 43, 0.97), rgba(20, 23, 30, 0.97));
+  box-shadow: 0 18px 44px rgba(0, 0, 0, 0.32);
   color: #e6e9ef;
+  animation: confirm-modal-rise 0.18s ease-out;
 }
 
 .confirm-modal h2 {
-  margin: 0 0 8px;
-  font-size: 16px;
+  margin: 0 0 6px;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: 0.1px;
 }
 
 .confirm-modal p {
-  margin: 0 0 14px;
+  margin: 0 0 16px;
   font-size: 13px;
-  line-height: 1.45;
-  color: #aab2bd;
+  line-height: 1.5;
+  color: #9aa3b0;
 }
 
 .confirm-modal-remember {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin: 0 0 16px;
+  margin: 0 0 18px;
   font-size: 12px;
-  color: #aab2bd;
+  color: #9aa3b0;
+  cursor: pointer;
+}
+
+/* Global label/input rules (label span: uppercase block; input: 100% wide,
+   38px tall) would otherwise blow this checkbox row up. */
+.confirm-modal-remember span {
+  display: inline;
+  margin: 0;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0;
+  text-transform: none;
+  color: inherit;
+}
+
+.confirm-modal-remember input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  padding: 0;
+  flex: 0 0 auto;
+  border-radius: 4px;
+  box-shadow: none;
+  accent-color: #48c7b8;
   cursor: pointer;
 }
 
@@ -557,9 +586,49 @@ body.layers-floating .scene-mode #scenePreviewPane.active {
   gap: 8px;
 }
 
-.confirm-modal-ok {
-  border-color: rgba(72, 199, 184, 0.6);
-  color: #48c7b8;
+.confirm-modal-actions .layer-mini-btn {
+  align-self: auto;
+  min-height: 32px;
+  margin: 0;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #c4cbd6;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.confirm-modal-actions .layer-mini-btn:hover {
+  background: rgba(255, 255, 255, 0.09);
+}
+
+/* Scoped under .confirm-modal-actions so it outranks the Cancel-button rule above. */
+.confirm-modal-actions .confirm-modal-ok {
+  border-color: rgba(72, 199, 184, 0.4);
+  background: rgba(72, 199, 184, 0.14);
+  color: #7fe0d4;
+}
+
+.confirm-modal-actions .confirm-modal-ok:hover {
+  background: rgba(72, 199, 184, 0.22);
+}
+
+@keyframes confirm-modal-fade {
+  from { opacity: 0; }
+}
+
+@keyframes confirm-modal-rise {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .confirm-modal-overlay,
+  .confirm-modal {
+    animation: none;
+  }
 }
 
 /* Frame-only boxes (selected layer under a drawing tool): visual, never clickable. */
