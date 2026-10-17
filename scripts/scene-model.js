@@ -33,6 +33,7 @@ import {
   getSceneTransitionSides,
 } from "./canvas.js?v=3.20.2";
 import { askConfirm, askDeleteConfirm } from "./confirm-modal.js?v=3.20.2";
+import { DEFAULT_TEXT_FONT_ID, TEXT_FONT_IDS } from "./text-fonts.js?v=3.20.2";
 import { clearCropSelection, getPendingCropSelection } from "./tool-panel.js?v=3.20.2";
 import { renderScenes, flashSceneEditorItem, clearExpandedSectionsFor } from "./layer-panel.js?v=3.20.2";
 import { switchMode, isSceneUndoShortcut, isSceneRedoShortcut } from "./menu-ui.js?v=3.20.2";
@@ -92,7 +93,7 @@ export function loadLastTextLayerDefaults() {
   } catch {
     // Corrupt/foreign localStorage value - fall through to defaults.
   }
-  return { fontSize: 18, textStyle: "box", letterSpacing: 0, lineHeight: 1.18 };
+  return { fontSize: 18, textStyle: "box", letterSpacing: 0, lineHeight: 1.18, fontId: DEFAULT_TEXT_FONT_ID };
 }
 
 export function rememberTextLayerDefaults(scene) {
@@ -101,6 +102,7 @@ export function rememberTextLayerDefaults(scene) {
     textStyle: scene.textStyle ?? lastTextLayerDefaults.textStyle,
     letterSpacing: scene.letterSpacing ?? lastTextLayerDefaults.letterSpacing,
     lineHeight: scene.lineHeight ?? lastTextLayerDefaults.lineHeight,
+    fontId: scene.fontId ?? lastTextLayerDefaults.fontId,
   };
   localStorage.setItem(textLayerDefaultsStorageKey, JSON.stringify(lastTextLayerDefaults));
 }
@@ -810,6 +812,7 @@ export function normalizeImportedScene(scene, index) {
     clone.fontSize = clampNumber(clone.fontSize, 10, 42, getSceneFontSize());
     clone.letterSpacing = clampNumber(clone.letterSpacing, -5, 20, 0);
     clone.lineHeight = clampNumber(clone.lineHeight, 0.8, 2.5, 1.18);
+    clone.fontId = TEXT_FONT_IDS.includes(clone.fontId) ? clone.fontId : DEFAULT_TEXT_FONT_ID;
     clone.textStyle = ["box", "soft", "outline", "plain", "boxSoft", "outlineThick", "neon"].includes(clone.textStyle)
       ? clone.textStyle
       : "box";
@@ -1126,6 +1129,7 @@ export function createSceneBlock(text = "") {
     textStyle: lastTextLayerDefaults.textStyle,
     letterSpacing: lastTextLayerDefaults.letterSpacing,
     lineHeight: lastTextLayerDefaults.lineHeight,
+    fontId: lastTextLayerDefaults.fontId ?? DEFAULT_TEXT_FONT_ID,
   };
 }
 
@@ -1141,6 +1145,7 @@ export function ensureSceneModel() {
       scene.text ??= "";
       scene.letterSpacing ??= 0;
       scene.lineHeight ??= 1.18;
+      scene.fontId ??= DEFAULT_TEXT_FONT_ID;
       scene.isLocked ??= false;
       return;
     }
